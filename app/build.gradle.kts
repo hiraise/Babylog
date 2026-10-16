@@ -97,7 +97,7 @@ dependencies {
     ksp("androidx.room:room-compiler:2.8.5")
     testImplementation("junit:junit:4.13.2")
     // Тесты ViewModel на JVM (Dispatchers.Main, runTest); версия — как у kotlinx-coroutines в приложении
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
     // Android на JVM без эмулятора: миграции, Room и скриншоты (ADR-0013)
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.room:room-testing:2.8.5")
