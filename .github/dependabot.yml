@@ -1,0 +1,28 @@
+# Обновления зависимостей (ADR-0011). Каждый PR Dependabot проходит CI; обновление без смены
+# поведения ADR не требует (ADR-0006).
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # ADR-0006: Gradle, AGP, Kotlin и KSP обновляются вместе
+      toolchain:
+        patterns:
+          - gradle-wrapper
+          - com.android.*
+          - org.jetbrains.kotlin.*
+          - com.google.devtools.ksp*
+      androidx:
+        patterns:
+          - androidx.*
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns:
+          - '*'

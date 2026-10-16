@@ -141,10 +141,92 @@ check_design_tokens() {
     fi
 }
 
+# Печатает нарушения правила (пути — от корня проекта); код 1, если нарушения есть
+report() {
+    [[ -z "$2" ]] && return 0
+    echo "$1:" >&2
+    sed "s|$ROOT/||; s|^|  |" <<<"$2" >&2
+    return 1
+}
+
+# Правила из разделов «Проверка» ADR, которые ловятся поиском по коду (ADR-0011).
+# Меняешь правило в ADR — меняй проверку здесь в том же изменении.
+check_adr_rules() {
+    local main="$ROOT/app/src/main" code="$ROOT/app/src/main/java/com/kid/babylog" failed=0 hits
+    hits="$(grep -nHE 'com\.google\.(android\.gms|firebase)' "$ROOT"/*.gradle.kts "$ROOT"/app/*.gradle.kts || true)"
+    report "ADR-0001: закрытые SDK (Play Services, Firebase) не подключаются" "$hits" || failed=1
+    # INTERNET появится только вместе с ADR сетевой интеграции — тогда поправь и эту проверку
+    hits="$(grep -nH 'android.permission.INTERNET' "$main/AndroidManifest.xml" || true)"
+    report "ADR-0002: permission INTERNET без ADR сетевой интеграции" "$hits" || failed=1
+    grep -q 'android:allowBackup="false"' "$main/AndroidManifest.xml" ||
+        report "ADR-0002: нужен android:allowBackup=\"false\"" "$main/AndroidManifest.xml" || failed=1
+    hits="$(grep -rnH 'System\.currentTimeMillis' "$code" | grep -v '/AppContainer\.kt:' || true)"
+    report "ADR-0007: текущее время — только через Clock, System.currentTimeMillis — только в AppContainer.kt" "$hits" || failed=1
+    hits="$(grep -rnHE '^import androidx\.room' "$code" | grep -v '/core/data/room/' || true)"
+    report "ADR-0007: Room импортируется только в core/data/room/" "$hits" || failed=1
+    hits="$(grep -nHE '^import android\.' "$code"/feature/*/*ViewModel.kt 2>/dev/null || true)"
+    report "ADR-0007: ViewModel не зависят от Android" "$hits" || failed=1
+    return "$failed"
+}
+
+# Документация: каждый ADR есть в индексе, номера не повторяются, относительные ссылки в .md не битые
+check_docs() {
+    local adr="$ROOT/docs/adr" failed=0 f link target hits=""
+    for f in "$adr"/[0-9][0-9][0-9][0-9]-*.md; do
+        grep -qF "]($(basename "$f"))" "$adr/README.md" || hits+="$f"$'\n'
+    done
+    report "ADR без строки в индексе docs/adr/README.md" "${hits%$'\n'}" || failed=1
+    hits="$(ls "$adr" | sed -n 's/^\([0-9]\{4\}\)-.*\.md$/\1/p' | sort | uniq -d)"
+    report "Номера ADR повторяются" "$hits" || failed=1
+    hits=""
+    # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md
+    while IFS= read -r f; do
+        while IFS= read -r link; do
+            target="${link%%#*}"
+            [[ -z "$target" || "$target" == *://* || "$target" == mailto:* ]] && continue
+            [[ -e "$(dirname "$f")/$target" ]] || hits+="$f → $link"$'\n'
+        done < <(grep -oE '\]\([^) ]+\)' "$f" | sed 's/^](//; s/)$//')
+    done < <(find "$ROOT" -name '*.md' ! -name template.md \
+        ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' ! -path '*/.claude/*')
+    report "Битые ссылки в документации" "${hits%$'\n'}" || failed=1
+    return "$failed"
+}
+
+# Gradle-часть проверки — общая для check и CI
+CHECK_TASKS=(testDebugUnitTest lintDebug assembleDebug)
+
+# Быстрые проверки правил без Gradle; сообщает обо всех нарушениях сразу, а не о первом
+cmd_rules() {
+    local failed=0
+    check_design_tokens || failed=1
+    check_adr_rules || failed=1
+    check_docs || failed=1
+    [[ "$failed" -eq 0 ]] && echo "Правила проекта соблюдены"
+    return "$failed"
+}
+
 # Проверка, без которой задача не считается выполненной (CLAUDE.md, «Сборка и проверка»)
 cmd_check() {
-    check_design_tokens
-    run_gradle testDebugUnitTest assembleDebug
+    cmd_rules
+    run_gradle "${CHECK_TASKS[@]}"
+}
+
+# Gradle-шаг CI: всё из check и release-сборка — по ней README учит собирать APK (ADR-0011)
+cmd_build() {
+    run_gradle "${CHECK_TASKS[@]}" assembleRelease
+}
+
+# Шаг CI после сборки: Room не должен был изменить схемы в app/schemas/ (ADR-0008).
+# Локально падает и на незакоммиченной новой схеме — это и есть напоминание её закоммитить.
+cmd_schemas() {
+    local changes
+    changes="$(cd "$ROOT" && git status --porcelain -- app/schemas)"
+    if [[ -n "$changes" ]]; then
+        echo "Сборка изменила схемы Room — нужна новая версия AppDatabase с миграцией и закоммиченная схема (ADR-0008):" >&2
+        echo "$changes" >&2
+        return 1
+    fi
+    echo "Схемы Room совпадают с закоммиченными"
 }
 
 cmd_logcat() {
@@ -201,7 +283,10 @@ usage() {
 Использование: scripts/dev.sh <команда>
 
   run         собрать debug-версию, установить и открыть (эмулятор поднимется сам)
-  check       дизайн-токены (ADR-0010), unit-тесты и debug-сборка (./gradlew testDebugUnitTest assembleDebug)
+  check       обязательная проверка: rules, unit-тесты, lint и debug-сборка
+  rules       правила проекта без Gradle: дизайн-токены (ADR-0010), правила ADR, ссылки в документации
+  build       шаг CI: unit-тесты, lint, debug- и release-сборка
+  schemas     шаг CI после сборки: схемы Room в app/schemas/ совпадают с закоммиченными
   emulator    запустить эмулятор и дождаться загрузки
   logcat      логи приложения (переживают перезапуски и падения)
   db          скачать базу в build/debug-db/$DB_NAME
@@ -211,6 +296,6 @@ EOF
 }
 
 case "${1:-}" in
-    run | check | emulator | logcat | db | screenshot | stop) "cmd_$1" ;;
+    run | check | rules | build | schemas | emulator | logcat | db | screenshot | stop) "cmd_$1" ;;
     *) usage ;;
 esac
