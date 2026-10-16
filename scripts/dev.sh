@@ -245,7 +245,7 @@ cmd_release() {
     local tag="${1:-}" version apk tools cert out
     version="$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle.kts")"
     if [[ "$tag" != "v$version" ]]; then
-        echo "Тег «$tag» должен совпадать с versionName: v$version" >&2
+        echo "Тег «${tag}» должен совпадать с versionName: v$version" >&2
         return 1
     fi
     if [[ -z "${BABYLOG_KEYSTORE:-}" || -z "${BABYLOG_KEYSTORE_PASSWORD:-}" ]]; then
@@ -255,10 +255,12 @@ cmd_release() {
     cmd_rules
     run_gradle "${CHECK_TASKS[@]}" assembleRelease
     apk="$ROOT/app/build/outputs/apk/release/app-release.apk"
-    tools="$(ls -d "$SDK"/build-tools/*/ | sort | tail -1)"
-    # apksigner.jar напрямую: обёртка apksigner берёт java из PATH, а там может быть Java ниже 17
-    cert="$("${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar "${tools}lib/apksigner.jar" verify --print-certs "$apk" |
-        sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+    tools="$(ls -d "$SDK"/build-tools/*/ | LC_ALL=C sort | tail -1)"
+    # apksigner.jar напрямую: обёртка apksigner берёт java из PATH, а там может быть Java ниже 17.
+    # Формат строки зависит от версии build-tools («Signer #1 certificate …» до 36, «V2 Signer: certificate …»
+    # с 37), поэтому берём все отпечатки подписантов: должен остаться ровно один — ключ проекта
+    cert="$("${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar "${tools}lib/apksigner.jar" verify --print-certs "$apk" 2>/dev/null |
+        sed -n 's/.*certificate SHA-256 digest: //p' | LC_ALL=C sort -u)"
     if [[ "$cert" != "$RELEASE_CERT_SHA256" ]]; then
         echo "APK подписан не ключом проекта (сертификат: ${cert:-нет подписи}) — ADR-0012" >&2
         return 1
