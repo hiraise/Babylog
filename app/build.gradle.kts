@@ -19,6 +19,18 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        // Ключ релизов есть только в секретах CI и у владельца, в репозитории его нет (ADR-0012)
+        System.getenv("BABYLOG_KEYSTORE")?.let { keystore ->
+            create("release") {
+                storeFile = file(keystore)
+                storePassword = System.getenv("BABYLOG_KEYSTORE_PASSWORD")
+                keyAlias = "babylog"
+                keyPassword = System.getenv("BABYLOG_KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             // Отдельное приложение рядом с основным: отладка не трогает настоящие записи на телефоне
@@ -27,9 +39,14 @@ android {
         }
         release {
             isMinifyEnabled = false
-            // Личное приложение: подписываем debug-ключом, чтобы APK ставился без возни с keystore
-            signingConfig = signingConfigs.getByName("debug")
+            // Без ключа release собирается неподписанным: чужой подписью его не выдать за релиз проекта
+            signingConfig = signingConfigs.findByName("release")
         }
+    }
+    // Блок метаданных зависимостей в APK зашифрован ключом Google — открытому проекту он не нужен
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
