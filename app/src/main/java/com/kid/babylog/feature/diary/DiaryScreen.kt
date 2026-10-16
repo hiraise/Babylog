@@ -171,7 +171,7 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     newEvent?.let { kind ->
         NewEventDialog(
             kind = kind,
-            childId = child.id,
+            child = child,
             onDismiss = { newEvent = null },
             onSave = {
                 viewModel.saveEvent(it)
@@ -206,6 +206,7 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
         key(event.id) {
             EditEventDialog(
                 event = event,
+                sex = child.sex,
                 onDismiss = { editingId = NONE },
                 onSave = {
                     viewModel.saveEvent(it)
@@ -220,7 +221,7 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
             onDismissRequest = { deletingId = NONE },
             icon = { AppIcon(eventIcon(event), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text("Удалить запись?") },
-            text = { Text("${eventTitle(event)}\n${eventTimeLine(event)}") },
+            text = { Text("${eventTitle(event, child.sex)}\n${eventTimeLine(event)}") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.deleteEvent(event)
@@ -250,8 +251,8 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
             initial = null,
             children = state.children,
             onDismiss = { childDialog = ChildDialogMode.NONE },
-            onSave = { name, birthDate ->
-                viewModel.addChild(name, birthDate)
+            onSave = { name, birthDate, sex ->
+                viewModel.addChild(name, birthDate, sex)
                 childDialog = ChildDialogMode.NONE
             },
         )
@@ -259,8 +260,8 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
             initial = child,
             children = state.children,
             onDismiss = { childDialog = ChildDialogMode.NONE },
-            onSave = { name, birthDate ->
-                viewModel.updateChild(child.copy(name = name, birthDate = birthDate))
+            onSave = { name, birthDate, sex ->
+                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex))
                 childDialog = ChildDialogMode.NONE
             },
             // Последнего ребёнка удалить нельзя

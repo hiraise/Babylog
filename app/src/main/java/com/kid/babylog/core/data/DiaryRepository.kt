@@ -3,6 +3,7 @@ package com.kid.babylog.core.data
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Sex
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -23,7 +24,7 @@ interface DiaryRepository {
     suspend fun allEvents(): List<BabyEvent>
 
     /** Возвращает id нового ребёнка. Имя проверяет вызывающий код ([com.kid.babylog.core.model.isNameTaken]). */
-    suspend fun addChild(name: String, birthDate: Long?): Long
+    suspend fun addChild(name: String, birthDate: Long?, sex: Sex?): Long
 
     suspend fun updateChild(child: Child)
 

@@ -13,9 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.breastLabel
+import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.components.ActionTile
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
@@ -28,14 +31,16 @@ import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
 
-/** Таймер сна выбранного ребёнка: «Уснул…» или идущий сон с кнопкой «Проснулся». */
+/** Таймер сна выбранного ребёнка: «Уснул(а)…» или идущий сон с кнопкой «Проснулся / Проснулась». */
 @Composable
-internal fun SleepCard(childName: String, activeSleep: Sleep?, now: Long, onStart: () -> Unit, onEnd: () -> Unit) {
+internal fun SleepCard(child: Child, activeSleep: Sleep?, now: Long, onStart: () -> Unit, onEnd: () -> Unit) {
     if (activeSleep == null) {
-        TimerStartCard(R.drawable.ic_sleep, "Сон", "Уснул…", onStart)
+        TimerStartCard(R.drawable.ic_sleep, "Сон", bySex(child.sex, "Уснул…", "Уснула…"), onStart)
     } else {
-        RunningTimerCard("$childName спит", activeSleep.start, now) {
-            Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) { Text("Проснулся") }
+        RunningTimerCard("${child.name} спит", activeSleep.start, now) {
+            Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) {
+                Text(bySex(child.sex, "Проснулся", "Проснулась"))
+            }
         }
     }
 }
@@ -70,9 +75,9 @@ internal fun QuickActions(onAdd: (NewEventKind) -> Unit) {
     }
 }
 
-/** Строка истории: нажатие на карточку — правка, корзина — удаление. */
+/** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
 @Composable
-internal fun EventRow(event: BabyEvent, onEdit: () -> Unit, onDelete: () -> Unit) {
+internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete: () -> Unit) {
     val spacing = BabyLogTheme.spacing
     AppCard(
         modifier = Modifier.fillMaxWidth(),
@@ -83,7 +88,7 @@ internal fun EventRow(event: BabyEvent, onEdit: () -> Unit, onDelete: () -> Unit
     ) {
         ItemRow(
             icon = eventIcon(event),
-            title = eventTitle(event),
+            title = eventTitle(event, sex),
             subtitle = eventTimeLine(event),
             note = event.note,
             trailing = {

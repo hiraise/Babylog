@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -66,7 +67,8 @@ class RoomDiaryRepositoryTest {
 
     @Test
     fun `deleting a child removes only its records and never the last child`() = withRepository { repo ->
-        val second = repo.addChild("Петя", birthDate = null)
+        val second = repo.addChild("Петя", birthDate = null, sex = Sex.BOY)
+        assertEquals(Child(second, "Петя", null, Sex.BOY), repo.allChildren().last())
         repo.addEvent(Medicine(childId = 1, start = T1, name = "Витамин D"))
         repo.addEvent(Medicine(childId = second, start = T2, name = "Нурофен"))
 

@@ -10,6 +10,7 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -73,7 +74,7 @@ class DiaryScreenshotTest {
 
     /** Двое детей; у Маши за сегодня записи всех типов и идёт сон, а при [feedingNow] — кормление. */
     private fun sampleDiary(feedingNow: Boolean = false) = FakeDiaryRepository(
-        listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z")), Child(2, "Петя", null)),
+        listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z"), Sex.GIRL), Child(2, "Петя", null, Sex.BOY)),
     ).apply {
         events.value = listOf<BabyEvent>(
             Weight(id = 1, childId = 1, start = at("2026-10-15T06:10:00Z"), grams = 6350),

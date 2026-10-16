@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.DiaperKind
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.breastLabel
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
@@ -32,12 +33,13 @@ import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
 import java.time.ZoneId
 
+/** Сводка дня; [sex] — пол ребёнка, для «пописал / пописала». */
 @Composable
-fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long) {
+fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex?) {
     // Пересчитываем раз в минуту, а не на каждый тик секундного таймера
     val minuteNow = now / 60_000
-    val lines = remember(events, date, minuteNow) {
-        summarizeDay(events, date, now, ZoneId.systemDefault()).lines(now)
+    val lines = remember(events, date, minuteNow, sex) {
+        summarizeDay(events, date, now, ZoneId.systemDefault()).lines(now, sex)
     }
     val spacing = BabyLogTheme.spacing
     AppCard(Modifier.fillMaxWidth()) {
@@ -73,7 +75,7 @@ fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long) {
 internal data class SummaryLine(@DrawableRes val icon: Int, val label: String, val value: String)
 
 /** Строки карточки: кормления, подгузники, сон, лекарства. */
-internal fun DaySummary.lines(now: Long): List<SummaryLine> {
+internal fun DaySummary.lines(now: Long, sex: Sex?): List<SummaryLine> {
     val feedingValue = buildString {
         append(feedings)
         lastFeeding?.let {
@@ -92,7 +94,7 @@ internal fun DaySummary.lines(now: Long): List<SummaryLine> {
             // Разбивка по видам — как у лекарств: «пописал ×2 · покакал ×1»
             val parts = DiaperKind.entries
                 .filter { (diapers[it] ?: 0) > 0 }
-                .map { "${diaperLabel(it)} ×${diapers[it]}" }
+                .map { "${diaperLabel(it, sex)} ×${diapers[it]}" }
             append(" (${parts.joinToString(" · ")})")
         }
     }

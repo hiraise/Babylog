@@ -2,7 +2,9 @@ package com.kid.babylog.feature.children
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -19,28 +21,32 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.ui.BirthDatePickerDialog
 import com.kid.babylog.core.ui.ChipIcon
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.formatDate
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
- * Добавление ([initial] = null) или правка ребёнка: имя и дата рождения.
- * Имя обязательно и не должно совпадать с именем другого ребёнка из [children].
+ * Добавление ([initial] = null) или правка ребёнка: имя, дата рождения и пол.
+ * Имя обязательно и не должно совпадать с именем другого ребёнка из [children]; пол необязателен,
+ * но выбранный снять нельзя — только поменять (ADR-0016).
  */
 @Composable
 fun ChildDialog(
     initial: Child?,
     children: List<Child>,
     onDismiss: () -> Unit,
-    onSave: (name: String, birthDate: Long?) -> Unit,
+    onSave: (name: String, birthDate: Long?, sex: Sex?) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
     var name by rememberSaveable { mutableStateOf(initial?.name ?: "") }
     var birthDate by rememberSaveable { mutableStateOf(initial?.birthDate) }
+    var sex by rememberSaveable { mutableStateOf(initial?.sex) }
     var pickBirth by rememberSaveable { mutableStateOf(false) }
     val taken = children.isNameTaken(name, exceptId = initial?.id)
     val valid = isValidChildName(name) && !taken
@@ -74,6 +80,13 @@ fun ChildDialog(
                         leadingIcon = { ChipIcon(R.drawable.ic_calendar) },
                     )
                 }
+                Column {
+                    Text("Пол:", style = MaterialTheme.typography.titleSmall)
+                    Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(spacing.s)) {
+                        ChoiceChip(selected = sex == Sex.BOY, onClick = { sex = Sex.BOY }, label = "Мальчик")
+                        ChoiceChip(selected = sex == Sex.GIRL, onClick = { sex = Sex.GIRL }, label = "Девочка")
+                    }
+                }
                 if (onDelete != null) {
                     TextButton(onClick = onDelete) {
                         Text("Удалить ребёнка…", color = MaterialTheme.colorScheme.error)
@@ -82,7 +95,7 @@ fun ChildDialog(
             }
         },
         confirmButton = {
-            TextButton(enabled = valid, onClick = { onSave(name.trim(), birthDate) }) { Text("Сохранить") }
+            TextButton(enabled = valid, onClick = { onSave(name.trim(), birthDate, sex) }) { Text("Сохранить") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )

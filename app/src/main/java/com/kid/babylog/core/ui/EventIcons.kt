@@ -51,7 +51,7 @@ private fun EventIconsPreview() = LightDarkPreview {
         AppCard(Modifier.fillMaxWidth()) {
             ItemRow(
                 icon = eventIcon(event),
-                title = eventTitle(event),
+                title = eventTitle(event, sex = null),
                 subtitle = eventTimeLine(event),
                 note = event.note,
             )

@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import java.time.Instant
@@ -68,15 +69,22 @@ fun breastLabel(breast: Breast): String = when (breast) {
     Breast.RIGHT -> "правая"
 }
 
-fun diaperLabel(kind: DiaperKind): String = when (kind) {
-    DiaperKind.WET -> "пописал"
-    DiaperKind.DIRTY -> "покакал"
+/**
+ * Слово по полу ребёнка (ADR-0016): женский род — для девочки, мужской — для мальчика и когда пол
+ * не указан. Где звучит естественно, пиши без рода: «Маша спит», «Маша ест».
+ */
+fun bySex(sex: Sex?, masculine: String, feminine: String): String = if (sex == Sex.GIRL) feminine else masculine
+
+fun diaperLabel(kind: DiaperKind, sex: Sex?): String = when (kind) {
+    DiaperKind.WET -> bySex(sex, "пописал", "пописала")
+    DiaperKind.DIRTY -> bySex(sex, "покакал", "покакала")
     DiaperKind.MIXED -> "и то, и то"
 }
 
-fun eventTitle(event: BabyEvent): String = when (event) {
+/** Заголовок записи; [sex] — пол ребёнка, чья это запись. */
+fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
     is Feeding -> "Кормление · ${breastLabel(event.breast)}" + if (event.isActive) " · идёт" else ""
-    is Diaper -> "Подгузник · ${diaperLabel(event.kind)}"
+    is Diaper -> "Подгузник · ${diaperLabel(event.kind, sex)}"
     is Sleep -> if (event.isActive) "Сон · идёт" else "Сон"
     is Medicine -> "Лекарство · ${event.name}"
     is Weight -> "Вес · ${formatWeight(event.grams)}"
@@ -103,8 +111,8 @@ fun formatWeight(grams: Int): String {
 }
 
 /** Возраст по-русски: «12 дн.», «2 мес 10 дн.», «1 г 3 мес» */
-fun formatAge(birth: LocalDate, today: LocalDate): String {
-    if (birth > today) return "ещё не родился"
+fun formatAge(birth: LocalDate, today: LocalDate, sex: Sex?): String {
+    if (birth > today) return bySex(sex, "ещё не родился", "ещё не родилась")
     val period = Period.between(birth, today)
     val years = period.years
     val months = period.months

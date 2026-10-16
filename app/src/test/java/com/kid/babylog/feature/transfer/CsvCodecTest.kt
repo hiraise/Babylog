@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -60,6 +61,12 @@ class CsvCodecTest {
         assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "", "", "Маша"), rows[1])
         // Без даты рождения строка всё равно есть: она переносит имя ребёнка
         assertEquals(listOf("PROFILE", "", "", "", "", "Петя, младший"), rows[2])
+    }
+
+    @Test
+    fun `profile row keeps sex in detail`() {
+        val csv = CsvCodec.encode(listOf(masha.copy(sex = Sex.GIRL)), emptyList())
+        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "GIRL", "", "Маша"), CsvCodec.parseRows(csv)[1])
     }
 
     @Test

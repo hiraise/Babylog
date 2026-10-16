@@ -14,8 +14,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.DateTimeField
+import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /** Начало сна: запускает таймер. */
@@ -45,6 +47,7 @@ fun SleepStartDialog(
 @Composable
 internal fun SleepEditDialog(
     initial: Sleep,
+    sex: Sex?,
     onDismiss: () -> Unit,
     onSave: (start: Long, end: Long?, note: String) -> Unit,
 ) {
@@ -60,9 +63,9 @@ internal fun SleepEditDialog(
         title = { Text("Сон — правка") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.m)) {
-                DateTimeField("Уснул:", start) { start = it }
+                DateTimeField(bySex(sex, "Уснул:", "Уснула:"), start) { start = it }
                 if (hasEnd) {
-                    DateTimeField("Проснулся:", end) { end = it }
+                    DateTimeField(bySex(sex, "Проснулся:", "Проснулась:"), end) { end = it }
                     if (!valid) {
                         Text(
                             "Конец сна не может быть раньше начала",

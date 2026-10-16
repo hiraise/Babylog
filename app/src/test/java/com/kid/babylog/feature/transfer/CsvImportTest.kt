@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -125,6 +126,36 @@ class CsvImportTest {
         assertEquals(4, result.errors)
         assertEquals(0, result.added)
         assertEquals(listOf(Child.DEFAULT_NAME), repo.children.value.map { it.name })
+    }
+
+    @Test
+    fun `sex from file is set only when missing and old files leave it alone`() = runTest {
+        val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null), Child(2, "Петя", null, Sex.BOY)))
+        val csv = "PROFILE,,,GIRL,,Маша\r\n" + "PROFILE,,,girl,,Петя\r\n" + "PROFILE,,,BOY,,Вася\r\n"
+        val result = importCsv(repo, csv, defaultChildId = 1)
+        assertEquals(1, result.sexesSet)
+        assertEquals(1, result.sexConflicts)
+        assertEquals(1, result.childrenAdded)
+        assertEquals(listOf(Sex.GIRL, Sex.BOY, Sex.BOY), repo.children.value.map { it.sex })
+        // Файл без пола (до ADR-0016) пол не сбрасывает
+        importCsv(repo, legacyFile, defaultChildId = 1)
+        assertEquals(Sex.GIRL, repo.children.value.first().sex)
+    }
+
+    @Test
+    fun `unknown sex code is an error and creates no child`() = runTest {
+        val repo = FakeDiaryRepository()
+        val result = importCsv(repo, "PROFILE,,,MAYBE,,Вася\r\n", defaultChildId = 1)
+        assertEquals(1, result.errors)
+        assertEquals(listOf(Child.DEFAULT_NAME), repo.children.value.map { it.name })
+    }
+
+    @Test
+    fun `sex survives export to another phone`() = runTest {
+        val source = FakeDiaryRepository(listOf(Child(1, "Маша", null, Sex.GIRL)))
+        val target = FakeDiaryRepository()
+        importCsv(target, exportCsv(source).text, defaultChildId = 1)
+        assertEquals(Sex.GIRL, target.children.value.first { it.name == "Маша" }.sex)
     }
 
     @Test

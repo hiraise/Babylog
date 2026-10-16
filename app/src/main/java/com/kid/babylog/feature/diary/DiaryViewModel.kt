@@ -7,6 +7,7 @@ import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.feature.transfer.DocumentStore
@@ -51,9 +52,9 @@ class DiaryViewModel(
     fun selectChild(childId: Long) = selection.select(childId)
 
     /** Добавляет ребёнка и сразу выбирает его. Пустое или занятое имя игнорируется. */
-    fun addChild(name: String, birthDate: Long?) = viewModelScope.launch {
+    fun addChild(name: String, birthDate: Long?, sex: Sex?) = viewModelScope.launch {
         if (!isValidChildName(name) || repository.allChildren().isNameTaken(name)) return@launch
-        selection.select(repository.addChild(name.trim(), birthDate))
+        selection.select(repository.addChild(name.trim(), birthDate, sex))
     }
 
     fun updateChild(child: Child) = viewModelScope.launch {

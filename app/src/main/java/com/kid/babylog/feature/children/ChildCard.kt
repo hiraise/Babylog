@@ -63,7 +63,7 @@ fun ChildCard(child: Child, lastWeight: Weight?, now: Long, onEdit: () -> Unit) 
             Column(modifier = Modifier.weight(1f)) {
                 Text(child.name, style = MaterialTheme.typography.titleMedium)
                 val ageLine = child.birthDate
-                    ?.let { "Возраст: ${formatAge(it.toLocalDate(), today)}" }
+                    ?.let { "Возраст: ${formatAge(it.toLocalDate(), today, child.sex)}" }
                     ?: "Указать дату рождения…"
                 Text(ageLine, style = MaterialTheme.typography.bodyMedium)
                 val weightLine = if (lastWeight != null) {

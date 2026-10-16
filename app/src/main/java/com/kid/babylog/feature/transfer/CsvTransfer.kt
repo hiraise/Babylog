@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.model.sameChildName
@@ -21,6 +22,8 @@ data class ImportResult(
     val childrenAdded: Int = 0,
     val birthDatesSet: Int = 0,
     val birthDateConflicts: Int = 0,
+    val sexesSet: Int = 0,
+    val sexConflicts: Int = 0,
 )
 
 /** Весь дневник в CSV: все дети и все их записи по возрастанию времени. */
@@ -58,31 +61,48 @@ private class CsvImporter(
         return result
     }
 
-    /** Строка PROFILE: создаёт ребёнка, если его нет; дату рождения ставит, только если она не задана. */
+    /**
+     * Строка PROFILE: создаёт ребёнка, если его нет; дату рождения и пол ставит, только если они
+     * не заданы. Пустой пол — файл до ADR-0016 или пол не указан: его не трогаем.
+     */
     private suspend fun importProfile(row: List<String>) {
         val name = CsvCodec.childName(row)
         val rawBirth = row.getOrElse(1) { "" }
         val birth = CsvCodec.parseTime(rawBirth)
         val badBirth = rawBirth.isNotBlank() && birth == null
+        val rawSex = row.getOrElse(3) { "" }
+        val sex = Sex.fromCode(rawSex)
+        val badSex = rawSex.isNotBlank() && sex == null
         // В файлах старых версий PROFILE без имени и всегда с датой рождения
-        if (badBirth || (name.isEmpty() && birth == null) || !isAcceptableName(name)) {
+        if (badBirth || badSex || (name.isEmpty() && birth == null) || !isAcceptableName(name)) {
             result = result.copy(errors = result.errors + 1)
             return
         }
         val child = findChild(name) ?: run {
-            createChild(name, birth)
+            createChild(name, birth, sex)
             return
         }
+        // Отличающиеся дату и пол не применяем: старый бэкап не должен молча откатить исправление
+        var updated = child
         when (child.birthDate) {
             null -> if (birth != null) {
-                val updated = child.copy(birthDate = birth)
-                repository.updateChild(updated)
-                children[children.indexOf(child)] = updated
+                updated = updated.copy(birthDate = birth)
                 result = result.copy(birthDatesSet = result.birthDatesSet + 1)
             }
             birth -> Unit
-            // Отличающуюся дату не применяем: старый бэкап не должен молча откатить исправление
             else -> if (birth != null) result = result.copy(birthDateConflicts = result.birthDateConflicts + 1)
+        }
+        when (child.sex) {
+            null -> if (sex != null) {
+                updated = updated.copy(sex = sex)
+                result = result.copy(sexesSet = result.sexesSet + 1)
+            }
+            sex -> Unit
+            else -> if (sex != null) result = result.copy(sexConflicts = result.sexConflicts + 1)
+        }
+        if (updated != child) {
+            repository.updateChild(updated)
+            children[children.indexOf(child)] = updated
         }
     }
 
@@ -100,7 +120,7 @@ private class CsvImporter(
             result = result.copy(skippedActiveSleep = result.skippedActiveSleep + 1)
             return
         }
-        val child = findChild(name) ?: createChild(name, birthDate = null)
+        val child = findChild(name) ?: createChild(name, birthDate = null, sex = null)
         val parsed = record.toEvent(childId = child.id) ?: return
         val event = parsed.withLegacyFeedingEnd()
         // Идущее кормление из собственного экспорта уже есть в базе — без конца, как в файле
@@ -125,8 +145,8 @@ private class CsvImporter(
         if (name.isEmpty()) children.find { it.id == defaultChildId } ?: children.firstOrNull()
         else children.find { sameChildName(it.name, name) }
 
-    private suspend fun createChild(name: String, birthDate: Long?): Child {
-        val child = Child(repository.addChild(name, birthDate), name.trim(), birthDate)
+    private suspend fun createChild(name: String, birthDate: Long?, sex: Sex?): Child {
+        val child = Child(repository.addChild(name, birthDate, sex), name.trim(), birthDate, sex)
         children += child
         result = result.copy(childrenAdded = result.childrenAdded + 1)
         return child
@@ -142,4 +162,6 @@ fun ImportResult.describe(): String = buildString {
     if (childrenAdded > 0) append(", новых детей $childrenAdded")
     if (birthDatesSet > 0) append(", дат рождения импортировано $birthDatesSet")
     if (birthDateConflicts > 0) append(", дата рождения в файле отличается — оставлена текущая")
+    if (sexesSet > 0) append(", пол указан у детей: $sexesSet")
+    if (sexConflicts > 0) append(", пол в файле отличается — оставлен текущий")
 }

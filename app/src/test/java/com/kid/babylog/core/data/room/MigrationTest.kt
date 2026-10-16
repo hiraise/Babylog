@@ -50,6 +50,20 @@ class MigrationTest {
     }
 
     @Test
+    fun `migration 4 to 5 produces schema 5 and children have no sex yet`() = runBlocking {
+        helper.createDatabase(DB_NAME, 4).use { db ->
+            db.execSQL("INSERT INTO children (id, name, birthDate) VALUES (1, 'Маша', ?)", arrayOf<Any?>(BIRTH))
+        }
+        helper.runMigrationsAndValidate(DB_NAME, 5, true, MIGRATION_4_5).close()
+        val db = AppDatabase.build(context)
+        try {
+            assertEquals(listOf(Child(1, "Маша", BIRTH, sex = null)), RoomDiaryRepository(db).allChildren())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
     fun `migration 2 to 3 produces schema 3`() {
         createVersion2(birthDate = BIRTH)
         helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_2_3).close()

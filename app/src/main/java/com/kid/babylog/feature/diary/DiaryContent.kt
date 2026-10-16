@@ -97,7 +97,7 @@ internal fun DiaryContent(
             ChildCard(child, state.lastWeight, now, actions.onEditChild)
         }
         item(key = "sleep") {
-            SleepCard(child.name, state.activeSleep, now, actions.onStartSleep, actions.onEndSleep)
+            SleepCard(child, state.activeSleep, now, actions.onStartSleep, actions.onEndSleep)
         }
         item(key = "feeding") {
             FeedingCard(
@@ -113,7 +113,7 @@ internal fun DiaryContent(
             QuickActions(actions.onAdd)
         }
         item(key = "summary") {
-            DaySummaryCard(events = events, date = selectedDate, now = now)
+            DaySummaryCard(events = events, date = selectedDate, now = now, sex = child.sex)
         }
         item(key = "daynav") {
             DayNavRow(
@@ -147,6 +147,7 @@ internal fun DiaryContent(
         items(dayEvents, key = { it.id }) { event ->
             EventRow(
                 event = event,
+                sex = child.sex,
                 onEdit = { actions.onEditEvent(event) },
                 onDelete = { actions.onDeleteEvent(event) },
             )

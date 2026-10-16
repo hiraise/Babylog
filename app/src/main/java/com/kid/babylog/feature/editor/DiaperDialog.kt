@@ -15,11 +15,14 @@ import androidx.compose.runtime.setValue
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
+import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.ui.diaperLabel
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 @Composable
 internal fun DiaperDialog(
     initial: Diaper?,
+    sex: Sex?,
     onDismiss: () -> Unit,
     onSave: (kind: DiaperKind, time: Long, note: String) -> Unit,
 ) {
@@ -36,11 +39,7 @@ internal fun DiaperDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.m)) {
                 OptionChips(
-                    options = listOf(
-                        DiaperKind.WET to "Пописал",
-                        DiaperKind.DIRTY to "Покакал",
-                        DiaperKind.MIXED to "И то, и то",
-                    ),
+                    options = DiaperKind.entries.map { it to diaperLabel(it, sex).replaceFirstChar(Char::titlecase) },
                     selected = kind,
                     onSelect = { kind = it },
                 )

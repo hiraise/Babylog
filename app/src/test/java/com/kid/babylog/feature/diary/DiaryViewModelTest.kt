@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
@@ -71,9 +72,9 @@ class DiaryViewModelTest {
     @Test
     fun `new child is selected and duplicate names are ignored`() = runTest {
         val vm = viewModel()
-        vm.addChild(" Вася ", birthDate = null)
-        assertEquals("Вася", vm.state.value.child?.name)
-        vm.addChild("вася", birthDate = null)
+        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY)
+        assertEquals(Child(3, "Вася", null, Sex.BOY), vm.state.value.child)
+        vm.addChild("вася", birthDate = null, sex = null)
         assertEquals(3, vm.state.value.children.size)
     }
 

@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,7 +47,7 @@ class DaySummaryTest {
         assertEquals(2, summary.feedings)
         assertEquals(mapOf(DiaperKind.WET to 2, DiaperKind.DIRTY to 1), summary.diapers)
         assertEquals(3, summary.diaperCount)
-        assertEquals("Подгузников: 3 (пописал ×2 · покакал ×1)", summary.lines(now)[1].shown())
+        assertEquals("Подгузников: 3 (пописал ×2 · покакал ×1)", summary.lines(now, null)[1].shown())
     }
 
     @Test
@@ -56,7 +57,7 @@ class DaySummaryTest {
         assertEquals(0, summary.feedings)
         assertEquals(Breast.RIGHT, summary.lastFeeding?.lastBreast)
         assertNull(summarizeDay(events, yesterday, now, zone).lastFeeding)
-        assertEquals("Кормлений: 0 · последнее: правая, 13 ч назад", summary.lines(now).first().shown())
+        assertEquals("Кормлений: 0 · последнее: правая, 13 ч назад", summary.lines(now, null).first().shown())
     }
 
     @Test
@@ -69,7 +70,7 @@ class DaySummaryTest {
         val summary = summarizeDay(events, today, now, zone)
         assertEquals(2, summary.feedings)
         assertEquals(FeedingSession(at(today, 10), at(today, 10, 15), Breast.RIGHT), summary.lastFeeding)
-        assertEquals("Кормлений: 2 · последнее: правая, 2 ч назад", summary.lines(now).first().shown())
+        assertEquals("Кормлений: 2 · последнее: правая, 2 ч назад", summary.lines(now, null).first().shown())
     }
 
     @Test
@@ -80,7 +81,7 @@ class DaySummaryTest {
         )
         val summary = summarizeDay(events, today, now, zone)
         assertEquals(1, summary.feedings)
-        assertEquals("Кормлений: 1 · сейчас ест: правая", summary.lines(now).first().shown())
+        assertEquals("Кормлений: 1 · сейчас ест: правая", summary.lines(now, null).first().shown())
     }
 
     @Test
@@ -88,6 +89,13 @@ class DaySummaryTest {
         val start = at(today, 9)
         val events = listOf(Feeding(1, 1, start, end = start, breast = Breast.LEFT), fed(2, at(today, 9, 30), Breast.RIGHT))
         assertEquals(2, summarizeDay(events, today, now, zone).feedings)
+    }
+
+    @Test
+    fun `diapers of a girl are in feminine form`() {
+        val events = listOf(Diaper(1, 1, at(today, 9), DiaperKind.WET), Diaper(2, 1, at(today, 10), DiaperKind.MIXED))
+        val line = summarizeDay(events, today, now, zone).lines(now, Sex.GIRL)[1]
+        assertEquals("Подгузников: 2 (пописала ×1 · и то, и то ×1)", line.shown())
     }
 
     @Test
@@ -115,12 +123,12 @@ class DaySummaryTest {
         )
         val summary = summarizeDay(events, today, now, zone)
         assertEquals(listOf("Нурофен" to 1, "Витамин D" to 2), summary.medicines)
-        assertEquals("Лекарств: 3 (Нурофен, Витамин D ×2)", summary.lines(now).last().shown())
+        assertEquals("Лекарств: 3 (Нурофен, Витамин D ×2)", summary.lines(now, null).last().shown())
     }
 
     @Test
     fun `empty day shows zeros without breakdowns`() {
-        val lines = summarizeDay(emptyList(), yesterday, now, zone).lines(now)
+        val lines = summarizeDay(emptyList(), yesterday, now, zone).lines(now, null)
         assertEquals(
             listOf("Кормлений: 0", "Подгузников: 0", "Сон: 0 мин", "Лекарств: 0"),
             lines.map { it.shown() },
