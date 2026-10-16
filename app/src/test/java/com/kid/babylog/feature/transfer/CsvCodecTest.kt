@@ -45,6 +45,14 @@ class CsvCodecTest {
     }
 
     @Test
+    fun `export starts with BOM and import skips it`() {
+        val csv = CsvCodec.encode(listOf(masha), emptyList())
+        // BOM нужен Excel, чтобы он понял UTF-8 и кириллицу
+        assertTrue(csv.startsWith("﻿" + CsvCodec.HEADER))
+        assertEquals(CsvCodec.HEADER.split(","), CsvCodec.parseRows(csv)[0])
+    }
+
+    @Test
     fun `header and profile rows describe every child`() {
         val csv = CsvCodec.encode(listOf(masha, petya), emptyList())
         val rows = CsvCodec.parseRows(csv)

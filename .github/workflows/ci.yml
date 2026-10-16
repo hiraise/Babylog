@@ -1,0 +1,64 @@
+# Проверка каждого PR и main (ADR-0011). Логика — в scripts/dev.sh, здесь только окружение:
+# любой шаг воспроизводится локально той же командой.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Новый коммит в PR отменяет устаревший прогон; прогоны main доводятся до конца
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Проверка
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # JDK 17 — нижняя граница из ADR-0006 (локально обычно новее)
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Открытый кеш (MIT): кеш по умолчанию — проприетарный компонент (ADR-0001, ADR-0011).
+      # Заодно проверяет, что gradle-wrapper.jar — настоящий.
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+        with:
+          cache-provider: basic
+          add-job-summary: on-failure
+
+      - name: Правила проекта (ADR, дизайн-токены, документация)
+        run: scripts/dev.sh rules
+
+      - name: Unit-тесты, lint, сборка debug и release
+        run: scripts/dev.sh build
+
+      - name: Схемы Room закоммичены
+        run: scripts/dev.sh schemas
+
+      - name: Debug APK
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - name: Отчёты тестов и lint
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: reports
+          path: app/build/reports/
+          retention-days: 14

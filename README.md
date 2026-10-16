@@ -1,5 +1,7 @@
 # Дневник малыша
 
+[![CI](https://github.com/hiraise/Babylog/actions/workflows/ci.yml/badge.svg)](https://github.com/hiraise/Babylog/actions/workflows/ci.yml)
+
 Открытое Android-приложение для отслеживания режима ребёнка. Все данные хранятся
 только локально на устройстве (SQLite/Room). Сейчас у приложения **нет permission
 INTERNET** — оно физически не может выйти в сеть. Нет рекламы, биллинга и
@@ -126,7 +128,8 @@ APK: `app/build/outputs/apk/release/app-release.apk` (подписан debug-к�
 | Команда                            | Что делает                                                              |
 |------------------------------------|-------------------------------------------------------------------------|
 | `scripts/dev.sh run`               | собрать debug, установить и открыть; эмулятор поднимется сам            |
-| `scripts/dev.sh check`             | дизайн-токены, unit-тесты и debug-сборка (обязательная проверка)        |
+| `scripts/dev.sh check`             | правила проекта, unit-тесты, lint и debug-сборка (обязательная проверка) |
+| `scripts/dev.sh rules`             | только правила проекта, без Gradle — за пару секунд                     |
 | `scripts/dev.sh logcat`            | логи приложения (не теряются при перезапуске и падении)                 |
 | `scripts/dev.sh db`                | скачать базу в `build/debug-db/babylog.db` (в VS Code — SQLite Viewer)  |
 | `scripts/dev.sh screenshot`        | скриншот в `build/screenshots/`                                         |
@@ -152,6 +155,13 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 в [CLAUDE.md](CLAUDE.md), архитектурные и системные решения — в
 [docs/adr/](docs/adr/README.md). Прежде чем менять архитектуру, добавлять
 зависимость или сетевую функцию, загляните туда.
+
+Изменения попадают в `main` только через pull request. GitHub Actions проверяет
+каждый PR так же, как `scripts/dev.sh check`, и дополнительно собирает release и
+сверяет схемы базы; debug APK прикладывается к прогону. Упавший шаг повторяется
+локально той же командой: `scripts/dev.sh rules`, `build` или `schemas`.
+Зависимости раз в неделю обновляет Dependabot. Почему так —
+[ADR-0011](docs/adr/0011-ci-github-actions.md).
 
 ## Лицензия
 

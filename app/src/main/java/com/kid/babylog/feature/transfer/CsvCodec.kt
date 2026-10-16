@@ -39,7 +39,7 @@ object CsvCodec {
     fun encode(children: List<Child>, events: List<BabyEvent>): String {
         val names = children.associate { it.id to it.name }
         val sb = StringBuilder()
-        sb.append('﻿') // BOM, чтобы Excel корректно открывал кириллицу
+        sb.append('\uFEFF') // BOM, чтобы Excel корректно открывал кириллицу
         sb.append(HEADER).append("\r\n")
         for (child in children) {
             sb.append(PROFILE_ROW).append(',')
@@ -71,7 +71,7 @@ object CsvCodec {
         val field = StringBuilder()
         var inQuotes = false
         var i = 0
-        val src = text.removePrefix("﻿")
+        val src = text.removePrefix("\uFEFF")
         while (i < src.length) {
             val c = src[i]
             when {

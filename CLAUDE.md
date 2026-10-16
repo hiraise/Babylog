@@ -82,10 +82,21 @@ README пишется для людей. Обнови его, если изме�
 
 ## Сборка и проверка
 
-- Задача не считается выполненной, пока не проходит `scripts/dev.sh check`: проверка
-  дизайн-токенов ([ADR-0010](docs/adr/0010-design-system.md)), `./gradlew testDebugUnitTest`
-  и `./gradlew assembleDebug`. Gradle нужен JDK 17+: если в `JAVA_HOME` Java ниже, скрипт сам
-  возьмёт JDK из Android Studio.
+- Задача не считается выполненной, пока не проходит `scripts/dev.sh check` и не зелёный CI
+  в её PR. `check` — правила проекта (`scripts/dev.sh rules`: дизайн-токены, правила ADR,
+  ссылки в документации), unit-тесты, lint и debug-сборка; что проверяет CI —
+  [ADR-0011](docs/adr/0011-ci-github-actions.md). Gradle нужен JDK 17+: если в `JAVA_HOME`
+  Java ниже, скрипт сам возьмёт JDK из Android Studio.
 - Запуск и отладка — `scripts/dev.sh run|logcat|db|screenshot` (debug-сборка
   `com.kid.babylog.debug` с отдельной базой), подробности — README, «Локальная отладка».
   Изменения UI по возможности проверяй на эмуляторе (`scripts/dev.sh run`, затем `screenshot`).
+
+## Ветки и PR
+
+- Каждая задача — своя ветка от `main`. Параллельная сессия работает в отдельном worktree:
+  `git worktree add ../kid-<задача> -b <ветка> main`, затем скопируй туда `local.properties`.
+- В `main` изменения попадают только через PR (`gh pr create`). Сливает PR владелец, агент —
+  только по его просьбе и при зелёном CI.
+- Результат CI читай кратко: `gh pr checks`, при падении — `gh run view <id> --log-failed`.
+  Упавший шаг повтори локально той же командой (`scripts/dev.sh rules|build|schemas`);
+  полный лог не скачивай.
