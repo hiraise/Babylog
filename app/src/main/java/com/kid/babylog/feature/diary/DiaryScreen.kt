@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kid.babylog.R
+import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.eventIcon
@@ -47,10 +48,13 @@ private enum class ChildDialogMode { NONE, ADD, EDIT }
 
 private const val NONE = -1L
 
-/** Главный экран: подключает [DiaryViewModel] к [DiaryContent] и показывает диалоги. */
+/**
+ * Главный экран: подключает [DiaryViewModel] к [DiaryContent] и показывает диалоги.
+ * Тему применяет `MainActivity` (ADR-0017): экран только показывает выбор и сообщает о новом.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryScreen(viewModel: DiaryViewModel) {
+fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChange: (ThemeMode) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
     var now by remember { mutableLongStateOf(clock.millis()) }
@@ -76,6 +80,7 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     var editingId by rememberSaveable { mutableLongStateOf(NONE) }
     var deletingId by rememberSaveable { mutableLongStateOf(NONE) }
     var showDaySelector by rememberSaveable { mutableStateOf(false) }
+    var showThemeSheet by rememberSaveable { mutableStateOf(false) }
     var childDialog by rememberSaveable { mutableStateOf(ChildDialogMode.NONE) }
     var confirmChildDelete by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
@@ -117,6 +122,14 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
                             onClick = {
                                 menuOpen = false
                                 childDialog = ChildDialogMode.ADD
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Тема", style = MaterialTheme.typography.bodyLarge) },
+                            leadingIcon = { AppIcon(R.drawable.ic_theme, contentDescription = null) },
+                            onClick = {
+                                menuOpen = false
+                                showThemeSheet = true
                             },
                         )
                         DropdownMenuItem(
@@ -164,6 +177,10 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
                 modifier = Modifier.padding(padding),
             )
         }
+    }
+
+    if (showThemeSheet) {
+        ThemeSheet(mode = themeMode, onSelect = onThemeModeChange, onDismiss = { showThemeSheet = false })
     }
 
     if (child == null) return

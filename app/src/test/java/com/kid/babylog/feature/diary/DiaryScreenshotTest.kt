@@ -3,6 +3,7 @@ package com.kid.babylog.feature.diary
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
@@ -67,7 +68,7 @@ class DiaryScreenshotTest {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel)
+                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {})
             }
         }
     }

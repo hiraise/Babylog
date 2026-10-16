@@ -67,6 +67,7 @@ private val AllIcons = listOf(
     R.drawable.ic_chevron_right to "chevron_right",
     R.drawable.ic_export to "export",
     R.drawable.ic_import to "import",
+    R.drawable.ic_theme to "theme",
 )
 
 @Preview(name = "AppIcon — все иконки", widthDp = 720)
