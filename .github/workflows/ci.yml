@@ -55,10 +55,13 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
 
-      - name: Отчёты тестов и lint
+      # Отчёты и картинки «эталон / сейчас / разница» для упавших скриншот-тестов — смотрит человек
+      - name: Отчёты тестов, lint и скриншотов
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: reports
-          path: app/build/reports/
+          path: |
+            app/build/reports/
+            app/build/outputs/roborazzi/
           retention-days: 14

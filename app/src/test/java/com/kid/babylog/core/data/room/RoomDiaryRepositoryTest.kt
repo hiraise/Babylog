@@ -1,0 +1,70 @@
+package com.kid.babylog.core.data.room
+
+import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sleep
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+/** Правила ADR-0008 на настоящей базе Room, а не на фейке. */
+@RunWith(RobolectricTestRunner::class)
+class RoomDiaryRepositoryTest {
+
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    /** Открывает базу приложения, как после запуска, и закрывает её после [block]. */
+    private fun <T> withRepository(block: suspend (RoomDiaryRepository) -> T): T = runBlocking {
+        val db = AppDatabase.build(context)
+        try {
+            block(RoomDiaryRepository(db))
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `new database starts with one default child`() = withRepository { repo ->
+        assertEquals(listOf(Child(1, Child.DEFAULT_NAME, null)), repo.allChildren())
+    }
+
+    @Test
+    fun `active sleep survives restart and stays the only one`() {
+        withRepository { repo ->
+            assertTrue(repo.startSleep(childId = 1, start = T1))
+            assertFalse(repo.startSleep(childId = 1, start = T2))
+        }
+        // Новый экземпляр базы — как после перезапуска приложения или телефона
+        withRepository { repo ->
+            assertEquals(listOf(Sleep(id = 1, childId = 1, start = T1)), repo.allEvents())
+        }
+    }
+
+    @Test
+    fun `time is stored with second precision`() = withRepository { repo ->
+        repo.addEvent(Medicine(childId = 1, start = T1 + 750, name = "Витамин D"))
+        assertEquals(T1, repo.allEvents().single().start)
+    }
+
+    @Test
+    fun `deleting a child removes only its records and never the last child`() = withRepository { repo ->
+        val second = repo.addChild("Петя", birthDate = null)
+        repo.addEvent(Medicine(childId = 1, start = T1, name = "Витамин D"))
+        repo.addEvent(Medicine(childId = second, start = T2, name = "Нурофен"))
+
+        assertTrue(repo.deleteChild(second))
+        assertEquals(listOf(1L), repo.allChildren().map { it.id })
+        assertEquals(listOf(1L), repo.allEvents().map { it.childId })
+        assertFalse(repo.deleteChild(1))
+    }
+
+    private companion object {
+        const val T1 = 1_786_000_000_000L
+        const val T2 = 1_786_003_600_000L
+    }
+}

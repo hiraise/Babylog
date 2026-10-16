@@ -192,8 +192,15 @@ check_docs() {
     return "$failed"
 }
 
-# Gradle-часть проверки — общая для check и CI
-CHECK_TASKS=(testDebugUnitTest lintDebug assembleDebug)
+# Gradle-часть проверки — общая для check и CI. verifyRoborazziDebug — это все unit-тесты
+# плюс сверка скриншотов с эталонами в app/src/test/screenshots/ (ADR-0013)
+CHECK_TASKS=(verifyRoborazziDebug lintDebug assembleDebug)
+
+# Перезаписывает эталонные скриншоты после намеренной правки UI. Изменившиеся PNG закоммить вместе с правкой
+cmd_goldens() {
+    run_gradle recordRoborazziDebug
+    (cd "$ROOT" && git status --short -- app/src/test/screenshots)
+}
 
 # Быстрые проверки правил без Gradle; сообщает обо всех нарушениях сразу, а не о первом
 cmd_rules() {
@@ -318,9 +325,10 @@ usage() {
 Использование: scripts/dev.sh <команда>
 
   run         собрать debug-версию, установить и открыть (эмулятор поднимется сам)
-  check       обязательная проверка: rules, unit-тесты, lint и debug-сборка
+  check       обязательная проверка: rules, unit-тесты со сверкой скриншотов, lint и debug-сборка
   rules       правила проекта без Gradle: дизайн-токены (ADR-0010), правила ADR, ссылки в документации
-  build       шаг CI: unit-тесты, lint, debug- и release-сборка
+  goldens     перезаписать эталонные скриншоты (app/src/test/screenshots/) после намеренной правки UI
+  build       шаг CI: unit-тесты со сверкой скриншотов, lint, debug- и release-сборка
   schemas     шаг CI после сборки: схемы Room в app/schemas/ совпадают с закоммиченными
   release v<версия>  подписанный APK и .sha256 в build/release/ (нужен ключ релизов, ADR-0012)
   emulator    запустить эмулятор и дождаться загрузки
@@ -332,6 +340,6 @@ EOF
 }
 
 case "${1:-}" in
-    run | check | rules | build | schemas | release | emulator | logcat | db | screenshot | stop) "cmd_$1" "${@:2}" ;;
+    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | screenshot | stop) "cmd_$1" "${@:2}" ;;
     *) usage ;;
 esac

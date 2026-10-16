@@ -1,0 +1,83 @@
+package com.kid.babylog.core.data.room
+
+import androidx.room.testing.MigrationTestHelper
+import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sleep
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+
+/**
+ * Обновление приложения поверх старой базы — на JVM вместо ручной проверки на эмуляторе
+ * (ADR-0008, ADR-0013). Схемы версий берутся из `app/schemas/`.
+ */
+@RunWith(RobolectricTestRunner::class)
+class MigrationTest {
+
+    @get:Rule
+    val helper = MigrationTestHelper(InstrumentationRegistry.getInstrumentation(), AppDatabase::class.java)
+
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
+
+    /** База версии 2, какой она была у пользователя до появления нескольких детей. */
+    private fun createVersion2(birthDate: Long?) {
+        helper.createDatabase(DB_NAME, 2).use { db ->
+            if (birthDate != null) db.execSQL("INSERT INTO profile (id, birthDate) VALUES (1, ?)", arrayOf(birthDate))
+            val insert = "INSERT INTO events (id, type, startTime, endTime, detail, note) VALUES (?, ?, ?, ?, ?, ?)"
+            db.execSQL(insert, arrayOf<Any?>(7, "FEEDING", T1, null, "LEFT", "ночью"))
+            db.execSQL(insert, arrayOf<Any?>(8, "SLEEP", T2, T3, "", ""))
+            db.execSQL(insert, arrayOf<Any?>(9, "SLEEP", T4, null, "", "спит сейчас"))
+        }
+    }
+
+    @Test
+    fun `migration 2 to 3 produces schema 3`() {
+        createVersion2(birthDate = BIRTH)
+        helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_2_3).close()
+    }
+
+    @Test
+    fun `update over version 2 keeps every record, active sleep and birth date`() = runBlocking {
+        createVersion2(birthDate = BIRTH)
+        val db = AppDatabase.build(context)
+        try {
+            val repo = RoomDiaryRepository(db)
+            assertEquals(listOf(Child(1, Child.DEFAULT_NAME, BIRTH)), repo.allChildren())
+            val expected = listOf(
+                Feeding(id = 7, childId = 1, start = T1, breast = Breast.LEFT, note = "ночью"),
+                Sleep(id = 8, childId = 1, start = T2, end = T3),
+                Sleep(id = 9, childId = 1, start = T4, note = "спит сейчас"),
+            )
+            assertEquals(expected, repo.allEvents())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `profile without birth date becomes a child without it`() = runBlocking {
+        createVersion2(birthDate = null)
+        val db = AppDatabase.build(context)
+        try {
+            assertEquals(listOf(Child(1, Child.DEFAULT_NAME, null)), RoomDiaryRepository(db).allChildren())
+        } finally {
+            db.close()
+        }
+    }
+
+    private companion object {
+        /** Имя файла из [AppDatabase.build]: тест открывает ту же базу, что приложение. */
+        const val DB_NAME = "babylog.db"
+        const val BIRTH = 1_779_235_200_000L // 2026-05-20
+        const val T1 = 1_786_000_000_000L
+        const val T2 = 1_786_003_600_000L
+        const val T3 = 1_786_008_000_000L
+        const val T4 = 1_786_020_000_000L
+    }
+}
