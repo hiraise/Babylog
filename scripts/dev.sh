@@ -245,7 +245,7 @@ cmd_release() {
     local tag="${1:-}" version apk tools cert out
     version="$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle.kts")"
     if [[ "$tag" != "v$version" ]]; then
-        echo "Тег «$tag» должен совпадать с versionName: v$version" >&2
+        echo "Тег «${tag}» должен совпадать с versionName: v$version" >&2
         return 1
     fi
     if [[ -z "${BABYLOG_KEYSTORE:-}" || -z "${BABYLOG_KEYSTORE_PASSWORD:-}" ]]; then
