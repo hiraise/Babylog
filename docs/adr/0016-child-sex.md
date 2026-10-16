@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/model/Child.kt`, `core/data/room/` (`Entities.kt`, `Migrations.kt`), `app/schemas/`, `core/ui/Format.kt`, `feature/children/ChildDialog.kt`, `feature/transfer/` (`CsvCodec.kt`, `CsvTransfer.kt`), README «Формат CSV»
+- **Затрагивает:** `core/model/Child.kt`, `core/data/room/` (`Entities.kt`, `Migrations.kt`), `app/schemas/`, `core/ui/Format.kt`, `feature/children/ChildSheet.kt`, `feature/transfer/` (`CsvCodec.kt`, `CsvTransfer.kt`), README «Формат CSV»
 
 ## Контекст
 
@@ -18,7 +18,7 @@
   указан — мужской род. Где звучит естественно, пиши без рода: «Маша спит», «Маша ест».
 - Функции, которые выводят такие слова (`eventTitle`, `diaperLabel`, `formatAge`), принимают
   пол параметром без значения по умолчанию: забыть его компилятор не даст.
-- Пол выбирают в `ChildDialog` чипами «Мальчик» / «Девочка»; он необязателен.
+- Пол выбирают в `ChildSheet` чипами «Мальчик» / «Девочка»; он необязателен.
 - В CSV пол — колонка `detail` строки `PROFILE`: `BOY`, `GIRL` или пусто. Новой колонки нет,
   прежние версии приложения эту ячейку не читают.
 - Импорт `PROFILE`: пустой пол (файлы до этого ADR) ничего не меняет; неизвестный код — ошибка

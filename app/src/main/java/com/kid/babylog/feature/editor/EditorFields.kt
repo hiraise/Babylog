@@ -1,6 +1,5 @@
 package com.kid.babylog.feature.editor
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.kid.babylog.core.ui.DateTimeField
 import com.kid.babylog.core.ui.LocalClock
-import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -36,19 +34,13 @@ private val TIME_OPTIONS = listOf(
     "−1 ч" to 60,
 )
 
-/** Иконка типа записи над заголовком диалога (слот `icon` у `AlertDialog`). */
-@Composable
-internal fun DialogIcon(@DrawableRes id: Int) {
-    AppIcon(id, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-}
-
 /** Выбор «когда это было»: сейчас или N минут назад. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit) {
     val clock = LocalClock.current
     val spacing = BabyLogTheme.spacing
-    // Часы тикают, пока диалог открыт, чтобы подпись не расходилась с реально сохраняемым временем
+    // Часы тикают, пока лист открыт, чтобы подпись не расходилась с реально сохраняемым временем
     var now by remember { mutableLongStateOf(clock.millis()) }
     LaunchedEffect(clock) {
         while (true) {

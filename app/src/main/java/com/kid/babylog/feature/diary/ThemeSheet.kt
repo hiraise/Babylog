@@ -9,12 +9,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,36 +20,25 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
  * Выбор темы в нижнем листе (ADR-0017): три строки в одну колонку, у выбранной — отметка.
  * Нажимается вся строка. Тема применяется сразу, лист остаётся открытым.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ThemeSheet(mode: ThemeMode, onSelect: (ThemeMode) -> Unit, onDismiss: () -> Unit) {
-    val spacing = BabyLogTheme.spacing
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
-        Column(Modifier.padding(bottom = spacing.l)) {
-            Text(
-                "Тема",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(start = spacing.l, end = spacing.l, bottom = spacing.s),
-            )
-            Column(Modifier.selectableGroup()) {
-                ThemeMode.entries.forEach { option ->
-                    ThemeRow(
-                        icon = themeIcon(option),
-                        title = themeLabel(option),
-                        subtitle = if (option == ThemeMode.SYSTEM) "Светлая или тёмная — как в телефоне" else null,
-                        selected = option == mode,
-                        onClick = { onSelect(option) },
-                    )
-                }
+    AppSheet(onDismiss = onDismiss, title = "Тема", icon = R.drawable.ic_theme, edgeToEdge = true) {
+        Column(Modifier.selectableGroup()) {
+            ThemeMode.entries.forEach { option ->
+                ThemeRow(
+                    icon = themeIcon(option),
+                    title = themeLabel(option),
+                    subtitle = if (option == ThemeMode.SYSTEM) "Светлая или тёмная — как в телефоне" else null,
+                    selected = option == mode,
+                    onClick = { onSelect(option) },
+                )
             }
         }
     }

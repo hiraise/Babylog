@@ -166,6 +166,8 @@ check_adr_rules() {
     report "ADR-0007: Room импортируется только в core/data/room/" "$hits" || failed=1
     hits="$(grep -nHE '^import android\.' "$code"/feature/*/*ViewModel.kt 2>/dev/null || true)"
     report "ADR-0007: ViewModel не зависят от Android" "$hits" || failed=1
+    hits="$(grep -rnHE '\b(AlertDialog|BasicAlertDialog|DatePickerDialog|DropdownMenu|DropdownMenuItem)\(|^import androidx\.compose\.ui\.window\.Dialog' "$code" || true)"
+    report "ADR-0018: всплывающие окна — только нижние листы AppSheet (без AlertDialog, DropdownMenu, DatePickerDialog)" "$hits" || failed=1
     return "$failed"
 }
 

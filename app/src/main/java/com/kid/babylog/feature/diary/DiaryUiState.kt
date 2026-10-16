@@ -6,7 +6,7 @@ import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 
-/** Всё, что главный экран показывает из данных. Эфемерное состояние UI (открытые диалоги) — в Compose. */
+/** Всё, что главный экран показывает из данных. Эфемерное состояние UI (открытые листы) — в Compose. */
 data class DiaryUiState(
     val children: List<Child> = emptyList(),
     /** Выбранный ребёнок; null — данные ещё загружаются. */

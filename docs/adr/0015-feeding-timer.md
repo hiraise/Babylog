@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/model/BabyEvent.kt`, `core/model/EventRecord.kt`, `core/data/` (`startFeeding`), `core/data/room/Migrations.kt`, `app/schemas/`, `feature/diary/`, `feature/editor/FeedingDialog.kt`, `feature/summary/DaySummary.kt`, `feature/transfer/CsvTransfer.kt`, README «Возможности» и «Формат CSV»
+- **Затрагивает:** `core/model/BabyEvent.kt`, `core/model/EventRecord.kt`, `core/data/` (`startFeeding`), `core/data/room/Migrations.kt`, `app/schemas/`, `feature/diary/`, `feature/editor/FeedingSheets.kt`, `feature/summary/DaySummary.kt`, `feature/transfer/CsvTransfer.kt`, README «Возможности» и «Формат CSV»
 
 ## Контекст
 
