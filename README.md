@@ -147,8 +147,9 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 | Команда                            | Что делает                                                              |
 |------------------------------------|-------------------------------------------------------------------------|
 | `scripts/dev.sh run`               | собрать debug, установить и открыть; эмулятор поднимется сам            |
-| `scripts/dev.sh check`             | правила проекта, unit-тесты, lint и debug-сборка (обязательная проверка) |
+| `scripts/dev.sh check`             | правила проекта, unit-тесты со сверкой скриншотов, lint и debug-сборка (обязательная проверка) |
 | `scripts/dev.sh rules`             | только правила проекта, без Gradle — за пару секунд                     |
+| `scripts/dev.sh goldens`           | перезаписать эталонные скриншоты экранов после намеренной правки UI     |
 | `scripts/dev.sh logcat`            | логи приложения (не теряются при перезапуске и падении)                 |
 | `scripts/dev.sh db`                | скачать базу в `build/debug-db/babylog.db` (в VS Code — SQLite Viewer)  |
 | `scripts/dev.sh screenshot`        | скриншот в `build/screenshots/`                                         |

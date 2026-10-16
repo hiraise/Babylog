@@ -84,12 +84,15 @@ README пишется для людей. Обнови его, если изме�
 
 - Задача не считается выполненной, пока не проходит `scripts/dev.sh check` и не зелёный CI
   в её PR. `check` — правила проекта (`scripts/dev.sh rules`: дизайн-токены, правила ADR,
-  ссылки в документации), unit-тесты, lint и debug-сборка; что проверяет CI —
-  [ADR-0011](docs/adr/0011-ci-github-actions.md). Gradle нужен JDK 17+: если в `JAVA_HOME`
+  ссылки в документации), unit-тесты со сверкой скриншотов, lint и debug-сборка; что проверяет
+  CI — [ADR-0011](docs/adr/0011-ci-github-actions.md). Gradle нужен JDK 17+: если в `JAVA_HOME`
   Java ниже, скрипт сам возьмёт JDK из Android Studio.
-- Запуск и отладка — `scripts/dev.sh run|logcat|db|screenshot` (debug-сборка
-  `com.kid.babylog.debug` с отдельной базой), подробности — README, «Локальная отладка».
-  Изменения UI по возможности проверяй на эмуляторе (`scripts/dev.sh run`, затем `screenshot`).
+- Изменения UI проверяй скриншот-тестами, миграции — тестами миграций, а не вручную
+  ([ADR-0013](docs/adr/0013-jvm-android-tests.md)). Намеренно поменял вид — перезапиши эталоны
+  `scripts/dev.sh goldens` и закоммить изменившиеся PNG; картинки при этом не открывай.
+- Эмулятор — для того, что тестом не проверить (системный выбор файла, поворот, телефон):
+  `scripts/dev.sh run|logcat|db|screenshot` (debug-сборка `com.kid.babylog.debug` с отдельной
+  базой), подробности — README, «Локальная отладка».
 
 ## Ветки и PR
 
