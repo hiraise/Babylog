@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Совпадает с background тёмной темы (core/ui/theme/Color.kt), проверяет ThemeWindowTest; зачем — в values/colors.xml -->
+    <color name="window_background">#22272C</color>
+</resources>

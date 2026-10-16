@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#FFE3EC</color>
+
+    <!--
+        Фон окна и системных панелей до первой отрисовки Compose. Совпадает с background
+        светлой темы (core/ui/theme/Color.kt), чтобы при запуске не мелькал другой цвет;
+        совпадение проверяет ThemeWindowTest. Тёмный вариант — values-night/colors.xml.
+    -->
+    <color name="window_background">#F9FAFB</color>
+</resources>

@@ -1,0 +1,75 @@
+{
+    // Terminal → Run Task… (⇧⌘B — сразу «Запустить на эмуляторе»). Вся логика в scripts/dev.sh
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "BabyLog: запустить на эмуляторе",
+            "type": "shell",
+            "command": "./scripts/dev.sh run",
+            "group": { "kind": "build", "isDefault": true },
+            "problemMatcher": {
+                // Ошибки и предупреждения Kotlin из вывода Gradle → панель Problems. Формат Kotlin 2.4:
+                //   Problem found: Kotlin compiler: UNRESOLVED_IMPORT (id: kotlin:compiler:error:UNRESOLVED_IMPORT)
+                //     Kotlin compiler error
+                //       Unresolved reference 'icons'.
+                //       Location: /…/MainScreen.kt:18
+                "owner": "kotlin",
+                "fileLocation": "absolute",
+                "pattern": [
+                    { "regexp": "^Problem found: Kotlin compiler: (\\S+) \\(id: kotlin:compiler:(error|warning):\\S+\\)$", "code": 1, "severity": 2 },
+                    { "regexp": "^\\s+Kotlin compiler (?:error|warning)$" },
+                    { "regexp": "^\\s+(?!Location: )(.+)$", "message": 1 },
+                    { "regexp": "^\\s+Location: (.+):(\\d+)$", "file": 1, "line": 2 }
+                ]
+            }
+        },
+        {
+            "label": "BabyLog: логи приложения (logcat)",
+            "type": "shell",
+            "command": "./scripts/dev.sh logcat",
+            "presentation": { "panel": "dedicated" },
+            "problemMatcher": []
+        },
+        {
+            "label": "BabyLog: запустить эмулятор",
+            "type": "shell",
+            "command": "./scripts/dev.sh emulator",
+            "problemMatcher": []
+        },
+        {
+            "label": "BabyLog: скачать базу с устройства",
+            "type": "shell",
+            "command": "./scripts/dev.sh db",
+            "problemMatcher": []
+        },
+        {
+            "label": "BabyLog: скриншот",
+            "type": "shell",
+            "command": "./scripts/dev.sh screenshot",
+            "problemMatcher": []
+        },
+        {
+            "label": "BabyLog: проверка (дизайн-токены, unit-тесты, сборка)",
+            "type": "shell",
+            "command": "./scripts/dev.sh check",
+            "group": "test",
+            "problemMatcher": {
+                // Тот же разбор вывода Kotlin, что в задаче «запустить на эмуляторе»
+                "owner": "kotlin",
+                "fileLocation": "absolute",
+                "pattern": [
+                    { "regexp": "^Problem found: Kotlin compiler: (\\S+) \\(id: kotlin:compiler:(error|warning):\\S+\\)$", "code": 1, "severity": 2 },
+                    { "regexp": "^\\s+Kotlin compiler (?:error|warning)$" },
+                    { "regexp": "^\\s+(?!Location: )(.+)$", "message": 1 },
+                    { "regexp": "^\\s+Location: (.+):(\\d+)$", "file": 1, "line": 2 }
+                ]
+            }
+        },
+        {
+            "label": "BabyLog: выключить эмулятор",
+            "type": "shell",
+            "command": "./scripts/dev.sh stop",
+            "problemMatcher": []
+        }
+    ]
+}

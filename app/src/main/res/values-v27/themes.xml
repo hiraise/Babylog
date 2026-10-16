@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Навигационная панель — тоже цвета фона темы, со значками под него. Атрибут
+        windowLightNavigationBar есть только с API 27, поэтому на API 26 панель остаётся системной.
+    -->
+    <style name="Theme.BabyLog" parent="Base.Theme.BabyLog">
+        <item name="android:navigationBarColor">@color/window_background</item>
+        <item name="android:windowLightNavigationBar">@bool/light_system_bars</item>
+    </style>
+</resources>

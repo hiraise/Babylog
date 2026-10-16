@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Тема окна до первой отрисовки Compose: фон и строка состояния цвета фона BabyLogTheme,
+        значки на ней тёмные. Без этого при запуске мелькает белое или чёрное окно, а строка
+        состояния остаётся системной. Тёмный вариант — values-night/themes.xml.
+    -->
+    <style name="Base.Theme.BabyLog" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+        <item name="android:statusBarColor">@color/window_background</item>
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+    </style>
+
+    <!-- На неё ссылается манифест. Цвет навигационной панели — в values-v27/themes.xml -->
+    <style name="Theme.BabyLog" parent="Base.Theme.BabyLog" />
+</resources>

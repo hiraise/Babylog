@@ -1,0 +1,123 @@
+package com.kid.babylog.feature.diary
+
+import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Diaper
+import com.kid.babylog.core.model.DiaperKind
+import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.testing.FakeDiaryRepository
+import com.kid.babylog.testing.FakeDocumentStore
+import com.kid.babylog.testing.FakeSelectedChildStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class DiaryViewModelTest {
+
+    private val now = Instant.parse("2026-10-15T10:00:00.750Z")
+    private val clock = Clock.fixed(now, ZoneOffset.UTC)
+    private val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null), Child(2, "Петя", null)))
+    private val selection = FakeSelectedChildStore()
+    private val documents = FakeDocumentStore()
+
+    @Before
+    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
+    /** ViewModel с подписчиком на state: без него `stateIn(WhileSubscribed)` не обновляется. */
+    private fun TestScope.viewModel(): DiaryViewModel {
+        val vm = DiaryViewModel(repo, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        return vm
+    }
+
+    @Test
+    fun `first child is shown until another is selected`() = runTest {
+        val vm = viewModel()
+        assertEquals(1L, vm.state.value.child?.id)
+        vm.selectChild(2)
+        assertEquals(2L, vm.state.value.child?.id)
+    }
+
+    @Test
+    fun `records belong to the selected child only`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        vm.saveEvent(Diaper(childId = 2, start = 2_000, kind = DiaperKind.WET))
+        assertEquals(listOf(1L), vm.state.value.events.map { it.childId })
+        vm.selectChild(2)
+        assertTrue(vm.state.value.events.single() is Diaper)
+    }
+
+    @Test
+    fun `new child is selected and duplicate names are ignored`() = runTest {
+        val vm = viewModel()
+        vm.addChild(" Вася ", birthDate = null)
+        assertEquals("Вася", vm.state.value.child?.name)
+        vm.addChild("вася", birthDate = null)
+        assertEquals(3, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `deleting the selected child falls back to the first one`() = runTest {
+        val vm = viewModel()
+        vm.selectChild(2)
+        vm.deleteChild(vm.state.value.child!!)
+        assertEquals(1L, vm.state.value.child?.id)
+        assertEquals("Удалено: Петя", vm.state.value.message)
+        vm.deleteChild(vm.state.value.child!!) // последнего удалить нельзя
+        assertEquals(1, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `sleep timer ends at clock time truncated to seconds`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.startSleep(now.toEpochMilli()) // второй активный сон не начинается
+        assertEquals(1, vm.state.value.events.size)
+        vm.endSleep()
+        assertNull(vm.state.value.activeSleep)
+        val sleep = vm.state.value.events.single() as com.kid.babylog.core.model.Sleep
+        assertEquals(Instant.parse("2026-10-15T10:00:00Z").toEpochMilli(), sleep.end)
+    }
+
+    @Test
+    fun `export and import report results`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        vm.exportTo("file")
+        assertEquals("Экспортировано записей: 1", vm.state.value.message)
+        vm.consumeMessage()
+        vm.importFrom("file")
+        assertEquals("Импорт: добавлено 0, дубликатов 1", vm.state.value.message)
+    }
+
+    @Test
+    fun `history days include today even without records`() {
+        val today = LocalDate.of(2026, 10, 15)
+        val events = listOf(Feeding(childId = 1, start = Instant.parse("2026-10-13T12:00:00Z").toEpochMilli(), breast = Breast.LEFT))
+        assertEquals(
+            listOf(LocalDate.of(2026, 10, 13), today),
+            historyDays(events, today, ZoneId.of("UTC")),
+        )
+    }
+}

@@ -1,0 +1,29 @@
+package com.kid.babylog.feature.diary
+
+import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Weight
+
+/** Всё, что главный экран показывает из данных. Эфемерное состояние UI (открытые диалоги) — в Compose. */
+data class DiaryUiState(
+    val children: List<Child> = emptyList(),
+    /** Выбранный ребёнок; null — данные ещё загружаются. */
+    val child: Child? = null,
+    /** Записи выбранного ребёнка, новые сверху. */
+    val events: List<BabyEvent> = emptyList(),
+    val activeSleep: Sleep? = null,
+    val lastWeight: Weight? = null,
+    /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
+    val message: String? = null,
+) {
+    companion object {
+        fun of(children: List<Child>, child: Child?, events: List<BabyEvent>) = DiaryUiState(
+            children = children,
+            child = child,
+            events = events,
+            activeSleep = events.firstNotNullOfOrNull { (it as? Sleep)?.takeIf(Sleep::isActive) },
+            lastWeight = events.firstNotNullOfOrNull { it as? Weight },
+        )
+    }
+}

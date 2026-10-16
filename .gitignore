@@ -1,0 +1,32 @@
+# Gradle
+.gradle/
+.kotlin/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Локальные настройки (путь к SDK конкретной машины)
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Ключи подписи
+*.jks
+*.keystore
+keystore.properties
+
+# Логи и дампы
+*.log
+*.hprof
+
+# macOS
+.DS_Store
+
+# VS Code: общие задачи (Run Task) — в репозитории, личные настройки — нет
+.vscode/*
+!.vscode/tasks.json
