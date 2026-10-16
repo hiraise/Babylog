@@ -13,6 +13,7 @@ import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
+import com.kid.babylog.core.ui.diaperIcon
 import com.kid.babylog.core.ui.diaperLabel
 
 @Composable
@@ -41,6 +42,7 @@ internal fun DiaperSheet(
             options = DiaperKind.entries.map { it to diaperLabel(it, sex).replaceFirstChar(Char::titlecase) },
             selected = kind,
             onSelect = { kind = it },
+            icon = ::diaperIcon,
         )
         TimeSection(isEdit, minutesAgo, { minutesAgo = it }, editTime, { editTime = it })
         NoteField(note, { note = it })

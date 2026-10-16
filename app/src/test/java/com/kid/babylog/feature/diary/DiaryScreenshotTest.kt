@@ -1,7 +1,6 @@
 package com.kid.babylog.feature.diary
 
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
 import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.model.BabyEvent
@@ -18,6 +17,7 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
+import com.kid.babylog.testing.SCREENSHOT_OPTIONS
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -66,7 +66,7 @@ class DiaryScreenshotTest {
 
     private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
-        captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = OPTIONS) {
+        captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
                 DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {})
             }
@@ -96,11 +96,4 @@ class DiaryScreenshotTest {
     }
 
     private fun at(iso: String): Long = Instant.parse(iso).toEpochMilli()
-
-    private companion object {
-        // Mac (эталоны) и Linux (CI) сглаживают шрифты чуть по-разному: допускаем 1 % отличающихся пикселей
-        val OPTIONS = RoborazziOptions(
-            compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
-        )
-    }
 }

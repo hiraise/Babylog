@@ -214,5 +214,7 @@ BabyLog — свободное программное обеспечение: е
   лицензий — [OFL-Inter.txt](app/src/main/assets/licenses/OFL-Inter.txt) и
   [OFL-Nunito.txt](app/src/main/assets/licenses/OFL-Nunito.txt);
 - иконки Material Symbols (© Google) в `app/src/main/res/drawable/ic_*.xml`,
-  кроме `ic_launcher_foreground.xml`, — Apache License 2.0, текст —
+  кроме `ic_launcher_foreground.xml` и своих иконок проекта `ic_diaper_wet.xml`,
+  `ic_diaper_dirty.xml`, `ic_diaper_mixed.xml` ([ADR-0014](docs/adr/0014-own-icons.md)), —
+  Apache License 2.0, текст —
   [Apache-2.0-Material-Symbols.txt](app/src/main/assets/licenses/Apache-2.0-Material-Symbols.txt).

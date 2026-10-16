@@ -103,6 +103,7 @@ internal fun <T> OptionChips(
     options: List<Pair<T, String>>, // значение и подпись
     selected: T?,
     onSelect: (T) -> Unit,
+    icon: (T) -> Int? = { null }, // иконка варианта перед подписью, null — без иконки
 ) {
     FlowRow(
         modifier = Modifier.selectableGroup(),
@@ -113,6 +114,7 @@ internal fun <T> OptionChips(
                 selected = selected == value,
                 onClick = { onSelect(value) },
                 label = label,
+                icon = icon(value),
             )
         }
     }

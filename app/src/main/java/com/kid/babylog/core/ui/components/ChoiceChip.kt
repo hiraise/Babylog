@@ -1,8 +1,10 @@
 package com.kid.babylog.core.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -19,6 +21,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import com.kid.babylog.R
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
@@ -27,8 +30,9 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  *
  * Не выбран — фон `surfaceContainerLow`, текст `onSurfaceVariant`; выбран — фон `primary`, текст
  * `onPrimary`. Рамки нет; в светлой теме — мягкая тень темы по форме `MaterialTheme.shapes.small`.
- * Подпись — `labelLarge` в одну строку, лишнее обрезается многоточием. Недоступный чип
- * (`enabled = false`) — без тени и с бледной подписью, как в Material 3.
+ * Подпись — `labelLarge` в одну строку, лишнее обрезается многоточием. Необязательная [icon] стоит
+ * перед подписью, 18 dp, цвета подписи. Недоступный чип (`enabled = false`) — без тени и с бледной
+ * подписью, как в Material 3.
  *
  * Используй вместо `FilterChip` везде, где выбирают одно значение из нескольких: для TalkBack чип —
  * радиокнопка, выбранный чип повторно не нажимается. Чипы клади в `Row` или `FlowRow` с шагом
@@ -40,6 +44,7 @@ fun ChoiceChip(
     onClick: () -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    @DrawableRes icon: Int? = null,
     enabled: Boolean = true,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -54,6 +59,10 @@ fun ChoiceChip(
                 selected = selected,
                 onClick = onClick,
                 label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                // Цвет иконки FilterChip задаёт через LocalContentColor — его и берёт AppIcon
+                leadingIcon = icon?.let {
+                    { AppIcon(it, contentDescription = null, modifier = Modifier.size(FilterChipDefaults.IconSize)) }
+                },
                 // FilterChip объявляет себя флажком (Role.Checkbox), будто можно выбрать несколько.
                 // Семантика узла собирается от внутренних модификаторов к внешним, поэтому роль,
                 // заданная здесь, снаружи, перекрывает внутреннюю
@@ -85,9 +94,9 @@ fun ChoiceChip(
 private fun ChoiceChipPreview() = LightDarkPreview {
     val gap = Arrangement.spacedBy(BabyLogTheme.spacing.s)
     Row(Modifier.selectableGroup(), horizontalArrangement = gap) {
-        ChoiceChip(selected = true, onClick = {}, label = "Пописал")
-        ChoiceChip(selected = false, onClick = {}, label = "Покакал")
-        ChoiceChip(selected = false, onClick = {}, label = "И то, и то")
+        ChoiceChip(selected = true, onClick = {}, label = "Пописал", icon = R.drawable.ic_diaper_wet)
+        ChoiceChip(selected = false, onClick = {}, label = "Покакал", icon = R.drawable.ic_diaper_dirty)
+        ChoiceChip(selected = false, onClick = {}, label = "И то, и то", icon = R.drawable.ic_diaper_mixed)
     }
     Row(Modifier.selectableGroup(), horizontalArrangement = gap) {
         ChoiceChip(selected = false, onClick = {}, label = "Сейчас")

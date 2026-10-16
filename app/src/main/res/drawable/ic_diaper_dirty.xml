@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Своя иконка BabyLog (ADR-0014): подгузник с волнами запаха — «покакал».
+     Начертание Material Symbols Rounded wght 300: сетка 24, обводка 1,5 со скруглёнными концами. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Подгузник: прямой пояс, полукруглый низ -->
+    <path
+        android:pathData="M4.5 8.75H19.5Q21 8.75 21 10.25V13.75A9 8 0 0 1 12 21.75A9 8 0 0 1 3 13.75V10.25Q3 8.75 4.5 8.75Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- Застёжки по бокам -->
+    <path
+        android:pathData="M3 11.25H6A1.25 1.25 0 0 1 6 13.75H3M21 11.25H18A1.25 1.25 0 0 0 18 13.75H21"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- Резинки у ног -->
+    <path
+        android:pathData="M3.307 15.821C7.807 15.821 9.219 16.858 9.219 21.358M20.693 15.821C16.193 15.821 14.781 16.858 14.781 21.358"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- Волны запаха -->
+    <path
+        android:pathData="M8 6c-1.05 -0.619 -1.05 -1.256 0 -1.875s1.05 -1.256 0 -1.875M12 6c-1.05 -0.619 -1.05 -1.256 0 -1.875s1.05 -1.256 0 -1.875M16 6c-1.05 -0.619 -1.05 -1.256 0 -1.875s1.05 -1.256 0 -1.875"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>
