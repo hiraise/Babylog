@@ -229,6 +229,41 @@ cmd_schemas() {
     echo "Схемы Room совпадают с закоммиченными"
 }
 
+# SHA-256 сертификата ключа релизов (ADR-0012); тот же отпечаток — в README «Установка на телефон»
+RELEASE_CERT_SHA256="e43b34e322438744830268de4b5579cafae46c4b549aceb0265a910a4d77f395"
+
+# Подписанный APK для GitHub Releases (ADR-0012). Аргумент — тег v<versionName>.
+# Ключ — BABYLOG_KEYSTORE (путь к .jks) и BABYLOG_KEYSTORE_PASSWORD; в CI их даёт окружение release.
+cmd_release() {
+    local tag="${1:-}" version apk tools cert out
+    version="$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle.kts")"
+    if [[ "$tag" != "v$version" ]]; then
+        echo "Тег «$tag» должен совпадать с versionName: v$version" >&2
+        return 1
+    fi
+    if [[ -z "${BABYLOG_KEYSTORE:-}" || -z "${BABYLOG_KEYSTORE_PASSWORD:-}" ]]; then
+        echo "Нет ключа релизов: задайте BABYLOG_KEYSTORE и BABYLOG_KEYSTORE_PASSWORD" >&2
+        return 1
+    fi
+    cmd_rules
+    run_gradle "${CHECK_TASKS[@]}" assembleRelease
+    apk="$ROOT/app/build/outputs/apk/release/app-release.apk"
+    tools="$(ls -d "$SDK"/build-tools/*/ | sort | tail -1)"
+    # apksigner.jar напрямую: обёртка apksigner берёт java из PATH, а там может быть Java ниже 17
+    cert="$("${JAVA_HOME:+$JAVA_HOME/bin/}java" -jar "${tools}lib/apksigner.jar" verify --print-certs "$apk" |
+        sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+    if [[ "$cert" != "$RELEASE_CERT_SHA256" ]]; then
+        echo "APK подписан не ключом проекта (сертификат: ${cert:-нет подписи}) — ADR-0012" >&2
+        return 1
+    fi
+    out="$ROOT/build/release"
+    rm -rf "$out"
+    mkdir -p "$out"
+    cp "$apk" "$out/babylog-$version.apk"
+    (cd "$out" && shasum -a 256 "babylog-$version.apk" >"babylog-$version.apk.sha256")
+    echo "$out/babylog-$version.apk"
+}
+
 cmd_logcat() {
     ensure_device
     local uid
@@ -287,6 +322,7 @@ usage() {
   rules       правила проекта без Gradle: дизайн-токены (ADR-0010), правила ADR, ссылки в документации
   build       шаг CI: unit-тесты, lint, debug- и release-сборка
   schemas     шаг CI после сборки: схемы Room в app/schemas/ совпадают с закоммиченными
+  release v<версия>  подписанный APK и .sha256 в build/release/ (нужен ключ релизов, ADR-0012)
   emulator    запустить эмулятор и дождаться загрузки
   logcat      логи приложения (переживают перезапуски и падения)
   db          скачать базу в build/debug-db/$DB_NAME
@@ -296,6 +332,6 @@ EOF
 }
 
 case "${1:-}" in
-    run | check | rules | build | schemas | emulator | logcat | db | screenshot | stop) "cmd_$1" ;;
+    run | check | rules | build | schemas | release | emulator | logcat | db | screenshot | stop) "cmd_$1" "${@:2}" ;;
     *) usage ;;
 esac
