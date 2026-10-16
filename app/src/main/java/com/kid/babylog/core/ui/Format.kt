@@ -54,7 +54,7 @@ fun formatAgo(millis: Long): String {
     return formatDuration(millis) + " назад"
 }
 
-/** Таймер сна: «1:23:45» или «23:45» */
+/** Таймер сна и кормления: «1:23:45» или «23:45» */
 fun formatTimer(millis: Long): String {
     val totalSeconds = millis / 1000
     val h = totalSeconds / 3600
@@ -75,7 +75,7 @@ fun diaperLabel(kind: DiaperKind): String = when (kind) {
 }
 
 fun eventTitle(event: BabyEvent): String = when (event) {
-    is Feeding -> "Кормление · ${breastLabel(event.breast)}"
+    is Feeding -> "Кормление · ${breastLabel(event.breast)}" + if (event.isActive) " · идёт" else ""
     is Diaper -> "Подгузник · ${diaperLabel(event.kind)}"
     is Sleep -> if (event.isActive) "Сон · идёт" else "Сон"
     is Medicine -> "Лекарство · ${event.name}"
@@ -83,11 +83,16 @@ fun eventTitle(event: BabyEvent): String = when (event) {
 }
 
 fun eventTimeLine(event: BabyEvent): String = when (event) {
-    is Sleep -> event.end?.let { end ->
-        "${formatClock(event.start)}–${formatClock(end)} · ${formatDuration(end - event.start)}"
-    } ?: "с ${formatClock(event.start)}"
-    is Feeding, is Diaper, is Medicine, is Weight -> formatClock(event.start)
+    is Sleep -> timeRange(event.start, event.end)
+    // Кормления до ADR-0015 — без длительности: конец равен началу
+    is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
+    is Diaper, is Medicine, is Weight -> formatClock(event.start)
 }
+
+/** «13:40–15:05 · 1 ч 25 мин»; идущий таймер — «с 13:40». */
+private fun timeRange(start: Long, end: Long?): String = end?.let {
+    "${formatClock(start)}–${formatClock(it)} · ${formatDuration(it - start)}"
+} ?: "с ${formatClock(start)}"
 
 /** «850 г» до килограмма, дальше «4,35 кг» (без хвостовых нулей) */
 fun formatWeight(grams: Int): String {

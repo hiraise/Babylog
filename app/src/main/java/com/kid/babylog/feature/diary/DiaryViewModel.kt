@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
@@ -83,6 +84,26 @@ class DiaryViewModel(
     fun endSleep() = viewModelScope.launch {
         val sleep = state.value.activeSleep ?: return@launch
         repository.updateEvent(sleep.copy(end = maxOf(clock.millis(), sleep.start)))
+    }
+
+    fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
+        val child = state.value.child ?: return@launch
+        repository.startFeeding(child.id, start, breast)
+    }
+
+    /** Смена груди: идущее кормление заканчивается, с той же секунды начинается кормление другой грудью. */
+    fun switchBreast() = viewModelScope.launch {
+        val feeding = state.value.activeFeeding ?: return@launch
+        val now = maxOf(clock.millis(), feeding.start)
+        repository.inTransaction {
+            repository.updateEvent(feeding.copy(end = now))
+            repository.startFeeding(feeding.childId, now, feeding.breast.opposite)
+        }
+    }
+
+    fun endFeeding() = viewModelScope.launch {
+        val feeding = state.value.activeFeeding ?: return@launch
+        repository.updateEvent(feeding.copy(end = maxOf(clock.millis(), feeding.start)))
     }
 
     fun exportTo(uri: String) = viewModelScope.launch {

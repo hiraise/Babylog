@@ -4,6 +4,8 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.platform.app.InstrumentationRegistry
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Diaper
+import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.runBlocking
@@ -15,7 +17,7 @@ import org.robolectric.RobolectricTestRunner
 
 /**
  * Обновление приложения поверх старой базы — на JVM вместо ручной проверки на эмуляторе
- * (ADR-0008, ADR-0013). Схемы версий берутся из `app/schemas/`.
+ * (ADR-0008, ADR-0013, ADR-0015). Схемы версий берутся из `app/schemas/`.
  */
 @RunWith(RobolectricTestRunner::class)
 class MigrationTest {
@@ -36,10 +38,43 @@ class MigrationTest {
         }
     }
 
+    /** База версии 3: кормления ещё без длительности, сон идёт. */
+    private fun createVersion3() {
+        helper.createDatabase(DB_NAME, 3).use { db ->
+            db.execSQL("INSERT INTO children (id, name, birthDate) VALUES (1, 'Маша', NULL)")
+            val insert = "INSERT INTO events (id, childId, type, startTime, endTime, detail, note) VALUES (?, 1, ?, ?, ?, ?, ?)"
+            db.execSQL(insert, arrayOf<Any?>(1, "FEEDING", T1, null, "RIGHT", "ночью"))
+            db.execSQL(insert, arrayOf<Any?>(2, "SLEEP", T2, null, "", ""))
+            db.execSQL(insert, arrayOf<Any?>(3, "DIAPER", T3, null, "WET", ""))
+        }
+    }
+
     @Test
     fun `migration 2 to 3 produces schema 3`() {
         createVersion2(birthDate = BIRTH)
         helper.runMigrationsAndValidate(DB_NAME, 3, true, MIGRATION_2_3).close()
+    }
+
+    @Test
+    fun `migration 3 to 4 produces schema 4`() {
+        createVersion3()
+        helper.runMigrationsAndValidate(DB_NAME, 4, true, MIGRATION_3_4).close()
+    }
+
+    @Test
+    fun `update over version 3 closes old feedings and keeps the active sleep`() = runBlocking {
+        createVersion3()
+        val db = AppDatabase.build(context)
+        try {
+            val expected = listOf(
+                Feeding(id = 1, childId = 1, start = T1, end = T1, breast = Breast.RIGHT, note = "ночью"),
+                Sleep(id = 2, childId = 1, start = T2),
+                Diaper(id = 3, childId = 1, start = T3, kind = DiaperKind.WET),
+            )
+            assertEquals(expected, RoomDiaryRepository(db).allEvents())
+        } finally {
+            db.close()
+        }
     }
 
     @Test
@@ -50,7 +85,7 @@ class MigrationTest {
             val repo = RoomDiaryRepository(db)
             assertEquals(listOf(Child(1, Child.DEFAULT_NAME, BIRTH)), repo.allChildren())
             val expected = listOf(
-                Feeding(id = 7, childId = 1, start = T1, breast = Breast.LEFT, note = "ночью"),
+                Feeding(id = 7, childId = 1, start = T1, end = T1, breast = Breast.LEFT, note = "ночью"),
                 Sleep(id = 8, childId = 1, start = T2, end = T3),
                 Sleep(id = 9, childId = 1, start = T4, note = "спит сейчас"),
             )

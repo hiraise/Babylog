@@ -34,7 +34,7 @@ class CsvCodecTest {
     @Test
     fun `round trip preserves all fields and children`() {
         val events = listOf(
-            Feeding(childId = 1, start = ms("2026-08-15 14:30:00"), breast = Breast.LEFT),
+            Feeding(childId = 1, start = ms("2026-08-15 14:30:00"), end = ms("2026-08-15 14:45:10"), breast = Breast.LEFT),
             Diaper(childId = 2, start = ms("2026-08-15 15:10:05"), kind = DiaperKind.MIXED, note = "обычный"),
             Sleep(childId = 1, start = ms("2026-08-15 13:00:00"), end = ms("2026-08-15 14:20:59")),
             Medicine(childId = 2, start = ms("2026-08-15 09:00:00"), name = "Витамин D", note = "1 капля"),

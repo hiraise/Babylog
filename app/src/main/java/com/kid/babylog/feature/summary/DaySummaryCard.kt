@@ -77,8 +77,13 @@ internal fun DaySummary.lines(now: Long): List<SummaryLine> {
     val feedingValue = buildString {
         append(feedings)
         lastFeeding?.let {
-            append(" · последнее: ${breastLabel(it.breast)}, ")
-            append(formatAgo((now - it.start).coerceAtLeast(0)))
+            if (it.isActive) {
+                append(" · сейчас ест: ${breastLabel(it.lastBreast)}")
+            } else {
+                // Перерыв между кормлениями считают от начала: «кормить каждые 3 часа»
+                append(" · последнее: ${breastLabel(it.lastBreast)}, ")
+                append(formatAgo((now - it.start).coerceAtLeast(0)))
+            }
         }
     }
     val diaperValue = buildString {

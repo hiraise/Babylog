@@ -4,7 +4,9 @@ import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toEvent
 import com.kid.babylog.core.model.toRecord
@@ -67,6 +69,12 @@ class FakeDiaryRepository(
     override suspend fun startSleep(childId: Long, start: Long): Boolean {
         if (events.value.any { it.childId == childId && it is Sleep && it.isActive }) return false
         addEvent(Sleep(childId = childId, start = start))
+        return true
+    }
+
+    override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {
+        if (events.value.any { it.childId == childId && it is Feeding && it.isActive }) return false
+        addEvent(Feeding(childId = childId, start = start, breast = breast))
         return true
     }
 

@@ -26,13 +26,18 @@ class DaySummaryTest {
 
     private val now = at(today, 12)
     private val hour = 3_600_000L
+    private val minute = 60_000L
+
+    /** Законченное кормление длиной [minutes] минут. */
+    private fun fed(id: Long, start: Long, breast: Breast, minutes: Int = 15) =
+        Feeding(id, 1, start, end = start + minutes * minute, breast = breast)
 
     @Test
     fun `counts only records of the chosen day`() {
         val events = listOf(
-            Feeding(1, 1, at(today, 8), Breast.LEFT),
-            Feeding(2, 1, at(today, 11), Breast.RIGHT),
-            Feeding(3, 1, at(yesterday, 23), Breast.LEFT),
+            fed(1, at(today, 8), Breast.LEFT),
+            fed(2, at(today, 11), Breast.RIGHT),
+            fed(3, at(yesterday, 23), Breast.LEFT),
             Diaper(4, 1, at(today, 9), DiaperKind.WET),
             Diaper(5, 1, at(today, 10), DiaperKind.WET),
             Diaper(6, 1, at(today, 10, 30), DiaperKind.DIRTY),
@@ -46,12 +51,43 @@ class DaySummaryTest {
 
     @Test
     fun `last feeding is shown only today and may be from yesterday`() {
-        val events = listOf(Feeding(1, 1, at(yesterday, 23), Breast.RIGHT))
+        val events = listOf(fed(1, at(yesterday, 23), Breast.RIGHT))
         val summary = summarizeDay(events, today, now, zone)
         assertEquals(0, summary.feedings)
-        assertEquals(Breast.RIGHT, summary.lastFeeding?.breast)
+        assertEquals(Breast.RIGHT, summary.lastFeeding?.lastBreast)
         assertNull(summarizeDay(events, yesterday, now, zone).lastFeeding)
         assertEquals("Кормлений: 0 · последнее: правая, 13 ч назад", summary.lines(now).first().shown())
+    }
+
+    @Test
+    fun `switching breast is one feeding counted from its start`() {
+        val events = listOf(
+            fed(1, at(today, 10), Breast.LEFT, minutes = 10),
+            fed(2, at(today, 10, 10), Breast.RIGHT, minutes = 5),
+            fed(3, at(today, 8), Breast.RIGHT), // отдельное кормление: начато не в конце другого
+        )
+        val summary = summarizeDay(events, today, now, zone)
+        assertEquals(2, summary.feedings)
+        assertEquals(FeedingSession(at(today, 10), at(today, 10, 15), Breast.RIGHT), summary.lastFeeding)
+        assertEquals("Кормлений: 2 · последнее: правая, 2 ч назад", summary.lines(now).first().shown())
+    }
+
+    @Test
+    fun `active feeding is shown instead of time ago`() {
+        val events = listOf(
+            fed(1, at(today, 11, 40), Breast.LEFT, minutes = 10),
+            Feeding(2, 1, at(today, 11, 50), end = null, breast = Breast.RIGHT),
+        )
+        val summary = summarizeDay(events, today, now, zone)
+        assertEquals(1, summary.feedings)
+        assertEquals("Кормлений: 1 · сейчас ест: правая", summary.lines(now).first().shown())
+    }
+
+    @Test
+    fun `old feeding without duration is a separate feeding`() {
+        val start = at(today, 9)
+        val events = listOf(Feeding(1, 1, start, end = start, breast = Breast.LEFT), fed(2, at(today, 9, 30), Breast.RIGHT))
+        assertEquals(2, summarizeDay(events, today, now, zone).feedings)
     }
 
     @Test

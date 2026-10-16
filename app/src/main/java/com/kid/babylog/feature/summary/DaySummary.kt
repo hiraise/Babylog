@@ -1,6 +1,7 @@
 package com.kid.babylog.feature.summary
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -13,9 +14,10 @@ import java.time.ZoneId
 /** Итоги одного дня для одного ребёнка. */
 data class DaySummary(
     val isToday: Boolean,
+    /** Кормления, начатые в этот день; смена груди не считается новым кормлением ([feedingSessions]). */
     val feedings: Int,
     /** Последнее кормление вообще, не только за этот день; есть только у сегодняшней сводки. */
-    val lastFeeding: Feeding?,
+    val lastFeeding: FeedingSession?,
     val diapers: Map<DiaperKind, Int>,
     /** Сон, пересекающийся с этими сутками; активный считается до `now`. */
     val sleepMillis: Long,
@@ -24,6 +26,27 @@ data class DaySummary(
     val medicines: List<Pair<String, Int>>,
 ) {
     val diaperCount: Int get() = diapers.values.sum()
+}
+
+/** Кормление целиком: запись или несколько записей встык при смене груди (ADR-0015). */
+data class FeedingSession(val start: Long, val end: Long?, val lastBreast: Breast) {
+    val isActive: Boolean get() = end == null
+}
+
+/** Кормления по возрастанию начала: запись, начатая ровно в конце предыдущей, — её продолжение. */
+fun feedingSessions(events: List<BabyEvent>): List<FeedingSession> {
+    val sessions = mutableListOf<FeedingSession>()
+    events.filterIsInstance<Feeding>()
+        .sortedWith(compareBy<Feeding> { it.start }.thenBy { it.id })
+        .forEach { feeding ->
+            val last = sessions.lastOrNull()
+            if (last?.end != null && last.end == feeding.start) {
+                sessions[sessions.lastIndex] = last.copy(end = feeding.end, lastBreast = feeding.breast)
+            } else {
+                sessions += FeedingSession(feeding.start, feeding.end, feeding.breast)
+            }
+        }
+    return sessions
 }
 
 /** [events] — записи одного ребёнка в любом порядке. */
@@ -35,6 +58,7 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
     val newestFirst = events.sortedWith(compareByDescending<BabyEvent> { it.start }.thenByDescending { it.id })
     val dayEvents = newestFirst.filter { it.start in dayStart until dayEnd }
 
+    val feedings = feedingSessions(events)
     val sleeps = events.filterIsInstance<Sleep>()
     val sleepMillis = sleeps.sumOf { sleep ->
         val start = maxOf(sleep.start, dayStart)
@@ -49,8 +73,8 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
 
     return DaySummary(
         isToday = isToday,
-        feedings = dayEvents.count { it is Feeding },
-        lastFeeding = if (isToday) newestFirst.firstNotNullOfOrNull { it as? Feeding } else null,
+        feedings = feedings.count { it.start in dayStart until dayEnd },
+        lastFeeding = if (isToday) feedings.lastOrNull() else null,
         diapers = dayEvents.filterIsInstance<Diaper>().groupingBy { it.kind }.eachCount(),
         sleepMillis = sleepMillis,
         sleepingNow = isToday && sleeps.any { it.isActive },

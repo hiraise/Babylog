@@ -1,7 +1,9 @@
 package com.kid.babylog.core.data.room
 
 import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.runBlocking
@@ -43,6 +45,17 @@ class RoomDiaryRepositoryTest {
         withRepository { repo ->
             assertEquals(listOf(Sleep(id = 1, childId = 1, start = T1)), repo.allEvents())
         }
+    }
+
+    @Test
+    fun `active feeding is the only one and does not block sleep`() = withRepository { repo ->
+        assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.LEFT))
+        assertFalse(repo.startFeeding(childId = 1, start = T2, breast = Breast.RIGHT))
+        assertTrue(repo.startSleep(childId = 1, start = T2))
+        assertEquals(
+            listOf(Feeding(id = 1, childId = 1, start = T1, breast = Breast.LEFT), Sleep(id = 2, childId = 1, start = T2)),
+            repo.allEvents(),
+        )
     }
 
     @Test

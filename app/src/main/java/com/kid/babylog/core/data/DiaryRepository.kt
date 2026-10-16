@@ -1,6 +1,7 @@
 package com.kid.babylog.core.data
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import kotlinx.coroutines.flow.Flow
 
@@ -37,6 +38,9 @@ interface DiaryRepository {
 
     /** Начинает сон ребёнка, если он ещё не спит; false — активный сон уже есть. */
     suspend fun startSleep(childId: Long, start: Long): Boolean
+
+    /** Начинает кормление ребёнка грудью [breast], если он ещё не ест; false — кормление уже идёт. */
+    suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean
 
     /** Выполняет [block] в одной транзакции: либо применяются все изменения, либо ни одного. */
     suspend fun <T> inTransaction(block: suspend () -> T): T

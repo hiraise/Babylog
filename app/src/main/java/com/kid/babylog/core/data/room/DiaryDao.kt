@@ -33,8 +33,9 @@ interface DiaryDao {
     @Query("SELECT * FROM events ORDER BY startTime ASC, id ASC")
     suspend fun getAllEvents(): List<EventEntity>
 
-    @Query("SELECT COUNT(*) FROM events WHERE childId = :childId AND type = 'SLEEP' AND endTime IS NULL")
-    suspend fun countActiveSleeps(childId: Long): Int
+    /** Идущие таймеры ребёнка — записи типа [type] без конца: сон, кормление. */
+    @Query("SELECT COUNT(*) FROM events WHERE childId = :childId AND type = :type AND endTime IS NULL")
+    suspend fun countActive(childId: Long, type: String): Int
 
     @Insert
     suspend fun insertEvent(event: EventEntity): Long

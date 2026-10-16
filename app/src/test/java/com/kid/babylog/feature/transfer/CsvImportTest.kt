@@ -58,19 +58,24 @@ class CsvImportTest {
     @Test
     fun `reimporting own export changes nothing`() = runTest {
         val repo = FakeDiaryRepository(listOf(Child(1, "Маша", ms("2026-05-20 00:00:00")), Child(2, "Петя", null)))
-        repo.addEvent(Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), breast = Breast.LEFT, note = "a, \"b\""))
-        repo.addEvent(Feeding(childId = 2, start = ms("2026-08-15 10:00:00"), breast = Breast.LEFT, note = "a, \"b\""))
+        val start = ms("2026-08-15 10:00:00")
+        repo.addEvent(Feeding(childId = 1, start = start, end = start + 600_000, breast = Breast.LEFT, note = "a, \"b\""))
+        repo.addEvent(Feeding(childId = 2, start = start, end = start, breast = Breast.LEFT, note = "a, \"b\""))
         repo.addEvent(Sleep(childId = 2, start = ms("2026-08-15 11:00:00"), end = ms("2026-08-15 12:30:00")))
+        // Кормление идёт во время экспорта: в файле оно без конца, но в базе уже есть
+        repo.addEvent(Feeding(childId = 1, start = ms("2026-08-15 13:00:00"), breast = Breast.RIGHT))
         val result = importCsv(repo, exportCsv(repo).text, defaultChildId = 1)
-        assertEquals(ImportResult(duplicates = 3), result)
-        assertEquals(3, repo.events.value.size)
+        assertEquals(ImportResult(duplicates = 4), result)
+        assertEquals(4, repo.events.value.size)
     }
 
     @Test
     fun `export imports into another phone with the same children and records`() = runTest {
         val source = FakeDiaryRepository(listOf(Child(1, "Маша", ms("2026-05-20 00:00:00")), Child(2, "Петя", null)))
         source.addEvent(Diaper(childId = 2, start = ms("2026-08-16 08:00:00"), kind = DiaperKind.WET))
-        source.addEvent(Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), breast = Breast.RIGHT))
+        source.addEvent(
+            Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), end = ms("2026-08-15 10:20:00"), breast = Breast.RIGHT),
+        )
         val target = FakeDiaryRepository() // новый телефон: один «Малыш» без записей
         importCsv(target, exportCsv(source).text, defaultChildId = 1)
 
@@ -78,6 +83,17 @@ class CsvImportTest {
             repo.children.value.first { it.id == e.childId }.let { it.name to it.birthDate } to e.toRecord()
         }.toSet()
         assertEquals(snapshot(source), snapshot(target))
+    }
+
+    @Test
+    fun `feeding without end from an old file has no duration and no timer`() = runTest {
+        val repo = FakeDiaryRepository()
+        importCsv(repo, legacyFile, defaultChildId = 1)
+        val feeding = repo.events.value.filterIsInstance<Feeding>().single()
+        assertEquals(ms("2026-08-15 10:00:00"), feeding.end)
+        assertEquals(feeding.start, feeding.end)
+        // Повторный импорт того же файла находит и кормление, уже закрытое при первом импорте
+        assertEquals(2, importCsv(repo, legacyFile, defaultChildId = 1).duplicates)
     }
 
     @Test

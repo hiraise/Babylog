@@ -101,6 +101,25 @@ class DiaryViewModelTest {
     }
 
     @Test
+    fun `switching breast splits the feeding at one second and end stops it`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 600_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startFeeding(now.toEpochMilli(), Breast.RIGHT) // второе кормление не начинается
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
+        vm.switchBreast()
+        val second = Instant.parse("2026-10-15T10:00:00Z").toEpochMilli()
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+        assertEquals(second, vm.state.value.activeFeeding?.start)
+        vm.endFeeding()
+        assertNull(vm.state.value.activeFeeding)
+        val feedings = vm.state.value.events.filterIsInstance<Feeding>().sortedBy { it.start }
+        assertEquals(listOf(Breast.LEFT, Breast.RIGHT), feedings.map { it.breast })
+        assertEquals(listOf(second, second), feedings.map { it.end })
+        assertEquals(second, feedings[1].start) // правая начата ровно в конце левой: одно кормление в сводке
+    }
+
+    @Test
     fun `export and import report results`() = runTest {
         val vm = viewModel()
         vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))

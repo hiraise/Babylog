@@ -1,8 +1,10 @@
 package com.kid.babylog.feature.transfer
 
 import com.kid.babylog.core.data.DiaryRepository
+import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.EventRecord
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.model.sameChildName
@@ -99,14 +101,22 @@ private class CsvImporter(
             return
         }
         val child = findChild(name) ?: createChild(name, birthDate = null)
-        val event = record.toEvent(childId = child.id) ?: return
-        if (!known.add(child.id to event.toRecord())) {
+        val parsed = record.toEvent(childId = child.id) ?: return
+        val event = parsed.withLegacyFeedingEnd()
+        // Идущее кормление из собственного экспорта уже есть в базе — без конца, как в файле
+        if ((child.id to parsed.toRecord()) in known || !known.add(child.id to event.toRecord())) {
             result = result.copy(duplicates = result.duplicates + 1)
             return
         }
         repository.addEvent(event)
         result = result.copy(added = result.added + 1)
     }
+
+    /**
+     * `FEEDING` без `end` — кормление из файла до ADR-0015 (или шедшее во время экспорта):
+     * импортируется без длительности, а не «фантомным» таймером.
+     */
+    private fun BabyEvent.withLegacyFeedingEnd(): BabyEvent = if (this is Feeding && isActive) copy(end = start) else this
 
     private fun isAcceptableName(name: String) = name.isEmpty() || isValidChildName(name)
 

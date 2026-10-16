@@ -5,7 +5,10 @@ import androidx.room.withTransaction
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.EventRecord
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -47,8 +50,14 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
     override suspend fun deleteEvent(event: BabyEvent) = dao.deleteEvent(event.id)
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean = db.withTransaction {
-        if (dao.countActiveSleeps(childId) > 0) return@withTransaction false
+        if (dao.countActive(childId, EventRecord.SLEEP) > 0) return@withTransaction false
         addEvent(Sleep(childId = childId, start = start))
+        true
+    }
+
+    override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean = db.withTransaction {
+        if (dao.countActive(childId, EventRecord.FEEDING) > 0) return@withTransaction false
+        addEvent(Feeding(childId = childId, start = start, breast = breast))
         true
     }
 

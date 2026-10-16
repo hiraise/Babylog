@@ -21,7 +21,7 @@ data class EventRecord(
 }
 
 fun BabyEvent.toRecord(): EventRecord = when (this) {
-    is Feeding -> EventRecord(EventRecord.FEEDING, start, null, breast.name, note)
+    is Feeding -> EventRecord(EventRecord.FEEDING, start, end, breast.name, note)
     is Diaper -> EventRecord(EventRecord.DIAPER, start, null, kind.name, note)
     is Sleep -> EventRecord(EventRecord.SLEEP, start, end, "", note)
     is Medicine -> EventRecord(EventRecord.MEDICINE, start, null, name, note)
@@ -31,10 +31,10 @@ fun BabyEvent.toRecord(): EventRecord = when (this) {
 /**
  * Проверяет запись и превращает её в [BabyEvent]; null — запись некорректна: неизвестный тип,
  * неверная деталь, вес вне [Weight.RANGE], лекарство без названия. Регистр кодов не важен.
- * `end` учитывается только у сна.
+ * `end` учитывается только у сна и кормления.
  */
 fun EventRecord.toEvent(id: Long = 0, childId: Long): BabyEvent? = when (type.trim().uppercase()) {
-    EventRecord.FEEDING -> enumOrNull<Breast>(detail)?.let { Feeding(id, childId, start, it, note) }
+    EventRecord.FEEDING -> enumOrNull<Breast>(detail)?.let { Feeding(id, childId, start, end, it, note) }
     EventRecord.DIAPER -> enumOrNull<DiaperKind>(detail)?.let { Diaper(id, childId, start, it, note) }
     EventRecord.SLEEP -> Sleep(id, childId, start, end, note)
     EventRecord.MEDICINE -> detail.takeIf { it.isNotBlank() }?.let { Medicine(id, childId, start, it, note) }

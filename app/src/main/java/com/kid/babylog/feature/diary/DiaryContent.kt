@@ -36,6 +36,9 @@ internal class DiaryActions(
     val onEditChild: () -> Unit,
     val onStartSleep: () -> Unit,
     val onEndSleep: () -> Unit,
+    val onStartFeeding: () -> Unit,
+    val onEndFeeding: () -> Unit,
+    val onSwitchBreast: () -> Unit,
     val onAdd: (NewEventKind) -> Unit,
     val onEditEvent: (BabyEvent) -> Unit,
     val onDeleteEvent: (BabyEvent) -> Unit,
@@ -96,6 +99,16 @@ internal fun DiaryContent(
         item(key = "sleep") {
             SleepCard(child.name, state.activeSleep, now, actions.onStartSleep, actions.onEndSleep)
         }
+        item(key = "feeding") {
+            FeedingCard(
+                childName = child.name,
+                activeFeeding = state.activeFeeding,
+                now = now,
+                onStart = actions.onStartFeeding,
+                onEnd = actions.onEndFeeding,
+                onSwitchBreast = actions.onSwitchBreast,
+            )
+        }
         item(key = "quick") {
             QuickActions(actions.onAdd)
         }
@@ -114,7 +127,7 @@ internal fun DiaryContent(
             )
         }
         val emptyText = when {
-            events.isEmpty() -> "Пока нет записей.\nОтмечайте кормления, сон, подгузники и лекарства кнопками выше."
+            events.isEmpty() -> "Пока нет записей.\nОтмечайте сон, кормления, подгузники и лекарства кнопками выше."
             dayEvents.isEmpty() -> "Нет записей за этот день"
             else -> null
         }

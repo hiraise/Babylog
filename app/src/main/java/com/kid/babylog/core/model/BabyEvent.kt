@@ -13,13 +13,20 @@ sealed interface BabyEvent {
     val note: String
 }
 
+/**
+ * Кормление одной грудью; [end] = null — кормление идёт сейчас (у ребёнка не больше одного).
+ * Записи до ADR-0015 — без длительности: у них [end] равен [start].
+ */
 data class Feeding(
     override val id: Long = 0,
     override val childId: Long,
     override val start: Long,
+    val end: Long? = null,
     val breast: Breast,
     override val note: String = "",
-) : BabyEvent
+) : BabyEvent {
+    val isActive: Boolean get() = end == null
+}
 
 data class Diaper(
     override val id: Long = 0,
@@ -61,7 +68,17 @@ data class Weight(
     }
 }
 
-enum class Breast { LEFT, RIGHT }
+enum class Breast {
+    LEFT,
+    RIGHT;
+
+    /** Другая грудь — для «Сменить грудь». */
+    val opposite: Breast
+        get() = when (this) {
+            LEFT -> RIGHT
+            RIGHT -> LEFT
+        }
+}
 
 enum class DiaperKind { WET, DIRTY, MIXED }
 

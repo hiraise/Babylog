@@ -57,6 +57,9 @@ class DiaryScreenshotTest {
     fun `day with records, dark`() = capture("diary_day_dark", sampleDiary(), dark = true)
 
     @Test
+    fun `feeding in progress`() = capture("diary_feeding", sampleDiary(feedingNow = true), dark = false)
+
+    @Test
     fun `first launch`() = capture("diary_first_launch", FakeDiaryRepository(), dark = false)
 
     private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean) {
@@ -68,18 +71,25 @@ class DiaryScreenshotTest {
         }
     }
 
-    /** Двое детей; у Маши за сегодня записи всех типов и идёт сон. */
-    private fun sampleDiary() = FakeDiaryRepository(
+    /** Двое детей; у Маши за сегодня записи всех типов и идёт сон, а при [feedingNow] — кормление. */
+    private fun sampleDiary(feedingNow: Boolean = false) = FakeDiaryRepository(
         listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z")), Child(2, "Петя", null)),
     ).apply {
         events.value = listOf<BabyEvent>(
             Weight(id = 1, childId = 1, start = at("2026-10-15T06:10:00Z"), grams = 6350),
-            Feeding(id = 2, childId = 1, start = at("2026-10-15T06:30:00Z"), breast = Breast.LEFT),
+            Feeding(id = 2, childId = 1, start = at("2026-10-15T06:30:00Z"), end = at("2026-10-15T06:45:00Z"), breast = Breast.LEFT),
             Diaper(id = 3, childId = 1, start = at("2026-10-15T07:05:00Z"), kind = DiaperKind.MIXED),
             Medicine(id = 4, childId = 1, start = at("2026-10-15T07:20:00Z"), name = "Витамин D", note = "1 капля"),
             Sleep(id = 5, childId = 1, start = at("2026-10-15T07:40:00Z"), end = at("2026-10-15T08:55:00Z")),
-            Feeding(id = 6, childId = 1, start = at("2026-10-15T09:00:00Z"), breast = Breast.RIGHT, note = "долго"),
-            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")),
+            Feeding(
+                id = 6, childId = 1, start = at("2026-10-15T09:00:00Z"), end = at("2026-10-15T09:35:00Z"),
+                breast = Breast.RIGHT, note = "долго",
+            ),
+            if (feedingNow) {
+                Feeding(id = 7, childId = 1, start = at("2026-10-15T09:48:00Z"), breast = Breast.LEFT)
+            } else {
+                Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z"))
+            },
         )
     }
 

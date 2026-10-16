@@ -36,6 +36,7 @@ import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.children.ChildDialog
 import com.kid.babylog.feature.editor.EditEventDialog
+import com.kid.babylog.feature.editor.FeedingStartDialog
 import com.kid.babylog.feature.editor.NewEventDialog
 import com.kid.babylog.feature.editor.NewEventKind
 import com.kid.babylog.feature.editor.SleepStartDialog
@@ -71,6 +72,7 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     // id вместо объектов: переживают поворот экрана
     var newEvent by rememberSaveable { mutableStateOf<NewEventKind?>(null) }
     var startingSleep by rememberSaveable { mutableStateOf(false) }
+    var startingFeeding by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableLongStateOf(NONE) }
     var deletingId by rememberSaveable { mutableLongStateOf(NONE) }
     var showDaySelector by rememberSaveable { mutableStateOf(false) }
@@ -150,6 +152,9 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
                     onEditChild = { childDialog = ChildDialogMode.EDIT },
                     onStartSleep = { startingSleep = true },
                     onEndSleep = { viewModel.endSleep() },
+                    onStartFeeding = { startingFeeding = true },
+                    onEndFeeding = { viewModel.endFeeding() },
+                    onSwitchBreast = { viewModel.switchBreast() },
                     onAdd = { newEvent = it },
                     onEditEvent = { editingId = it.id },
                     onDeleteEvent = { deletingId = it.id },
@@ -182,6 +187,17 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
             onSave = {
                 viewModel.startSleep(it)
                 startingSleep = false
+            },
+        )
+    }
+
+    if (startingFeeding) {
+        FeedingStartDialog(
+            childName = child.name,
+            onDismiss = { startingFeeding = false },
+            onSave = { breast, time ->
+                viewModel.startFeeding(time, breast)
+                startingFeeding = false
             },
         )
     }

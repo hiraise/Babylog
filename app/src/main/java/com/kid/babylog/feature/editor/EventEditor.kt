@@ -8,8 +8,8 @@ import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 
-/** Кнопки быстрого добавления. Сон начинается отдельно — через [SleepStartDialog]. */
-enum class NewEventKind { FEEDING, DIAPER, MEDICINE, WEIGHT }
+/** Кнопки быстрого добавления. Сон и кормление начинаются отдельно — через [SleepStartDialog] и [FeedingStartDialog]. */
+enum class NewEventKind { DIAPER, MEDICINE, WEIGHT }
 
 /** Диалог новой записи для ребёнка [childId]. */
 @Composable
@@ -20,9 +20,6 @@ fun NewEventDialog(
     onSave: (BabyEvent) -> Unit,
 ) {
     when (kind) {
-        NewEventKind.FEEDING -> FeedingDialog(null, onDismiss) { breast, time, note ->
-            onSave(Feeding(childId = childId, start = time, breast = breast, note = note))
-        }
         NewEventKind.DIAPER -> DiaperDialog(null, onDismiss) { diaperKind, time, note ->
             onSave(Diaper(childId = childId, start = time, kind = diaperKind, note = note))
         }
@@ -43,8 +40,8 @@ fun EditEventDialog(
     onSave: (BabyEvent) -> Unit,
 ) {
     when (event) {
-        is Feeding -> FeedingDialog(event, onDismiss) { breast, time, note ->
-            onSave(event.copy(breast = breast, start = time, note = note))
+        is Feeding -> FeedingEditDialog(event, onDismiss) { breast, start, end, note ->
+            onSave(event.copy(breast = breast, start = start, end = end, note = note))
         }
         is Diaper -> DiaperDialog(event, onDismiss) { kind, time, note ->
             onSave(event.copy(kind = kind, start = time, note = note))
