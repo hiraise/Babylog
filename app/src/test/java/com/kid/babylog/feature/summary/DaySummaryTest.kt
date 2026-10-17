@@ -1,5 +1,6 @@
 package com.kid.babylog.feature.summary
 
+import com.kid.babylog.R
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
@@ -47,7 +48,9 @@ class DaySummaryTest {
         assertEquals(2, summary.feedings)
         assertEquals(mapOf(DiaperKind.WET to 2, DiaperKind.DIRTY to 1), summary.diapers)
         assertEquals(3, summary.diaperCount)
-        assertEquals("Подгузников: 3 (пописал ×2 · покакал ×1)", summary.lines(now, null)[1].shown())
+        val diapers = summary.lines(now, null)[1]
+        assertEquals("Подгузников: 3 (пописал×2 · покакал×1)", diapers.shown())
+        assertEquals(listOf(R.drawable.ic_diaper_wet, R.drawable.ic_diaper_dirty), diapers.parts.map { it.icon })
     }
 
     @Test
@@ -95,7 +98,8 @@ class DaySummaryTest {
     fun `diapers of a girl are in feminine form`() {
         val events = listOf(Diaper(1, 1, at(today, 9), DiaperKind.WET), Diaper(2, 1, at(today, 10), DiaperKind.MIXED))
         val line = summarizeDay(events, today, now, zone).lines(now, Sex.GIRL)[1]
-        assertEquals("Подгузников: 2 (пописала ×1 · и то, и то ×1)", line.shown())
+        assertEquals("Подгузников: 2 (пописала×1 · и то, и то×1)", line.shown())
+        assertEquals(listOf(R.drawable.ic_diaper_wet, R.drawable.ic_diaper_mixed), line.parts.map { it.icon })
     }
 
     @Test
@@ -135,6 +139,7 @@ class DaySummaryTest {
         )
     }
 
-    /** Строка так, как её собирает карточка: метка, пробел, значение. */
-    private fun SummaryLine.shown() = "$label $value"
+    /** Строка так, как её читает TalkBack: метка, значение, разбивка с описаниями вместо иконок. */
+    private fun SummaryLine.shown() =
+        "$label $value" + if (parts.isEmpty()) "" else parts.joinToString(" · ", " (", ")") { "${it.description}×${it.count}" }
 }
