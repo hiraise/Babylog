@@ -81,9 +81,10 @@ internal fun TodayContent(
             // IntrinsicSize.Min: плитки одной высоты, даже когда идёт только один таймер
             Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
                 val tile = Modifier.weight(1f).fillMaxHeight()
-                SleepCard(child, state.activeSleep, now, actions.onStartSleep, actions.onEndSleep, tile)
+                SleepCard(child, state.activeSleep, state.lastSleepEnd, now, actions.onStartSleep, actions.onEndSleep, tile)
                 FeedingCard(
                     activeFeeding = state.activeFeeding,
+                    lastFeedingEnd = state.lastFeedingEnd,
                     now = now,
                     onStart = actions.onStartFeeding,
                     onEnd = actions.onEndFeeding,

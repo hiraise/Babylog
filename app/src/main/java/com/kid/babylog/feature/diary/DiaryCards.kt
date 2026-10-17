@@ -26,14 +26,20 @@ import com.kid.babylog.core.ui.components.TimerTile
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
+import com.kid.babylog.core.ui.formatAgo
+import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
 
-/** Таймер сна — плитка в ряду с кормлением (ADR-0021): касание начинает сон, во время сна — заканчивает. */
+/**
+ * Таймер сна — плитка в ряду с кормлением (ADR-0021): касание начинает сон, во время сна — заканчивает.
+ * Пока сон не идёт — сколько малыш уже не спит ([awakeCaption]): по этому окну решают, когда укладывать.
+ */
 @Composable
 internal fun SleepCard(
     child: Child,
     activeSleep: Sleep?,
+    lastSleepEnd: Long?,
     now: Long,
     onStart: () -> Unit,
     onEnd: () -> Unit,
@@ -49,16 +55,21 @@ internal fun SleepCard(
         onStart = onStart,
         onStop = onEnd,
         modifier = modifier,
+        idleCaption = awakeCaption(lastSleepEnd, now),
     )
 }
 
 /**
  * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
  * во время кормления — заканчивает; ⇄ в углу меняет грудь.
+ *
+ * Пока кормление не идёт — сколько прошло с его конца ([afterFeedingCaption]): можно ли купать или
+ * класть на живот. Сводка дня считает от начала кормления — по ней решают, когда кормить снова.
  */
 @Composable
 internal fun FeedingCard(
     activeFeeding: Feeding?,
+    lastFeedingEnd: Long?,
     now: Long,
     onStart: () -> Unit,
     onEnd: () -> Unit,
@@ -76,9 +87,24 @@ internal fun FeedingCard(
         onStop = onEnd,
         modifier = modifier,
         runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
+        idleCaption = afterFeedingCaption(lastFeedingEnd, now),
         corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
     )
 }
+
+/** «не спит 1 ч 20 мин» — с конца последнего сна; сна не было или он давно ([sinceLast]) — null. */
+internal fun awakeCaption(lastSleepEnd: Long?, now: Long): String? =
+    sinceLast(lastSleepEnd, now)?.let { "не спит ${formatDuration(it)}" }
+
+/** «закончилось 40 мин назад» — с конца последнего кормления; не было или давно ([sinceLast]) — null. */
+internal fun afterFeedingCaption(lastFeedingEnd: Long?, now: Long): String? =
+    sinceLast(lastFeedingEnd, now)?.let { "закончилось ${formatAgo(it)}" }
+
+/** Сколько прошло с [end]; сутки и больше — null: так долго не спят и не едят, просто не записывали. */
+private fun sinceLast(end: Long?, now: Long): Long? =
+    end?.let { (now - it).coerceAtLeast(0) }?.takeIf { it < SINCE_LAST_LIMIT_MS }
+
+private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
 
 /** Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard]. */
 @Composable

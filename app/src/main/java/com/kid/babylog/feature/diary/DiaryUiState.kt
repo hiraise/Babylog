@@ -15,6 +15,10 @@ data class DiaryUiState(
     val events: List<BabyEvent> = emptyList(),
     val activeSleep: Sleep? = null,
     val activeFeeding: Feeding? = null,
+    /** Конец последнего законченного сна: «не спит 1 ч 20 мин» на плитке сна. */
+    val lastSleepEnd: Long? = null,
+    /** Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления. */
+    val lastFeedingEnd: Long? = null,
     val lastWeight: Weight? = null,
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
@@ -28,6 +32,8 @@ data class DiaryUiState(
             events = events,
             activeSleep = events.firstNotNullOfOrNull { (it as? Sleep)?.takeIf(Sleep::isActive) },
             activeFeeding = events.firstNotNullOfOrNull { (it as? Feeding)?.takeIf(Feeding::isActive) },
+            lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
+            lastFeedingEnd = events.filterIsInstance<Feeding>().mapNotNull { it.end }.maxOrNull(),
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
         )
     }
