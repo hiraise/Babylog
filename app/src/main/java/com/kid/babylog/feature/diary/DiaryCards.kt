@@ -116,9 +116,12 @@ internal fun QuickActions(onAdd: (NewEventKind) -> Unit) {
     }
 }
 
-/** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
+/**
+ * Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись;
+ * [photoCount] — сколько у записи фото (ADR-0024): «14:30 · 2 фото», чтобы найти их, не открывая записи.
+ */
 @Composable
-internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete: () -> Unit) {
+internal fun EventRow(event: BabyEvent, sex: Sex?, photoCount: Int, onEdit: () -> Unit, onDelete: () -> Unit) {
     val spacing = BabyLogTheme.spacing
     AppCard(
         modifier = Modifier.fillMaxWidth(),
@@ -130,7 +133,7 @@ internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete:
         ItemRow(
             icon = eventIcon(event),
             title = eventTitle(event, sex),
-            subtitle = eventTimeLine(event),
+            subtitle = eventTimeLine(event) + if (photoCount > 0) " · $photoCount фото" else "",
             note = event.note,
             trailing = {
                 IconButton(onClick = onDelete) {

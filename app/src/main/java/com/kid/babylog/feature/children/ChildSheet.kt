@@ -32,6 +32,7 @@ import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.components.SheetAction
 import com.kid.babylog.core.ui.formatDate
+import com.kid.babylog.core.ui.photo.PhotoSourceSheet
 import com.kid.babylog.core.ui.photo.deletePhotoFile
 import com.kid.babylog.core.ui.photo.rememberPhotoPicker
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -122,8 +123,7 @@ fun ChildSheet(
     }
 
     if (photoMenu) {
-        PhotoMenuSheet(
-            hasPhoto = photo != null,
+        PhotoSourceSheet(
             onCamera = {
                 photoMenu = false
                 picker.takePhoto()
@@ -132,11 +132,13 @@ fun ChildSheet(
                 photoMenu = false
                 picker.pickFromGallery()
             },
-            onRemove = {
-                photoMenu = false
-                photo = null
-            },
             onDismiss = { photoMenu = false },
+            onRemove = if (photo != null) {
+                {
+                    photoMenu = false
+                    photo = null
+                }
+            } else null,
         )
     }
 

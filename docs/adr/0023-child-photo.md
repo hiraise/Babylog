@@ -19,6 +19,7 @@
 - Снимает системное приложение камеры (`ActivityResultContracts.TakePicture`) в файл, открытый через
   `FileProvider` (`${applicationId}.photos`, в `photo_paths.xml` — только `cache/photos/`). Permission
   `CAMERA` не объявляй: с ним, пока его не выдали, системная камера не запускается.
+  Что ещё открывает провайдер — [ADR-0024](0024-event-photos.md).
 - Галерея — системный пикер (`PickVisualMedia`, `ImageOnly`); разрешения на чтение памяти
   (`READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`) не объявляй. Выбранное фото копируй в `cache/photos/`:
   ссылка из пикера не переживает перезапуск процесса.

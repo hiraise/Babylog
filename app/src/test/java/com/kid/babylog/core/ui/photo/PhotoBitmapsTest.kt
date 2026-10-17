@@ -6,6 +6,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.media.ExifInterface
+import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.testing.assertColor
 import com.kid.babylog.testing.testBitmap
 import org.junit.Assert.assertEquals
@@ -73,6 +75,16 @@ class PhotoBitmapsTest {
         // Короткая сторона 1200: вдвое — 600, вчетверо — 300 ≥ 200, ввосьмеро — 150 < 200
         assertEquals(400 to 300, decodeSampled(jpeg, minSidePx = 200)!!.let { it.width to it.height })
         assertEquals(null, decodeSampled(byteArrayOf(1, 2, 3), minSidePx = 200))
+    }
+
+    @Test
+    fun `event photo is reduced to 1600 px into a new cache file and keeps the source`() {
+        val source = save(testBitmap(width = 4000, height = 3000))
+        val prepared = File(prepareEventPhoto(InstrumentationRegistry.getInstrumentation().targetContext, source.path))
+        val decoded = BitmapFactory.decodeFile(prepared.path)
+        assertEquals(EventPhoto.MAX_SIDE to 1200, decoded.width to decoded.height)
+        assertEquals(true, source.exists())
+        assertEquals("photos", prepared.parentFile?.name)
     }
 
     private fun save(bitmap: Bitmap): File =

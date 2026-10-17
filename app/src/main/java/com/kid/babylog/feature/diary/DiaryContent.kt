@@ -154,6 +154,7 @@ internal fun HistoryContent(
         }
         records(
             events = dayEvents,
+            photoCounts = state.photoCounts,
             child = child,
             actions = actions,
             emptyText = if (events.isEmpty()) {
@@ -166,7 +167,13 @@ internal fun HistoryContent(
 }
 
 /** Записи дня, новые сверху; пустой день — подсказка [emptyText]. */
-private fun LazyListScope.records(events: List<BabyEvent>, child: Child, actions: DiaryActions, emptyText: String) {
+private fun LazyListScope.records(
+    events: List<BabyEvent>,
+    photoCounts: Map<Long, Int>,
+    child: Child,
+    actions: DiaryActions,
+    emptyText: String,
+) {
     if (events.isEmpty()) {
         item(key = "empty") {
             Text(
@@ -184,6 +191,7 @@ private fun LazyListScope.records(events: List<BabyEvent>, child: Child, actions
         EventRow(
             event = event,
             sex = child.sex,
+            photoCount = photoCounts[event.id] ?: 0,
             onEdit = { actions.onEditEvent(event) },
             onDelete = { actions.onDeleteEvent(event) },
         )

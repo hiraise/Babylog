@@ -102,7 +102,7 @@ private fun copyToCache(context: Context, uri: Uri): File {
 
 /** Файл в `cache/photos/` — эту папку `FileProvider` открывает камере (`res/xml/photo_paths.xml`). */
 private fun photoCacheFile(context: Context, name: String): File =
-    File(context.cacheDir, "photos").apply { mkdirs() }.resolve(name)
+    File(context.cacheDir, PHOTOS_DIR).apply { mkdirs() }.resolve(name)
 
 /** Authority провайдера — `${applicationId}.photos`, как в `AndroidManifest.xml`. */
 internal fun providerAuthority(context: Context): String = "${context.packageName}.photos"
