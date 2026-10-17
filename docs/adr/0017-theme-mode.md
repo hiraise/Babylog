@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `MainActivity.kt`, `AndroidManifest.xml` (`configChanges`), `AppContainer.kt`, `core/data/ThemeModeStore.kt`, `core/ui/theme/Theme.kt`, `feature/diary/ThemeSheet.kt`, `feature/diary/DiaryScreen.kt`, README «Возможности»
+- **Затрагивает:** `MainActivity.kt`, `AndroidManifest.xml` (`configChanges`), `core/data/ThemeModeStore.kt`, `core/ui/theme/Theme.kt`, AppCompat в `app/build.gradle.kts`
 
 ## Контекст
 

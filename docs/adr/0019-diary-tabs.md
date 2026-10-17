@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `feature/diary/` (`DiaryScreen.kt`, `DiaryContent.kt`), `feature/children/ChildSelector.kt`, `core/ui/components/Avatar.kt`, `core/ui/Format.kt` (`diaryTitle`), `DiaryScreenshotTest`, README «Возможности»
+- **Затрагивает:** `feature/diary/` (`DiaryScreen.kt`, `DiaryContent.kt`), `feature/children/ChildSelector.kt`, `core/ui/components/Avatar.kt`, `core/ui/Format.kt` (`diaryTitle`)
 
 ## Контекст
 
@@ -21,7 +21,8 @@
   выбранного — правка и удаление, «Добавить ребёнка». Чипов детей и карточки ребёнка нет.
 - Имя в заголовке — в родительном падеже (`diaryTitle`, `genitiveName`); имя, которое правила
   не склоняют уверенно (несколько слов, латиница), — «Дневник: Имя».
-- Аватар (`Avatar`) — фото ребёнка, когда оно появится; пока — иконка `ic_child`.
+- Аватар (`Avatar`) — фото ребёнка, когда оно появится; пока — иконка по полу, какая —
+  в KDoc `avatarIcon`.
 - «Сегодня» (`TodayContent`): плитки сна и кормления в ряд ([ADR-0021](0021-tap-to-stop-timer.md)),
   плитки «Подгузник», «Лекарство», «Вес», сводка за сегодня. Записей здесь нет.
 - «История» (`HistoryContent`): выбор дня (по умолчанию — текущий, и после полуночи тоже),

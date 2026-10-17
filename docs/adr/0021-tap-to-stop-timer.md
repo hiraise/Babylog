@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `core/ui/components/AppCard.kt` (`containerColor`), `feature/diary/` (`DiaryCards.kt`, `DiaryContent.kt`, `DiaryViewModel.kt`, `DiaryUiState.kt`, `DiaryScreen.kt`), `DiaryViewModelTest`
+- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `feature/diary/` (`DiaryCards.kt`; отмена остановки — `DiaryViewModel.kt`)
 
 ## Контекст
 
@@ -13,7 +13,9 @@
 ## Решение
 
 - Сон и кормление — `TimerTile` в одном ряду (`Row(Modifier.height(IntrinsicSize.Min))`),
-  плитки одной высоты. Без кнопок и пояснений: большая иконка и подпись («Сон», «Кормление»).
+  плитки одной высоты. Без кнопок и пояснений: большая иконка и подпись («Сон», «Кормление»);
+  под подписью неактивной плитки — сколько прошло с конца прошлого (KDoc `TimerTile`, `SleepCard`,
+  `FeedingCard`).
 - Касание плитки, пока таймер не идёт, открывает лист старта (время, у кормления — грудь).
 - Идущий таймер: фон `primary`, иконка поднимается, под ней время, подпись — «Сон» или грудь
   («левая грудь»). Касание плитки останавливает таймер.

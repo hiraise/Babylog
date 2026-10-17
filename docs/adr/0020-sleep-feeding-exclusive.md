@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/data/DiaryRepository.kt` (`startSleep`, `startFeeding`), `core/data/room/` (`RoomDiaryRepository.kt`, `DiaryDao.kt`), `testing/Fakes.kt`, `feature/editor/` (`TimeAgoPicker`, `SleepSheets.kt`, `FeedingSheets.kt`), README «Возможности»
+- **Затрагивает:** `core/data/` (`startSleep`, `startFeeding`), `testing/Fakes.kt`, листы старта в `feature/editor/` (`SleepSheets.kt`, `FeedingSheets.kt`)
 - **Заменяет:** часть [ADR-0015](0015-feeding-timer.md): «с идущим сном оно не связано»
 
 ## Контекст

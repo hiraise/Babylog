@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/model/Child.kt`, `core/data/room/` (`Entities.kt`, `Migrations.kt`), `app/schemas/`, `core/ui/Format.kt`, `feature/children/ChildSheet.kt`, `feature/transfer/` (`CsvCodec.kt`, `CsvTransfer.kt`), README «Формат CSV»
+- **Затрагивает:** `core/model/Child.kt`, `core/data/room/Entities.kt`, `feature/transfer/` (`PROFILE`), слова о ребёнке в UI (`bySex` в `core/ui/Format.kt`), README «Формат CSV»
 
 ## Контекст
 

@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/ui/components/AppSheet.kt`, `core/ui/DateTimePickers.kt`, `feature/editor/*Sheet*.kt`, `feature/children/ChildSheet.kt`, `feature/diary/` (`DiaryScreen.kt`, `DayNavigation.kt`, `ThemeSheet.kt`), `scripts/dev.sh` (`check_adr_rules`)
+- **Затрагивает:** `core/ui/components/AppSheet.kt`, `core/ui/DateTimePickers.kt`, любое всплывающее окно в `core/ui/` и `feature/*/` (`*Sheet*.kt`)
 
 ## Контекст
 
