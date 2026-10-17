@@ -32,7 +32,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
@@ -64,7 +65,8 @@ internal fun PhotoCropSheet(source: String, onDismiss: () -> Unit, onDone: (Chil
     var frame by rememberSaveable(source, stateSaver = CropFrameSaver) { mutableStateOf(CropFrame()) }
     // Квадрат во всю ширину, но так, чтобы лист с кнопками помещался по высоте и в ландшафте:
     // окно ловит касания, и прокрутить лист можно было бы только за заголовок
-    val side = (LocalConfiguration.current.screenHeightDp.dp - SHEET_CHROME).coerceIn(MIN_CROP_SIDE, MAX_CROP_SIDE)
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val side = (windowHeight - SHEET_CHROME).coerceIn(MIN_CROP_SIDE, MAX_CROP_SIDE)
 
     AppSheet(
         onDismiss = onDismiss,
