@@ -26,14 +26,17 @@ import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.diaperLabel
 import com.kid.babylog.core.ui.formatAgo
-import com.kid.babylog.core.ui.formatDayHeader
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.theme.BabyLogTheme
-import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
 import java.time.ZoneId
 
-/** Сводка дня; [sex] — пол ребёнка, для «пописал / пописала». */
+/**
+ * Сводка дня; [sex] — пол ребёнка, для «пописал / пописала».
+ *
+ * Заголовка с днём нет: какой это день, и так видно — по вкладке «Сегодня» или по выбору дня
+ * в «Истории».
+ */
 @Composable
 fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex?) {
     // Пересчитываем раз в минуту, а не на каждый тик секундного таймера
@@ -44,7 +47,6 @@ fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex
     val spacing = BabyLogTheme.spacing
     AppCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
-            Text(formatDayHeader(date, now.toLocalDate()), style = MaterialTheme.typography.titleMedium)
             lines.forEach { line ->
                 // Иконка и текст — одна фраза для TalkBack
                 Row(
