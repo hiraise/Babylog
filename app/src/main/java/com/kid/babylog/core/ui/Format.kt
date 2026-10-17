@@ -1,11 +1,13 @@
 package com.kid.babylog.core.ui
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -130,6 +132,7 @@ private fun matchCase(declined: String, original: String): String = when {
 /** Заголовок записи; [sex] — пол ребёнка, чья это запись. */
 fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
     is Feeding -> "Кормление · ${breastLabel(event.breast)}" + if (event.isActive) " · идёт" else ""
+    is Bottle -> "Кормление · ${bottleLabel(event.volumeMl, event.milk)}"
     is Diaper -> "Подгузник · ${diaperLabel(event.kind, sex)}"
     is Sleep -> if (event.isActive) "Сон · идёт" else "Сон"
     is Medicine -> "Лекарство · ${event.name}"
@@ -140,7 +143,19 @@ fun eventTimeLine(event: BabyEvent): String = when (event) {
     is Sleep -> timeRange(event.start, event.end)
     // Кормления до ADR-0015 — без длительности: конец равен началу
     is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
-    is Diaper, is Medicine, is Weight -> formatClock(event.start)
+    is Bottle, is Diaper, is Medicine, is Weight -> formatClock(event.start)
+}
+
+/**
+ * «бутылочка 120 мл», «бутылочка 120 мл, смесь». Между числом и «мл» — неразрывный пробел:
+ * в узкой строке истории «120» и «мл» иначе расходятся по строкам.
+ */
+fun bottleLabel(volumeMl: Int, milk: Milk?): String =
+    "бутылочка $volumeMl\u00A0мл" + (milk?.let { ", ${milkLabel(it)}" } ?: "")
+
+fun milkLabel(milk: Milk): String = when (milk) {
+    Milk.FORMULA -> "смесь"
+    Milk.BREAST_MILK -> "сцеженное молоко"
 }
 
 /** «13:40–15:05 · 1 ч 25 мин»; идущий таймер — «с 13:40». */

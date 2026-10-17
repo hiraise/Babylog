@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
@@ -26,11 +27,12 @@ import java.time.ZoneId
  * Сводка, листы и быстрые действия ссылаются на те же файлы `R.drawable.ic_<тип>` напрямую:
  * чтобы сменить символ типа, замени файл `res/drawable/ic_<тип>.xml`, а не ссылки в коде.
  * Подгузник показан по виду ([diaperIcon]); сторону кормления иконка не различает: она в тексте
- * записи ([eventTitle]).
+ * записи ([eventTitle]). У бутылочки своя иконка (ADR-0014): в истории её видно сразу.
  */
 @DrawableRes
 fun eventIcon(event: BabyEvent): Int = when (event) {
     is Feeding -> R.drawable.ic_feeding
+    is Bottle -> R.drawable.ic_bottle
     is Diaper -> diaperIcon(event.kind)
     is Sleep -> R.drawable.ic_sleep
     is Medicine -> R.drawable.ic_medicine

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Что FileProvider открывает другим приложениям, и только по выданной ссылке на файл:
+     photos/ — куда системная камера кладёт снимок (ADR-0023), share/ — копии фото для «Поделиться»,
+     только на чтение (ADR-0024). База и остальные файлы приложения через провайдер не видны -->
+<paths>
+    <cache-path name="photos" path="photos/" />
+    <cache-path name="share" path="share/" />
+</paths>

@@ -146,7 +146,7 @@ private class CsvImporter(
         else children.find { sameChildName(it.name, name) }
 
     private suspend fun createChild(name: String, birthDate: Long?, sex: Sex?): Child {
-        val child = Child(repository.addChild(name, birthDate, sex), name.trim(), birthDate, sex)
+        val child = Child(repository.addChild(name, birthDate, sex, photo = null), name.trim(), birthDate, sex)
         children += child
         result = result.copy(childrenAdded = result.childrenAdded + 1)
         return child

@@ -84,7 +84,7 @@ internal fun TodayContent(
                 SleepCard(child, state.activeSleep, state.lastSleepEnd, now, actions.onStartSleep, actions.onEndSleep, tile)
                 FeedingCard(
                     activeFeeding = state.activeFeeding,
-                    lastFeedingEnd = state.lastFeedingEnd,
+                    lastFeeding = state.lastFeeding,
                     now = now,
                     onStart = actions.onStartFeeding,
                     onEnd = actions.onEndFeeding,
@@ -94,7 +94,7 @@ internal fun TodayContent(
             }
         }
         item(key = "quick") {
-            QuickActions(actions.onAdd)
+            QuickActions(state.lastDiaper, sleeping = state.activeSleep != null, now = now, onAdd = actions.onAdd)
         }
         item(key = "summary") {
             DaySummaryCard(events = state.events, date = now.toLocalDate(), now = now, sex = child.sex)
@@ -154,6 +154,7 @@ internal fun HistoryContent(
         }
         records(
             events = dayEvents,
+            photoCounts = state.photoCounts,
             child = child,
             actions = actions,
             emptyText = if (events.isEmpty()) {
@@ -166,7 +167,13 @@ internal fun HistoryContent(
 }
 
 /** Записи дня, новые сверху; пустой день — подсказка [emptyText]. */
-private fun LazyListScope.records(events: List<BabyEvent>, child: Child, actions: DiaryActions, emptyText: String) {
+private fun LazyListScope.records(
+    events: List<BabyEvent>,
+    photoCounts: Map<Long, Int>,
+    child: Child,
+    actions: DiaryActions,
+    emptyText: String,
+) {
     if (events.isEmpty()) {
         item(key = "empty") {
             Text(
@@ -184,6 +191,7 @@ private fun LazyListScope.records(events: List<BabyEvent>, child: Child, actions
         EventRow(
             event = event,
             sex = child.sex,
+            photoCount = photoCounts[event.id] ?: 0,
             onEdit = { actions.onEditEvent(event) },
             onDelete = { actions.onDeleteEvent(event) },
         )

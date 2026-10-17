@@ -6,6 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.toEvent
@@ -18,6 +19,8 @@ data class ChildEntity(
     val birthDate: Long?,
     /** Код [com.kid.babylog.core.model.Sex], null — пол не указан. */
     val sex: String? = null,
+    /** JPEG [com.kid.babylog.core.model.ChildPhoto], null — фото нет (ADR-0023). */
+    val photo: ByteArray? = null,
 )
 
 /** Записи всех типов в одной таблице; смысл `detail` по типам — в [EventRecord] и ADR-0008. */
@@ -43,9 +46,37 @@ data class EventEntity(
     val note: String,
 )
 
-fun ChildEntity.toChild() = Child(id = id, name = name, birthDate = birthDate, sex = Sex.fromCode(sex))
+/**
+ * Фото записи (ADR-0024): удаляется вместе с записью (`CASCADE`). Записи правятся только `UPDATE`
+ * (`@Update`): `REPLACE` удалил бы строку записи, а с ней каскадом и фото.
+ */
+@Entity(
+    tableName = "event_photos",
+    foreignKeys = [
+        ForeignKey(
+            entity = EventEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["eventId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("eventId")],
+)
+data class EventPhotoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val eventId: Long,
+    /** Порядок фото в записи, с нуля. */
+    val position: Int,
+    val jpeg: ByteArray,
+)
 
-fun Child.toEntity() = ChildEntity(id = id, name = name, birthDate = birthDate, sex = sex?.name)
+/** Сколько фото у записи [eventId] — для отметки в истории, без самих фото. */
+data class PhotoCount(val eventId: Long, val count: Int)
+
+fun ChildEntity.toChild() =
+    Child(id = id, name = name, birthDate = birthDate, sex = Sex.fromCode(sex), photo = photo?.let(::ChildPhoto))
+
+fun Child.toEntity() = ChildEntity(id = id, name = name, birthDate = birthDate, sex = sex?.name, photo = photo?.jpeg)
 
 /** null — строка не разбирается (такого не пишет ни одна версия приложения). */
 fun EventEntity.toEvent(): BabyEvent? =

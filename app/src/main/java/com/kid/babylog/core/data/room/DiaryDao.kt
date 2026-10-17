@@ -51,4 +51,23 @@ interface DiaryDao {
 
     @Query("DELETE FROM events WHERE childId = :childId")
     suspend fun deleteEventsOf(childId: Long)
+
+    @Query("SELECT * FROM event_photos WHERE eventId = :eventId ORDER BY position, id")
+    fun observeEventPhotos(eventId: Long): Flow<List<EventPhotoEntity>>
+
+    /** Без самих фото: только сколько их у каждой записи ребёнка. */
+    @Query(
+        "SELECT p.eventId AS eventId, COUNT(*) AS count FROM event_photos p " +
+            "JOIN events e ON e.id = p.eventId WHERE e.childId = :childId GROUP BY p.eventId"
+    )
+    fun observePhotoCounts(childId: Long): Flow<List<PhotoCount>>
+
+    @Query("DELETE FROM event_photos WHERE eventId = :eventId AND id NOT IN (:keep)")
+    suspend fun deletePhotosExcept(eventId: Long, keep: List<Long>)
+
+    @Query("UPDATE event_photos SET position = :position WHERE id = :id AND eventId = :eventId")
+    suspend fun movePhoto(id: Long, eventId: Long, position: Int)
+
+    @Insert
+    suspend fun insertPhoto(photo: EventPhotoEntity)
 }

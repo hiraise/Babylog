@@ -14,12 +14,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
@@ -29,25 +32,41 @@ import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.components.SheetAction
 import com.kid.babylog.core.ui.formatDate
+import com.kid.babylog.core.ui.photo.PhotoSourceSheet
+import com.kid.babylog.core.ui.photo.deletePhotoFile
+import com.kid.babylog.core.ui.photo.rememberPhotoPicker
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
- * Добавление ([initial] = null) или правка ребёнка: имя, дата рождения и пол.
+ * Добавление ([initial] = null) или правка ребёнка: фото, имя, дата рождения и пол.
  * Имя обязательно и не должно совпадать с именем другого ребёнка из [children]; пол необязателен,
- * но выбранный снять нельзя — только поменять (ADR-0016).
+ * но выбранный снять нельзя — только поменять (ADR-0016). Фото необязательно (ADR-0023): снимок
+ * или фото из галереи кадрируется в [PhotoCropSheet] и сохраняется вместе с формой.
  */
 @Composable
 fun ChildSheet(
     initial: Child?,
     children: List<Child>,
     onDismiss: () -> Unit,
-    onSave: (name: String, birthDate: Long?, sex: Sex?) -> Unit,
+    onSave: (name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?) -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
     var name by rememberSaveable { mutableStateOf(initial?.name ?: "") }
     var birthDate by rememberSaveable { mutableStateOf(initial?.birthDate) }
     var sex by rememberSaveable { mutableStateOf(initial?.sex) }
+    var photo by rememberSaveable(stateSaver = PhotoSaver) { mutableStateOf(initial?.photo) }
     var pickBirth by rememberSaveable { mutableStateOf(false) }
+    var photoMenu by rememberSaveable { mutableStateOf(false) }
+    var cropSource by rememberSaveable { mutableStateOf<String?>(null) }
+    var photoError by rememberSaveable { mutableStateOf<String?>(null) }
+    // Здесь, а не в листе «Фото»: он закрывается раньше, чем камера вернёт снимок
+    val picker = rememberPhotoPicker(
+        onPicked = {
+            photoError = null
+            cropSource = it.first()
+        },
+        onError = { photoError = it },
+    )
     val taken = children.isNameTaken(name, exceptId = initial?.id)
     val valid = isValidChildName(name) && !taken
     val spacing = BabyLogTheme.spacing
@@ -56,8 +75,17 @@ fun ChildSheet(
         onDismiss = onDismiss,
         title = if (initial == null) "Новый ребёнок" else "Ребёнок",
         icon = R.drawable.ic_child,
-        confirm = SheetAction("Сохранить", enabled = valid) { onSave(name.trim(), birthDate, sex) },
+        confirm = SheetAction("Сохранить", enabled = valid) { onSave(name.trim(), birthDate, sex, photo) },
     ) { closer ->
+        PhotoButton(sex, photo, onClick = { photoMenu = true }, modifier = Modifier.align(Alignment.CenterHorizontally))
+        photoError?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+        }
         OutlinedTextField(
             value = name,
             onValueChange = { name = it.take(Child.MAX_NAME_LENGTH) },
@@ -94,6 +122,41 @@ fun ChildSheet(
         }
     }
 
+    if (photoMenu) {
+        PhotoSourceSheet(
+            onCamera = {
+                photoMenu = false
+                picker.takePhoto()
+            },
+            onGallery = {
+                photoMenu = false
+                picker.pickFromGallery()
+            },
+            onDismiss = { photoMenu = false },
+            onRemove = if (photo != null) {
+                {
+                    photoMenu = false
+                    photo = null
+                }
+            } else null,
+        )
+    }
+
+    cropSource?.let { source ->
+        PhotoCropSheet(
+            source = source,
+            onDismiss = {
+                deletePhotoFile(source)
+                cropSource = null
+            },
+            onDone = {
+                photo = it
+                deletePhotoFile(source)
+                cropSource = null
+            },
+        )
+    }
+
     if (pickBirth) {
         BirthDateSheet(
             initial = birthDate,
@@ -105,3 +168,12 @@ fun ChildSheet(
         )
     }
 }
+
+/**
+ * Фото формы в сохранённом состоянии — байтами (~50 КБ). Нет фото — пустой массив, а не null:
+ * без сохранённого значения после поворота экрана вернулось бы исходное фото.
+ */
+private val PhotoSaver = Saver<ChildPhoto?, ByteArray>(
+    save = { it?.jpeg ?: ByteArray(0) },
+    restore = { bytes -> bytes.takeIf { it.isNotEmpty() }?.let(::ChildPhoto) },
+)

@@ -1,10 +1,15 @@
 package com.kid.babylog.feature.diary
 
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Milk
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -72,12 +77,39 @@ class DiaryViewModelTest {
     }
 
     @Test
-    fun `new child is selected and duplicate names are ignored`() = runTest {
+    fun `medicine suggestions come from the selected child's records`() = runTest {
         val vm = viewModel()
-        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY)
-        assertEquals(Child(3, "Вася", null, Sex.BOY), vm.state.value.child)
-        vm.addChild("вася", birthDate = null, sex = null)
+        vm.saveEvent(Medicine(childId = 1, start = 1_000, name = "Витамин D"))
+        vm.saveEvent(Medicine(childId = 1, start = 3_000, name = "Нурофен"))
+        vm.saveEvent(Medicine(childId = 2, start = 2_000, name = "Эспумизан"))
+        assertEquals(listOf("Нурофен", "Витамин D"), vm.state.value.pastMedicines.map { it.name })
+        vm.selectChild(2)
+        assertEquals(listOf("Эспумизан"), vm.state.value.pastMedicines.map { it.name })
+    }
+
+    @Test
+    fun `new child is selected with its photo and duplicate names are ignored`() = runTest {
+        val vm = viewModel()
+        val photo = ChildPhoto(byteArrayOf(1, 2, 3))
+        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY, photo = photo)
+        assertEquals(Child(3, "Вася", null, Sex.BOY, photo), vm.state.value.child)
+        vm.addChild("вася", birthDate = null, sex = null, photo = null)
         assertEquals(3, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `new diaper is saved with its photos, editing without photos keeps them`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Diaper(childId = 1, start = 1_000, kind = DiaperKind.DIRTY), PhotoEdit(emptyList(), listOf(byteArrayOf(1), byteArrayOf(2))))
+        val diaper = vm.state.value.events.single() as Diaper
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        vm.saveEvent(diaper.copy(note = "зелёный"))
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        val first = repo.photos.value.getValue(diaper.id).first()
+        vm.saveEvent(diaper, PhotoEdit(keep = listOf(first.id), add = emptyList()))
+        assertEquals(mapOf(diaper.id to 1), vm.state.value.photoCounts)
     }
 
     @Test
@@ -178,5 +210,15 @@ class DiaryViewModelTest {
             listOf(LocalDate.of(2026, 10, 13), today),
             historyDays(events, today, ZoneId.of("UTC")),
         )
+    }
+
+    @Test
+    fun `bottle is saved for the selected child and becomes the last feeding and bottle`() = runTest {
+        val vm = viewModel()
+        vm.addBottle(volumeMl = 120, milk = Milk.FORMULA, time = 5_000)
+        val bottle = vm.state.value.events.single() as Bottle
+        assertEquals(Triple(1L, 120, Milk.FORMULA), Triple(bottle.childId, bottle.volumeMl, bottle.milk))
+        assertEquals(bottle, vm.state.value.lastBottle)
+        assertEquals(LastFeeding(5_000, 5_000, breast = null), vm.state.value.lastFeeding)
     }
 }

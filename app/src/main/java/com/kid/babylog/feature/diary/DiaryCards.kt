@@ -1,9 +1,12 @@
 package com.kid.babylog.feature.diary
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,6 +30,7 @@ import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.formatAgo
+import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
@@ -63,13 +67,15 @@ internal fun SleepCard(
  * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
  * во время кормления — заканчивает; ⇄ в углу меняет грудь.
  *
- * Пока кормление не идёт — сколько прошло с его конца ([afterFeedingCaption]): можно ли купать или
- * класть на живот. Сводка дня считает от начала кормления — по ней решают, когда кормить снова.
+ * Пока кормление не идёт — чем кормили, во сколько начали и сколько прошло с конца
+ * ([afterFeedingCaption]): какой грудью начинать теперь, когда кормить снова («каждые 3 часа» —
+ * от начала) и можно ли купать или класть на живот (от конца). Только здесь: сводка дня — итоги
+ * дня, «последнее» она не повторяет (ADR-0026).
  */
 @Composable
 internal fun FeedingCard(
     activeFeeding: Feeding?,
-    lastFeedingEnd: Long?,
+    lastFeeding: LastFeeding?,
     now: Long,
     onStart: () -> Unit,
     onEnd: () -> Unit,
@@ -87,7 +93,7 @@ internal fun FeedingCard(
         onStop = onEnd,
         modifier = modifier,
         runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
-        idleCaption = afterFeedingCaption(lastFeedingEnd, now),
+        idleCaption = afterFeedingCaption(lastFeeding, now),
         corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
     )
 }
@@ -96,9 +102,18 @@ internal fun FeedingCard(
 internal fun awakeCaption(lastSleepEnd: Long?, now: Long): String? =
     sinceLast(lastSleepEnd, now)?.let { "не спит ${formatDuration(it)}" }
 
-/** «закончилось 40 мин назад» — с конца последнего кормления; не было или давно ([sinceLast]) — null. */
-internal fun afterFeedingCaption(lastFeedingEnd: Long?, now: Long): String? =
-    sinceLast(lastFeedingEnd, now)?.let { "закончилось ${formatAgo(it)}" }
+/**
+ * Две строки: чем кормили и во сколько начали — начало по часам, чтобы не путать его со второй
+ * строкой, — и сколько прошло с конца: «левая в 12:00» / «закончилось 40 мин назад». У бутылочки
+ * начало и конец — одно время: «бутылочка в 12:30» / «40 мин назад». Не было или давно ([sinceLast]) — null.
+ */
+internal fun afterFeedingCaption(lastFeeding: LastFeeding?, now: Long): String? {
+    val ago = sinceLast(lastFeeding?.end, now) ?: return null
+    val breast = lastFeeding?.breast
+    val what = breast?.let(::breastLabel) ?: "бутылочка"
+    val since = if (breast == null) formatAgo(ago) else "закончилось ${formatAgo(ago)}"
+    return "$what в ${formatClock(lastFeeding!!.start)}\n$since"
+}
 
 /** Сколько прошло с [end]; сутки и больше — null: так долго не спят и не едят, просто не записывали. */
 private fun sinceLast(end: Long?, now: Long): Long? =
@@ -106,19 +121,50 @@ private fun sinceLast(end: Long?, now: Long): Long? =
 
 private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
 
-/** Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard]. */
+/**
+ * Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard].
+ *
+ * Под «Подгузник» — сколько прошло с последней смены ([diaperCaption]); давно ([diaperOverdue]) —
+ * пояснение выделено. Это только на плитке: сводка дня его не повторяет — одно и то же в двух местах
+ * с разным расчётом расходится.
+ */
 @Composable
-internal fun QuickActions(onAdd: (NewEventKind) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
-        ActionTile(R.drawable.ic_diaper, "Подгузник", { onAdd(NewEventKind.DIAPER) }, Modifier.weight(1f))
-        ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, Modifier.weight(1f))
-        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, Modifier.weight(1f))
+internal fun QuickActions(lastDiaper: Long?, sleeping: Boolean, now: Long, onAdd: (NewEventKind) -> Unit) {
+    // IntrinsicSize.Min: плитки одной высоты, хотя пояснение есть только у подгузника
+    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
+        val tile = Modifier.weight(1f).fillMaxHeight()
+        ActionTile(
+            R.drawable.ic_diaper,
+            "Подгузник",
+            { onAdd(NewEventKind.DIAPER) },
+            tile,
+            caption = diaperCaption(lastDiaper, now),
+            highlight = diaperOverdue(lastDiaper, sleeping, now),
+        )
+        ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, tile)
+        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile)
     }
 }
 
-/** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
+/** «2 ч 10 мин назад» — с последней смены подгузника; не меняли или давно ([sinceLast]) — null. */
+internal fun diaperCaption(lastDiaper: Long?, now: Long): String? = sinceLast(lastDiaper, now)?.let(::formatAgo)
+
+/**
+ * Пора ли менять подгузник: с последней смены прошло [DIAPER_CHANGE_MS] и больше. Пока малыш спит —
+ * нет: будить ради подгузника не нужно. Нет пояснения ([diaperCaption] — null) — тоже нет.
+ */
+internal fun diaperOverdue(lastDiaper: Long?, sleeping: Boolean, now: Long): Boolean =
+    !sleeping && (sinceLast(lastDiaper, now) ?: 0) >= DIAPER_CHANGE_MS
+
+/** Подгузник меняют каждые 2–3 часа — после трёх пояснение на плитке выделяется. */
+private const val DIAPER_CHANGE_MS = 3 * 60 * 60 * 1000L
+
+/**
+ * Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись;
+ * [photoCount] — сколько у записи фото (ADR-0024): «14:30 · 2 фото», чтобы найти их, не открывая записи.
+ */
 @Composable
-internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete: () -> Unit) {
+internal fun EventRow(event: BabyEvent, sex: Sex?, photoCount: Int, onEdit: () -> Unit, onDelete: () -> Unit) {
     val spacing = BabyLogTheme.spacing
     AppCard(
         modifier = Modifier.fillMaxWidth(),
@@ -130,7 +176,7 @@ internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete:
         ItemRow(
             icon = eventIcon(event),
             title = eventTitle(event, sex),
-            subtitle = eventTimeLine(event),
+            subtitle = eventTimeLine(event) + if (photoCount > 0) " · $photoCount фото" else "",
             note = event.note,
             trailing = {
                 IconButton(onClick = onDelete) {

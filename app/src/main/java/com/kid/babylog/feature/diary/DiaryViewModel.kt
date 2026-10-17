@@ -5,8 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.Milk
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
@@ -16,6 +21,7 @@ import com.kid.babylog.feature.transfer.describe
 import com.kid.babylog.feature.transfer.exportCsv
 import com.kid.babylog.feature.transfer.importCsv
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -48,7 +54,8 @@ class DiaryViewModel(
         }
             .flatMapLatest { (children, child) ->
                 val events = if (child == null) flowOf(emptyList()) else repository.observeEvents(child.id)
-                events.map { DiaryUiState.of(children, child, it) }
+                val photos = if (child == null) flowOf(emptyMap()) else repository.observePhotoCounts(child.id)
+                combine(events, photos) { list, counts -> DiaryUiState.of(children, child, list, counts) }
             }
             .combine(message) { state, text -> state.copy(message = text) }
             .combine(stopped) { state, timer -> state.copy(canUndo = timer != null) }
@@ -57,9 +64,9 @@ class DiaryViewModel(
     fun selectChild(childId: Long) = selection.select(childId)
 
     /** Добавляет ребёнка и сразу выбирает его. Пустое или занятое имя игнорируется. */
-    fun addChild(name: String, birthDate: Long?, sex: Sex?) = viewModelScope.launch {
+    fun addChild(name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?) = viewModelScope.launch {
         if (!isValidChildName(name) || repository.allChildren().isNameTaken(name)) return@launch
-        selection.select(repository.addChild(name.trim(), birthDate, sex))
+        selection.select(repository.addChild(name.trim(), birthDate, sex, photo))
     }
 
     fun updateChild(child: Child) = viewModelScope.launch {
@@ -74,9 +81,16 @@ class DiaryViewModel(
     }
 
     /** Новая запись (id = 0) добавляется, существующая обновляется. */
-    fun saveEvent(event: BabyEvent) = viewModelScope.launch {
-        if (event.id == 0L) repository.addEvent(event) else repository.updateEvent(event)
+    /** Новая запись (id = 0) или правка; [photos] — фото после формы, null — фото не трогали (ADR-0024). */
+    fun saveEvent(event: BabyEvent, photos: PhotoEdit? = null) = viewModelScope.launch {
+        repository.inTransaction {
+            val id = if (event.id == 0L) repository.addEvent(event) else event.id.also { repository.updateEvent(event) }
+            if (photos != null) repository.setEventPhotos(id, photos)
+        }
     }
+
+    /** Фото записи — для формы правки и «Поделиться». */
+    fun eventPhotos(eventId: Long): Flow<List<EventPhoto>> = repository.observeEventPhotos(eventId)
 
     fun deleteEvent(event: BabyEvent) = viewModelScope.launch {
         repository.deleteEvent(event)
@@ -97,6 +111,12 @@ class DiaryViewModel(
     fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
         val child = state.value.child ?: return@launch
         repository.startFeeding(child.id, start, breast)
+    }
+
+    /** Бутылочка выбранному ребёнку (ADR-0025): разовая запись, идущий сон заканчивается (ADR-0020). */
+    fun addBottle(volumeMl: Int, milk: Milk?, time: Long) = viewModelScope.launch {
+        val child = state.value.child ?: return@launch
+        repository.addBottle(Bottle(childId = child.id, start = time, volumeMl = volumeMl, milk = milk))
     }
 
     /** Смена груди: идущее кормление заканчивается, с той же секунды начинается кормление другой грудью. */

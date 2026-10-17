@@ -17,6 +17,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
@@ -190,9 +191,10 @@ fun DiaryScreen(
         NewEventSheet(
             kind = kind,
             child = child,
+            pastMedicines = state.pastMedicines,
             onDismiss = { newEvent = null },
-            onSave = {
-                viewModel.saveEvent(it)
+            onSave = { event, photos ->
+                viewModel.saveEvent(event, photos)
                 newEvent = null
             },
         )
@@ -212,9 +214,14 @@ fun DiaryScreen(
     if (startingFeeding) {
         FeedingStartSheet(
             activeSleep = state.activeSleep,
+            lastBottle = state.lastBottle,
             onDismiss = { startingFeeding = false },
             onSave = { breast, time ->
                 viewModel.startFeeding(time, breast)
+                startingFeeding = false
+            },
+            onSaveBottle = { volumeMl, milk, time ->
+                viewModel.addBottle(volumeMl, milk, time)
                 startingFeeding = false
             },
         )
@@ -222,15 +229,21 @@ fun DiaryScreen(
 
     state.events.find { it.id == editingId }?.let { event ->
         key(event.id) {
-            EditEventSheet(
-                event = event,
-                sex = child.sex,
-                onDismiss = { editingId = NONE },
-                onSave = {
-                    viewModel.saveEvent(it)
-                    editingId = NONE
-                },
-            )
+            // Лист открывается, когда фото записи загружены: форма берёт их один раз, при открытии
+            val photos by remember { viewModel.eventPhotos(event.id) }.collectAsState(initial = null)
+            photos?.let {
+                EditEventSheet(
+                    event = event,
+                    child = child,
+                    photos = it,
+                    pastMedicines = state.pastMedicines,
+                    onDismiss = { editingId = NONE },
+                    onSave = { edited, edit ->
+                        viewModel.saveEvent(edited, edit)
+                        editingId = NONE
+                    },
+                )
+            }
         }
     }
 
@@ -288,8 +301,8 @@ fun DiaryScreen(
             initial = null,
             children = state.children,
             onDismiss = { childSheet = ChildSheetMode.NONE },
-            onSave = { name, birthDate, sex ->
-                viewModel.addChild(name, birthDate, sex)
+            onSave = { name, birthDate, sex, photo ->
+                viewModel.addChild(name, birthDate, sex, photo)
                 childSheet = ChildSheetMode.NONE
             },
         )
@@ -297,8 +310,8 @@ fun DiaryScreen(
             initial = child,
             children = state.children,
             onDismiss = { childSheet = ChildSheetMode.NONE },
-            onSave = { name, birthDate, sex ->
-                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex))
+            onSave = { name, birthDate, sex, photo ->
+                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex, photo = photo))
                 childSheet = ChildSheetMode.NONE
             },
             // Последнего ребёнка удалить нельзя
