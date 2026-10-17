@@ -61,6 +61,8 @@ private val AllIcons = listOf(
     R.drawable.ic_medicine to "medicine",
     R.drawable.ic_weight to "weight",
     R.drawable.ic_child to "child",
+    R.drawable.ic_child_boy to "child_boy",
+    R.drawable.ic_child_girl to "child_girl",
     R.drawable.ic_add_child to "add_child",
     R.drawable.ic_edit to "edit",
     R.drawable.ic_delete to "delete",
