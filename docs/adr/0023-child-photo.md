@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-17
-- **Затрагивает:** `Child.photo` (`core/model/Child.kt`), `children.photo` (`core/data/room/`), `AndroidManifest.xml` (`FileProvider`, permissions), `res/xml/photo_paths.xml`, фото в `feature/children/` (`rememberPhotoPicker`, `PhotoCropSheet`), `Avatar`, `feature/transfer/`
+- **Затрагивает:** `Child.photo` (`core/model/Child.kt`), `children.photo` (`core/data/room/`), `AndroidManifest.xml` (`FileProvider`, permissions), `res/xml/photo_paths.xml`, `core/ui/photo/` (`rememberPhotoPicker`, `loadUpright`), `PhotoCropSheet`, `Avatar`, `feature/transfer/`
 
 ## Контекст
 
@@ -15,10 +15,11 @@
 - Фото — `Child.photo: ChildPhoto?`: уже кадрированный квадратный JPEG `ChildPhoto.SIZE` (512 px).
   В базе — `children.photo` (BLOB, `NULL` — фото нет), миграция 5→6. Файлов фото вне базы нет.
 - Храни только кадр. Снимок или фото из галереи — временный файл в `cache/photos/`; после
-  кадрирования удаляй его (`deletePhotoSource`).
+  кадрирования удаляй его (`deletePhotoFile`).
 - Снимает системное приложение камеры (`ActivityResultContracts.TakePicture`) в файл, открытый через
   `FileProvider` (`${applicationId}.photos`, в `photo_paths.xml` — только `cache/photos/`). Permission
   `CAMERA` не объявляй: с ним, пока его не выдали, системная камера не запускается.
+  Что ещё открывает провайдер — [ADR-0024](0024-event-photos.md).
 - Галерея — системный пикер (`PickVisualMedia`, `ImageOnly`); разрешения на чтение памяти
   (`READ_MEDIA_IMAGES`, `READ_EXTERNAL_STORAGE`) не объявляй. Выбранное фото копируй в `cache/photos/`:
   ссылка из пикера не переживает перезапуск процесса.

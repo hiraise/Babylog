@@ -1,6 +1,5 @@
 package com.kid.babylog.core.ui.components
 
-import android.graphics.BitmapFactory
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,8 +15,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -27,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.ui.photo.decodeSampled
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
@@ -41,7 +39,7 @@ fun Avatar(sex: Sex?, photo: ChildPhoto?, modifier: Modifier = Modifier, size: D
     val colors = MaterialTheme.colorScheme
     val sizePx = with(LocalDensity.current) { size.roundToPx() }
     // 512 × 512 JPEG декодируется за миллисекунды — без фонового потока: аватар не мигает иконкой
-    val image = remember(photo, sizePx) { photo?.let { decodeAvatar(it, sizePx) } }
+    val image = remember(photo, sizePx) { photo?.let { decodeSampled(it.jpeg, sizePx) } }
     Box(
         modifier = modifier
             .size(size)
@@ -61,17 +59,6 @@ fun Avatar(sex: Sex?, photo: ChildPhoto?, modifier: Modifier = Modifier, size: D
             )
         }
     }
-}
-
-/**
- * Фото, уменьшенное уже при декодировании — не мельче [sizePx]: аватару 40 dp хватает четверти
- * пикселей, а уменьшение больше чем вдвое при отрисовке даёт зубцы. null — не декодируется.
- */
-private fun decodeAvatar(photo: ChildPhoto, sizePx: Int): ImageBitmap? {
-    var sample = 1
-    while (ChildPhoto.SIZE / (sample * 2) >= sizePx) sample *= 2
-    val options = BitmapFactory.Options().apply { inSampleSize = sample }
-    return BitmapFactory.decodeByteArray(photo.jpeg, 0, photo.jpeg.size, options)?.asImageBitmap()
 }
 
 /**

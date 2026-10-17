@@ -17,6 +17,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
@@ -192,8 +193,8 @@ fun DiaryScreen(
             child = child,
             pastMedicines = state.pastMedicines,
             onDismiss = { newEvent = null },
-            onSave = {
-                viewModel.saveEvent(it)
+            onSave = { event, photos ->
+                viewModel.saveEvent(event, photos)
                 newEvent = null
             },
         )
@@ -223,16 +224,21 @@ fun DiaryScreen(
 
     state.events.find { it.id == editingId }?.let { event ->
         key(event.id) {
-            EditEventSheet(
-                event = event,
-                sex = child.sex,
-                pastMedicines = state.pastMedicines,
-                onDismiss = { editingId = NONE },
-                onSave = {
-                    viewModel.saveEvent(it)
-                    editingId = NONE
-                },
-            )
+            // Лист открывается, когда фото записи загружены: форма берёт их один раз, при открытии
+            val photos by remember { viewModel.eventPhotos(event.id) }.collectAsState(initial = null)
+            photos?.let {
+                EditEventSheet(
+                    event = event,
+                    child = child,
+                    photos = it,
+                    pastMedicines = state.pastMedicines,
+                    onDismiss = { editingId = NONE },
+                    onSave = { edited, edit ->
+                        viewModel.saveEvent(edited, edit)
+                        editingId = NONE
+                    },
+                )
+            }
         }
     }
 

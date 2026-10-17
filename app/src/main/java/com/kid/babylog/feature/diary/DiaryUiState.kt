@@ -27,13 +27,15 @@ data class DiaryUiState(
     val lastWeight: Weight? = null,
     /** Лекарства из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
     val pastMedicines: List<PastMedicine> = emptyList(),
+    /** Сколько фото у записей: id записи → число, для отметки в истории (ADR-0024). */
+    val photoCounts: Map<Long, Int> = emptyMap(),
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
     /** У сообщения есть «Отменить»: таймер остановили касанием карточки (ADR-0021). */
     val canUndo: Boolean = false,
 ) {
     companion object {
-        fun of(children: List<Child>, child: Child?, events: List<BabyEvent>) = DiaryUiState(
+        fun of(children: List<Child>, child: Child?, events: List<BabyEvent>, photoCounts: Map<Long, Int> = emptyMap()) = DiaryUiState(
             children = children,
             child = child,
             events = events,
@@ -44,6 +46,7 @@ data class DiaryUiState(
             lastDiaper = events.firstNotNullOfOrNull { (it as? Diaper)?.start },
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
             pastMedicines = pastMedicines(events),
+            photoCounts = photoCounts,
         )
     }
 }

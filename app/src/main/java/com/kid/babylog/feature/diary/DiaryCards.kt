@@ -147,9 +147,12 @@ internal fun diaperOverdue(lastDiaper: Long?, sleeping: Boolean, now: Long): Boo
 /** Подгузник меняют каждые 2–3 часа — после трёх пояснение на плитке выделяется. */
 private const val DIAPER_CHANGE_MS = 3 * 60 * 60 * 1000L
 
-/** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
+/**
+ * Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись;
+ * [photoCount] — сколько у записи фото (ADR-0024): «14:30 · 2 фото», чтобы найти их, не открывая записи.
+ */
 @Composable
-internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete: () -> Unit) {
+internal fun EventRow(event: BabyEvent, sex: Sex?, photoCount: Int, onEdit: () -> Unit, onDelete: () -> Unit) {
     val spacing = BabyLogTheme.spacing
     AppCard(
         modifier = Modifier.fillMaxWidth(),
@@ -161,7 +164,7 @@ internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete:
         ItemRow(
             icon = eventIcon(event),
             title = eventTitle(event, sex),
-            subtitle = eventTimeLine(event),
+            subtitle = eventTimeLine(event) + if (photoCount > 0) " · $photoCount фото" else "",
             note = event.note,
             trailing = {
                 IconButton(onClick = onDelete) {

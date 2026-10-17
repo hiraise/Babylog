@@ -11,6 +11,7 @@ import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.data.ThemeModeStore
 import com.kid.babylog.core.data.room.AppDatabase
 import com.kid.babylog.core.data.room.RoomDiaryRepository
+import com.kid.babylog.core.ui.photo.sweepPhotoCache
 import com.kid.babylog.feature.diary.DiaryViewModel
 import com.kid.babylog.feature.transfer.ContentResolverDocumentStore
 import com.kid.babylog.feature.transfer.DocumentStore
@@ -25,6 +26,11 @@ class AppContainer(context: Context) {
     val clock: Clock = SystemZoneClock
 
     private val database = AppDatabase.build(context)
+
+    init {
+        // Снимки и копии фото, не дошедшие до базы, и копии для «Поделиться» (ADR-0024)
+        sweepPhotoCache(context, clock.millis())
+    }
 
     val repository: DiaryRepository = RoomDiaryRepository(database)
 
