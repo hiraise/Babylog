@@ -38,7 +38,8 @@ INTERNET** — оно физически не может выйти в сеть.
 - ⚖️ **Вес** — в граммах (300–30000), в истории и в шапке под именем ребёнка
   показывается как «4,35 кг».
 - 👶 **Несколько детей** — у каждого ребёнка свои записи, таймеры и сводка.
-  Ребёнок выбирается в шапке: «Дневник Маши», под ним возраст и последний вес.
+  Ребёнок выбирается в шапке: «Дневник Маши», под ним возраст и последний вес;
+  на картинке рядом — мальчик в кепке или девочка с бантиком, пока пол не выбран — малыш.
   Тап по шапке открывает список детей: выбрать ребёнка, «Добавить ребёнка»,
   карандаш у выбранного — имя, дата рождения и пол; по полу приложение пишет
   «уснул / уснула», «пописал / пописала» (пока пол не выбран — в мужском
@@ -223,6 +224,7 @@ BabyLog — свободное программное обеспечение: е
   [OFL-Nunito.txt](app/src/main/assets/licenses/OFL-Nunito.txt);
 - иконки Material Symbols (© Google) в `app/src/main/res/drawable/ic_*.xml`,
   кроме `ic_launcher_foreground.xml` и своих иконок проекта `ic_diaper_wet.xml`,
-  `ic_diaper_dirty.xml`, `ic_diaper_mixed.xml` ([ADR-0014](docs/adr/0014-own-icons.md)), —
+  `ic_diaper_dirty.xml`, `ic_diaper_mixed.xml`, `ic_child_girl.xml`
+  ([ADR-0014](docs/adr/0014-own-icons.md)), —
   Apache License 2.0, текст —
   [Apache-2.0-Material-Symbols.txt](app/src/main/assets/licenses/Apache-2.0-Material-Symbols.txt).

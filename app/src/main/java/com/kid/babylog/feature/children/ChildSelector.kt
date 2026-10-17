@@ -51,7 +51,7 @@ fun ChildSelector(child: Child, lastWeight: Weight?, now: Long, onClick: () -> U
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(spacing.m),
     ) {
-        Avatar()
+        Avatar(child.sex)
         Column(Modifier.weight(1f, fill = false)) {
             // Шрифт названия приложения — как логотип; длинное имя уменьшает его, а не обрезается сразу
             val titleStyle = MaterialTheme.typography.headlineSmall
@@ -106,7 +106,7 @@ fun ChildrenSheet(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(spacing.m),
                 ) {
-                    Avatar(size = 36.dp)
+                    Avatar(child.sex, size = 36.dp)
                     Column(Modifier.weight(1f)) {
                         Text(child.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         child.birthDate?.let {
