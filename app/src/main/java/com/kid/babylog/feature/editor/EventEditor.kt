@@ -2,6 +2,7 @@ package com.kid.babylog.feature.editor
 
 import androidx.compose.runtime.Composable
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
@@ -46,6 +47,9 @@ fun EditEventSheet(
     when (event) {
         is Feeding -> FeedingEditSheet(event, onDismiss) { breast, start, end, note ->
             onSave(event.copy(breast = breast, start = start, end = end, note = note))
+        }
+        is Bottle -> BottleSheet(event, onDismiss) { volumeMl, milk, time, note ->
+            onSave(event.copy(volumeMl = volumeMl, milk = milk, start = time, note = note))
         }
         is Diaper -> DiaperSheet(event, sex, onDismiss) { kind, time, note ->
             onSave(event.copy(kind = kind, start = time, note = note))

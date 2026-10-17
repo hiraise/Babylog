@@ -1,10 +1,12 @@
 package com.kid.babylog.feature.diary
 
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -178,5 +180,15 @@ class DiaryViewModelTest {
             listOf(LocalDate.of(2026, 10, 13), today),
             historyDays(events, today, ZoneId.of("UTC")),
         )
+    }
+
+    @Test
+    fun `bottle is saved for the selected child and becomes the last feeding and bottle`() = runTest {
+        val vm = viewModel()
+        vm.addBottle(volumeMl = 120, milk = Milk.FORMULA, time = 5_000)
+        val bottle = vm.state.value.events.single() as Bottle
+        assertEquals(Triple(1L, 120, Milk.FORMULA), Triple(bottle.childId, bottle.volumeMl, bottle.milk))
+        assertEquals(bottle, vm.state.value.lastBottle)
+        assertEquals(5_000L, vm.state.value.lastFeedingEnd)
     }
 }

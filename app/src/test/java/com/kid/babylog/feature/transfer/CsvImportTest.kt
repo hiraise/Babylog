@@ -1,10 +1,12 @@
 package com.kid.babylog.feature.transfer
 
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
@@ -95,6 +97,19 @@ class CsvImportTest {
         assertEquals(feeding.start, feeding.end)
         // Повторный импорт того же файла находит и кормление, уже закрытое при первом импорте
         assertEquals(2, importCsv(repo, legacyFile, defaultChildId = 1).duplicates)
+    }
+
+    @Test
+    fun `bottle rows are imported with volume and milk`() = runTest {
+        val repo = FakeDiaryRepository()
+        val csv = "type,start,end,detail,note,child\n" +
+            "BOTTLE,2026-08-15 10:00:00,,120:FORMULA,докорм,Малыш\n" +
+            "BOTTLE,2026-08-15 13:00:00,,90,,Малыш\n"
+        assertEquals(2, importCsv(repo, csv, defaultChildId = 1).added)
+        assertEquals(
+            listOf(120 to Milk.FORMULA, 90 to null),
+            repo.events.value.filterIsInstance<Bottle>().map { it.volumeMl to it.milk },
+        )
     }
 
     @Test

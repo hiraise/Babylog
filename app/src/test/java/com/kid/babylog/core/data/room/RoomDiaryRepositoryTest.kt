@@ -1,6 +1,7 @@
 package com.kid.babylog.core.data.room
 
 import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Feeding
@@ -85,5 +86,18 @@ class RoomDiaryRepositoryTest {
     private companion object {
         const val T1 = 1_786_000_000_000L
         const val T2 = 1_786_003_600_000L
+    }
+
+    @Test
+    fun `bottle ends the sleep it falls into but not a later one`() = withRepository { repo ->
+        assertTrue(repo.startSleep(childId = 1, start = T1))
+        repo.addBottle(Bottle(childId = 1, start = T2, volumeMl = 120))
+        assertEquals(T2, repo.allEvents().filterIsInstance<Sleep>().single().end)
+
+        // Бутылочку записали задним числом, раньше начала идущего сна, — сон идёт дальше
+        assertTrue(repo.startSleep(childId = 1, start = T2 + 60_000))
+        repo.addBottle(Bottle(childId = 1, start = T1 + 60_000, volumeMl = 90))
+        assertEquals(null, repo.allEvents().filterIsInstance<Sleep>().last().end)
+        assertEquals(listOf(120, 90), repo.allEvents().filterIsInstance<Bottle>().sortedBy { it.id }.map { it.volumeMl })
     }
 }

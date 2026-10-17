@@ -13,6 +13,7 @@ data class EventRecord(
 ) {
     companion object {
         const val FEEDING = "FEEDING"
+        const val BOTTLE = "BOTTLE"
         const val DIAPER = "DIAPER"
         const val SLEEP = "SLEEP"
         const val MEDICINE = "MEDICINE"
@@ -22,6 +23,7 @@ data class EventRecord(
 
 fun BabyEvent.toRecord(): EventRecord = when (this) {
     is Feeding -> EventRecord(EventRecord.FEEDING, start, end, breast.name, note)
+    is Bottle -> EventRecord(EventRecord.BOTTLE, start, null, listOfNotNull(volumeMl.toString(), milk?.name).joinToString(":"), note)
     is Diaper -> EventRecord(EventRecord.DIAPER, start, null, kind.name, note)
     is Sleep -> EventRecord(EventRecord.SLEEP, start, end, "", note)
     is Medicine -> EventRecord(EventRecord.MEDICINE, start, null, name, note)
@@ -35,12 +37,28 @@ fun BabyEvent.toRecord(): EventRecord = when (this) {
  */
 fun EventRecord.toEvent(id: Long = 0, childId: Long): BabyEvent? = when (type.trim().uppercase()) {
     EventRecord.FEEDING -> enumOrNull<Breast>(detail)?.let { Feeding(id, childId, start, end, it, note) }
+    EventRecord.BOTTLE -> bottleOrNull(id, childId, start, detail, note)
     EventRecord.DIAPER -> enumOrNull<DiaperKind>(detail)?.let { Diaper(id, childId, start, it, note) }
     EventRecord.SLEEP -> Sleep(id, childId, start, end, note)
     EventRecord.MEDICINE -> detail.takeIf { it.isNotBlank() }?.let { Medicine(id, childId, start, it, note) }
     EventRecord.WEIGHT -> detail.trim().toIntOrNull()?.takeIf { it in Weight.RANGE }
         ?.let { Weight(id, childId, start, it, note) }
     else -> null
+}
+
+/**
+ * `detail` бутылочки (ADR-0025): объём в мл, а если отмечено, что внутри, — через двоеточие код
+ * [Milk]: `120`, `120:FORMULA`. Объём вне [Bottle.RANGE] или неизвестный код — запись некорректна.
+ */
+private fun bottleOrNull(id: Long, childId: Long, start: Long, detail: String, note: String): Bottle? {
+    val parts = detail.split(':')
+    val volume = parts[0].trim().toIntOrNull()?.takeIf { it in Bottle.RANGE } ?: return null
+    val milk = when (parts.size) {
+        1 -> null
+        2 -> enumOrNull<Milk>(parts[1]) ?: return null
+        else -> return null
+    }
+    return Bottle(id, childId, start, volume, milk, note)
 }
 
 private inline fun <reified T : Enum<T>> enumOrNull(code: String): T? =

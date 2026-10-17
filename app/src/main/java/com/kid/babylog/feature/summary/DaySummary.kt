@@ -1,6 +1,7 @@
 package com.kid.babylog.feature.summary
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
@@ -14,10 +15,18 @@ import java.time.ZoneId
 /** Итоги одного дня для одного ребёнка. */
 data class DaySummary(
     val isToday: Boolean,
-    /** Кормления, начатые в этот день; смена груди не считается новым кормлением ([feedingSessions]). */
+    /**
+     * Кормления, начатые в этот день, вместе с бутылочками; смена груди не считается новым
+     * кормлением ([feedingSessions]).
+     */
     val feedings: Int,
-    /** Последнее кормление вообще, не только за этот день; есть только у сегодняшней сводки. */
+    /** Последнее кормление грудью вообще, не только за этот день; есть только у сегодняшней сводки. */
     val lastFeeding: FeedingSession?,
+    /** Бутылочки этого дня (ADR-0025): сколько раз и сколько всего миллилитров; входят и в [feedings]. */
+    val bottles: Int,
+    val bottleMl: Int,
+    /** Последняя бутылочка вообще; есть только у сегодняшней сводки — как [lastFeeding]. */
+    val lastBottle: Bottle?,
     val diapers: Map<DiaperKind, Int>,
     /** Сон, пересекающийся с этими сутками; активный считается до `now`. */
     val sleepMillis: Long,
@@ -59,6 +68,7 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
     val dayEvents = newestFirst.filter { it.start in dayStart until dayEnd }
 
     val feedings = feedingSessions(events)
+    val dayBottles = dayEvents.filterIsInstance<Bottle>()
     val sleeps = events.filterIsInstance<Sleep>()
     val sleepMillis = sleeps.sumOf { sleep ->
         val start = maxOf(sleep.start, dayStart)
@@ -73,8 +83,11 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
 
     return DaySummary(
         isToday = isToday,
-        feedings = feedings.count { it.start in dayStart until dayEnd },
+        feedings = feedings.count { it.start in dayStart until dayEnd } + dayBottles.size,
         lastFeeding = if (isToday) feedings.lastOrNull() else null,
+        bottles = dayBottles.size,
+        bottleMl = dayBottles.sumOf { it.volumeMl },
+        lastBottle = if (isToday) newestFirst.firstNotNullOfOrNull { it as? Bottle } else null,
         diapers = dayEvents.filterIsInstance<Diaper>().groupingBy { it.kind }.eachCount(),
         sleepMillis = sleepMillis,
         sleepingNow = isToday && sleeps.any { it.isActive },

@@ -4,6 +4,7 @@ import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Feeding
@@ -81,6 +82,13 @@ class FakeDiaryRepository(
             .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         addEvent(Feeding(childId = childId, start = start, breast = breast))
         return true
+    }
+
+    override suspend fun addBottle(bottle: Bottle) {
+        val at = bottle.start.truncatedToSecond()
+        events.value.filterIsInstance<Sleep>().filter { it.childId == bottle.childId && it.isActive && it.start <= at }
+            .forEach { updateEvent(it.copy(end = at)) }
+        addEvent(bottle)
     }
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = block()

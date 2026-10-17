@@ -1,6 +1,7 @@
 package com.kid.babylog.core.data
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Sex
@@ -48,6 +49,12 @@ interface DiaryRepository {
      * Идущий сон заканчивается в момент начала кормления (ADR-0020).
      */
     suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean
+
+    /**
+     * Добавляет бутылочку (ADR-0025). Идущий сон, начатый не позже неё, заканчивается в её время:
+     * кормят не во сне (ADR-0020). Сон, начатый позже, — бутылочку записали задним числом, он идёт.
+     */
+    suspend fun addBottle(bottle: Bottle)
 
     /** Выполняет [block] в одной транзакции: либо применяются все изменения, либо ни одного. */
     suspend fun <T> inTransaction(block: suspend () -> T): T
