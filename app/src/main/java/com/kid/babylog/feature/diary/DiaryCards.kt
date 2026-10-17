@@ -30,6 +30,7 @@ import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.formatAgo
+import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
@@ -66,8 +67,9 @@ internal fun SleepCard(
  * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
  * во время кормления — заканчивает; ⇄ в углу меняет грудь.
  *
- * Пока кормление не идёт — чем кормили и сколько прошло с конца ([afterFeedingCaption]): какой
- * грудью начинать теперь и можно ли купать или класть на живот. Только здесь: сводка дня — итоги
+ * Пока кормление не идёт — чем кормили, во сколько начали и сколько прошло с конца
+ * ([afterFeedingCaption]): какой грудью начинать теперь, когда кормить снова («каждые 3 часа» —
+ * от начала) и можно ли купать или класть на живот (от конца). Только здесь: сводка дня — итоги
  * дня, «последнее» она не повторяет (ADR-0026).
  */
 @Composable
@@ -101,11 +103,17 @@ internal fun awakeCaption(lastSleepEnd: Long?, now: Long): String? =
     sinceLast(lastSleepEnd, now)?.let { "не спит ${formatDuration(it)}" }
 
 /**
- * «левая, 40 мин назад», «бутылочка, 2 ч назад» — чем кормили и сколько прошло с конца последнего
- * кормления; не было или давно ([sinceLast]) — null.
+ * Две строки: чем кормили и во сколько начали — начало по часам, чтобы не путать его со второй
+ * строкой, — и сколько прошло с конца: «левая в 12:00» / «закончилось 40 мин назад». У бутылочки
+ * начало и конец — одно время: «бутылочка в 12:30» / «40 мин назад». Не было или давно ([sinceLast]) — null.
  */
-internal fun afterFeedingCaption(lastFeeding: LastFeeding?, now: Long): String? =
-    sinceLast(lastFeeding?.end, now)?.let { "${lastFeeding?.breast?.let(::breastLabel) ?: "бутылочка"}, ${formatAgo(it)}" }
+internal fun afterFeedingCaption(lastFeeding: LastFeeding?, now: Long): String? {
+    val ago = sinceLast(lastFeeding?.end, now) ?: return null
+    val breast = lastFeeding?.breast
+    val what = breast?.let(::breastLabel) ?: "бутылочка"
+    val since = if (breast == null) formatAgo(ago) else "закончилось ${formatAgo(ago)}"
+    return "$what в ${formatClock(lastFeeding!!.start)}\n$since"
+}
 
 /** Сколько прошло с [end]; сутки и больше — null: так долго не спят и не едят, просто не записывали. */
 private fun sinceLast(end: Long?, now: Long): Long? =

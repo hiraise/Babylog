@@ -219,6 +219,6 @@ class DiaryViewModelTest {
         val bottle = vm.state.value.events.single() as Bottle
         assertEquals(Triple(1L, 120, Milk.FORMULA), Triple(bottle.childId, bottle.volumeMl, bottle.milk))
         assertEquals(bottle, vm.state.value.lastBottle)
-        assertEquals(LastFeeding(5_000, breast = null), vm.state.value.lastFeeding)
+        assertEquals(LastFeeding(5_000, 5_000, breast = null), vm.state.value.lastFeeding)
     }
 }
