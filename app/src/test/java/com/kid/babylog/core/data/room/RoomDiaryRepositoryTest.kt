@@ -49,14 +49,18 @@ class RoomDiaryRepositoryTest {
     }
 
     @Test
-    fun `active feeding is the only one and does not block sleep`() = withRepository { repo ->
+    fun `active feeding is the only one and sleep ends it`() = withRepository { repo ->
         assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.LEFT))
         assertFalse(repo.startFeeding(childId = 1, start = T2, breast = Breast.RIGHT))
+        // Сон и кормление не идут одновременно (ADR-0020): начало сна заканчивает кормление
         assertTrue(repo.startSleep(childId = 1, start = T2))
         assertEquals(
-            listOf(Feeding(id = 1, childId = 1, start = T1, breast = Breast.LEFT), Sleep(id = 2, childId = 1, start = T2)),
+            listOf(Feeding(id = 1, childId = 1, start = T1, end = T2, breast = Breast.LEFT), Sleep(id = 2, childId = 1, start = T2)),
             repo.allEvents(),
         )
+        // …и наоборот; конец не раньше начала, даже если новое «было» раньше
+        assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.RIGHT))
+        assertEquals(Sleep(id = 2, childId = 1, start = T2, end = T2), repo.allEvents().last { it is Sleep })
     }
 
     @Test

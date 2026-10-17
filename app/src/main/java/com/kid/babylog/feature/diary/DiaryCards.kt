@@ -4,10 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -23,46 +21,63 @@ import com.kid.babylog.core.ui.components.ActionTile
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.ItemRow
-import com.kid.babylog.core.ui.components.RunningTimerCard
-import com.kid.babylog.core.ui.components.TimerStartCard
+import com.kid.babylog.core.ui.components.TimerCornerButton
+import com.kid.babylog.core.ui.components.TimerTile
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
 
-/** Таймер сна выбранного ребёнка: «Уснул(а)…» или идущий сон с кнопкой «Проснулся / Проснулась». */
+/** Таймер сна — плитка в ряду с кормлением (ADR-0021): касание начинает сон, во время сна — заканчивает. */
 @Composable
-internal fun SleepCard(child: Child, activeSleep: Sleep?, now: Long, onStart: () -> Unit, onEnd: () -> Unit) {
-    if (activeSleep == null) {
-        TimerStartCard(R.drawable.ic_sleep, "Сон", bySex(child.sex, "Уснул…", "Уснула…"), onStart)
-    } else {
-        RunningTimerCard("${child.name} спит", activeSleep.start, now) {
-            Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) {
-                Text(bySex(child.sex, "Проснулся", "Проснулась"))
-            }
-        }
-    }
+internal fun SleepCard(
+    child: Child,
+    activeSleep: Sleep?,
+    now: Long,
+    onStart: () -> Unit,
+    onEnd: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TimerTile(
+        icon = R.drawable.ic_sleep,
+        label = "Сон",
+        runningSince = activeSleep?.start,
+        now = now,
+        startLabel = "начать сон",
+        stopLabel = bySex(child.sex, "проснулся", "проснулась"),
+        onStart = onStart,
+        onStop = onEnd,
+        modifier = modifier,
+    )
 }
 
-/** Таймер кормления (ADR-0015): «Начать…» или идущее кормление с кнопками «Закончить» и «Сменить грудь». */
+/**
+ * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
+ * во время кормления — заканчивает; ⇄ в углу меняет грудь.
+ */
 @Composable
 internal fun FeedingCard(
-    childName: String,
     activeFeeding: Feeding?,
     now: Long,
     onStart: () -> Unit,
     onEnd: () -> Unit,
     onSwitchBreast: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    if (activeFeeding == null) {
-        TimerStartCard(R.drawable.ic_feeding, "Кормление", "Начать…", onStart)
-    } else {
-        RunningTimerCard("$childName ест · ${breastLabel(activeFeeding.breast)} грудь", activeFeeding.start, now) {
-            Button(onClick = onEnd, modifier = Modifier.fillMaxWidth()) { Text("Закончить") }
-            OutlinedButton(onClick = onSwitchBreast, modifier = Modifier.fillMaxWidth()) { Text("Сменить грудь") }
-        }
-    }
+    TimerTile(
+        icon = R.drawable.ic_feeding,
+        label = "Кормление",
+        runningSince = activeFeeding?.start,
+        now = now,
+        startLabel = "начать кормление",
+        stopLabel = "закончить кормление",
+        onStart = onStart,
+        onStop = onEnd,
+        modifier = modifier,
+        runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
+        corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
+    )
 }
 
 /** Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard]. */

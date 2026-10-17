@@ -72,6 +72,7 @@ private val AllIcons = listOf(
     R.drawable.ic_export to "export",
     R.drawable.ic_import to "import",
     R.drawable.ic_theme to "theme",
+    R.drawable.ic_swap to "swap",
 )
 
 @Preview(name = "AppIcon — все иконки", widthDp = 720)

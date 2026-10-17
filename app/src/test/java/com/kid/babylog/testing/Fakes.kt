@@ -69,12 +69,16 @@ class FakeDiaryRepository(
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean {
         if (events.value.any { it.childId == childId && it is Sleep && it.isActive }) return false
+        events.value.filterIsInstance<Feeding>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         addEvent(Sleep(childId = childId, start = start))
         return true
     }
 
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {
         if (events.value.any { it.childId == childId && it is Feeding && it.isActive }) return false
+        events.value.filterIsInstance<Sleep>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         addEvent(Feeding(childId = childId, start = start, breast = breast))
         return true
     }

@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
@@ -19,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -118,6 +120,43 @@ class DiaryViewModelTest {
         assertEquals(listOf(Breast.LEFT, Breast.RIGHT), feedings.map { it.breast })
         assertEquals(listOf(second, second), feedings.map { it.end })
         assertEquals(second, feedings[1].start) // правая начата ровно в конце левой: одно кормление в сводке
+    }
+
+    @Test
+    fun `sleep and feeding never run together`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 1_800_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startSleep(start + 600_000)
+        assertNull(vm.state.value.activeFeeding)
+        // Кормление закончилось в момент начала сна — с точностью до секунды, как хранит репозиторий
+        assertEquals(Instant.parse("2026-10-15T09:40:00Z").toEpochMilli(), vm.state.value.events.filterIsInstance<Feeding>().single().end)
+        vm.startFeeding(start + 1_200_000, Breast.RIGHT)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+    }
+
+    @Test
+    fun `stopping a timer by tap can be undone`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        assertEquals("Сон: 1 ч", vm.state.value.message)
+        assertTrue(vm.state.value.canUndo)
+        vm.consumeMessage(undo = true)
+        assertNull(vm.state.value.events.filterIsInstance<Sleep>().single().end)
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun `undo does not resume a timer once another one started`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        vm.startFeeding(now.toEpochMilli(), Breast.LEFT)
+        vm.consumeMessage(undo = true)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
     }
 
     @Test

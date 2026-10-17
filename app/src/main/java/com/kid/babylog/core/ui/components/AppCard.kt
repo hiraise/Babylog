@@ -15,6 +15,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Shape
@@ -37,6 +38,8 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  * @param onClickLabel что сделает нажатие, для TalkBack: «изменить запись»; без него TalkBack
  *   скажет общее «активировать».
  * @param contentPadding отступ содержимого от края карточки; по умолчанию `spacing.l`.
+ * @param containerColor фон; не `surfaceContainerLow` — только выделенная карточка, например
+ *   идущий таймер (`primary`, текст — [contentColor] `onPrimary`).
  * @param content содержимое — `Column` сверху вниз без промежутков: шаг между строками задавай
  *   вложенной колонкой с `Arrangement.spacedBy(spacing.…)`.
  */
@@ -46,17 +49,18 @@ fun AppCard(
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
     contentPadding: PaddingValues = PaddingValues(BabyLogTheme.spacing.l),
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
-    val colors = MaterialTheme.colorScheme
     // Цвет содержимого задан снаружи Column: от него берёт цвет и волна нажатия
-    CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
+    CompositionLocalProvider(LocalContentColor provides contentColor) {
         Column(
             modifier = modifier
                 .cardShadow(shape, BabyLogTheme.shadows.card)
                 .clip(shape)
-                .background(colors.surfaceContainerLow)
+                .background(containerColor)
                 .then(
                     if (onClick != null) {
                         Modifier.clickable(

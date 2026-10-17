@@ -25,8 +25,8 @@ import com.kid.babylog.R
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
- * Чип выбора варианта — обёртка `FilterChip` в стиле макета: вид подгузника, «5 мин назад»,
- * ребёнок в переключателе.
+ * Чип выбора варианта — обёртка `FilterChip` в стиле макета: вид подгузника, грудь, «5 мин назад»,
+ * пол ребёнка.
  *
  * Не выбран — фон `surfaceContainerLow`, текст `onSurfaceVariant`; выбран — фон `primary`, текст
  * `onPrimary`. Рамки нет; в светлой теме — мягкая тень темы по форме `MaterialTheme.shapes.small`.

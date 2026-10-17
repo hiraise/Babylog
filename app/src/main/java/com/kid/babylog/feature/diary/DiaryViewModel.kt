@@ -10,6 +10,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
+import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.feature.transfer.DocumentStore
 import com.kid.babylog.feature.transfer.describe
 import com.kid.babylog.feature.transfer.exportCsv
@@ -37,6 +38,9 @@ class DiaryViewModel(
 
     private val message = MutableStateFlow<String?>(null)
 
+    /** Таймер до остановки касанием карточки: его возвращает «Отменить» в снекбаре (ADR-0021). */
+    private val stopped = MutableStateFlow<BabyEvent?>(null)
+
     val state: StateFlow<DiaryUiState> =
         combine(repository.observeChildren(), selection.selectedChildId) { children, selectedId ->
             // Выбранного нет (не выбирали или удалён) — показываем первого
@@ -47,6 +51,7 @@ class DiaryViewModel(
                 events.map { DiaryUiState.of(children, child, it) }
             }
             .combine(message) { state, text -> state.copy(message = text) }
+            .combine(stopped) { state, timer -> state.copy(canUndo = timer != null) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryUiState())
 
     fun selectChild(childId: Long) = selection.select(childId)
@@ -65,7 +70,7 @@ class DiaryViewModel(
 
     /** Удаляет ребёнка с его записями; последнего ребёнка удалить нельзя. */
     fun deleteChild(child: Child) = viewModelScope.launch {
-        if (repository.deleteChild(child.id)) message.value = "Удалено: ${child.name}"
+        if (repository.deleteChild(child.id)) show("Удалено: ${child.name}")
     }
 
     /** Новая запись (id = 0) добавляется, существующая обновляется. */
@@ -84,7 +89,9 @@ class DiaryViewModel(
 
     fun endSleep() = viewModelScope.launch {
         val sleep = state.value.activeSleep ?: return@launch
-        repository.updateEvent(sleep.copy(end = maxOf(clock.millis(), sleep.start)))
+        val end = maxOf(clock.millis(), sleep.start)
+        repository.updateEvent(sleep.copy(end = end))
+        show("Сон: ${formatDuration(end - sleep.start)}", undo = sleep)
     }
 
     fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
@@ -104,31 +111,49 @@ class DiaryViewModel(
 
     fun endFeeding() = viewModelScope.launch {
         val feeding = state.value.activeFeeding ?: return@launch
-        repository.updateEvent(feeding.copy(end = maxOf(clock.millis(), feeding.start)))
+        val end = maxOf(clock.millis(), feeding.start)
+        repository.updateEvent(feeding.copy(end = end))
+        show("Кормление: ${formatDuration(end - feeding.start)}", undo = feeding)
     }
 
     fun exportTo(uri: String) = viewModelScope.launch {
-        message.value = runCatching {
+        show(runCatching {
             val export = exportCsv(repository)
             documents.write(uri, export.text)
             export.eventCount
         }.fold(
             onSuccess = { "Экспортировано записей: $it" },
             onFailure = { "Ошибка экспорта: ${it.message}" },
-        )
+        ))
     }
 
     /** Строки без колонки `child` (файлы старых версий) попадают к выбранному ребёнку. */
     fun importFrom(uri: String) = viewModelScope.launch {
         val child = state.value.child ?: return@launch
-        message.value = runCatching { importCsv(repository, documents.read(uri), defaultChildId = child.id) }
+        show(runCatching { importCsv(repository, documents.read(uri), defaultChildId = child.id) }
             .fold(
                 onSuccess = { it.describe() },
                 onFailure = { "Ошибка импорта: ${it.message}" },
-            )
+            ))
     }
 
-    fun consumeMessage() {
+    /**
+     * Снекбар закрыт. [undo] — нажали «Отменить»: остановленный таймер идёт дальше, если за это время
+     * не начался другой (сон и кормление не идут одновременно, ADR-0020).
+     */
+    fun consumeMessage(undo: Boolean = false) {
+        val timer = stopped.value
+        stopped.value = null
         message.value = null
+        if (undo && timer != null) viewModelScope.launch {
+            val current = state.value
+            if (current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(timer)
+        }
+    }
+
+    /** Сообщение для снекбара; [undo] — таймер, который вернёт «Отменить». */
+    private fun show(text: String, undo: BabyEvent? = null) {
+        stopped.value = undo
+        message.value = text
     }
 }

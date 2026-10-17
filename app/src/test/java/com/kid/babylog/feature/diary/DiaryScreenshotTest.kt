@@ -62,13 +62,16 @@ class DiaryScreenshotTest {
     fun `feeding in progress`() = capture("diary_feeding", sampleDiary(feedingNow = true), dark = false)
 
     @Test
+    fun `history tab`() = capture("diary_history", sampleDiary(), dark = false, tab = DiaryTab.HISTORY)
+
+    @Test
     fun `first launch`() = capture("diary_first_launch", FakeDiaryRepository(), dark = false)
 
-    private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean) {
+    private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean, tab: DiaryTab = DiaryTab.TODAY) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {})
+                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = tab)
             }
         }
     }
@@ -87,11 +90,9 @@ class DiaryScreenshotTest {
                 id = 6, childId = 1, start = at("2026-10-15T09:00:00Z"), end = at("2026-10-15T09:35:00Z"),
                 breast = Breast.RIGHT, note = "долго",
             ),
-            if (feedingNow) {
-                Feeding(id = 7, childId = 1, start = at("2026-10-15T09:48:00Z"), breast = Breast.LEFT)
-            } else {
-                Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z"))
-            },
+        ) + listOfNotNull(
+            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")).takeIf { !feedingNow },
+            Feeding(id = 8, childId = 1, start = at("2026-10-15T09:48:00Z"), breast = Breast.LEFT).takeIf { feedingNow },
         )
     }
 

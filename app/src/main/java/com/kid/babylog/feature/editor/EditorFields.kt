@@ -34,10 +34,19 @@ private val TIME_OPTIONS = listOf(
     "−1 ч" to 60,
 )
 
-/** Выбор «когда это было»: сейчас или N минут назад. */
+/**
+ * Таймер, который закончится, когда начнётся новый (ADR-0020): [what] — «Кормление» или «Сон»,
+ * [start] — его начало. Конец не раньше начала.
+ */
+class FinishingTimer(val what: String, val start: Long)
+
+/**
+ * Выбор «когда это было»: сейчас или N минут назад. С [finishing] под временем — когда закончится
+ * идущий другой таймер: сон и кормление не идут одновременно.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit) {
+internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit, finishing: FinishingTimer? = null) {
     val clock = LocalClock.current
     val spacing = BabyLogTheme.spacing
     // Часы тикают, пока лист открыт, чтобы подпись не расходилась с реально сохраняемым временем
@@ -63,12 +72,20 @@ internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit) {
                 )
             }
         }
+        val time = now - minutesAgo * 60_000L
         Text(
-            "Время: " + formatClock(now - minutesAgo * 60_000L),
+            "Время: " + formatClock(time),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = spacing.xs),
         )
+        if (finishing != null) {
+            Text(
+                "${finishing.what} закончится в ${formatClock(maxOf(finishing.start, time))}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

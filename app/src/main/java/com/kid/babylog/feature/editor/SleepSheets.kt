@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.DateTimeField
@@ -17,10 +18,10 @@ import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
 
-/** Начало сна: запускает таймер. */
+/** Начало сна: запускает таймер. Идущее кормление ([activeFeeding]) при этом закончится (ADR-0020). */
 @Composable
 fun SleepStartSheet(
-    childName: String,
+    activeFeeding: Feeding?,
     onDismiss: () -> Unit,
     onSave: (time: Long) -> Unit,
 ) {
@@ -28,11 +29,11 @@ fun SleepStartSheet(
     val resolveTime = rememberTimeResolver()
     AppSheet(
         onDismiss = onDismiss,
-        title = "Сон · $childName",
+        title = "Сон",
         icon = R.drawable.ic_sleep,
         confirm = SheetAction("Запустить таймер") { onSave(resolveTime(false, minutesAgo, 0L)) },
     ) {
-        TimeAgoPicker(minutesAgo) { minutesAgo = it }
+        TimeAgoPicker(minutesAgo, { minutesAgo = it }, activeFeeding?.let { FinishingTimer("Кормление", it.start) })
     }
 }
 

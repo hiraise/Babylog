@@ -81,6 +81,52 @@ fun diaperLabel(kind: DiaperKind, sex: Sex?): String = when (kind) {
     DiaperKind.MIXED -> "и то, и то"
 }
 
+/**
+ * Заголовок главного экрана: «Дневник Маши» — имя в родительном падеже ([genitiveName]). Имя,
+ * которое правила не склоняют уверенно (несколько слов, не кириллица), — «Дневник: Петя, младший».
+ */
+fun diaryTitle(name: String, sex: Sex?): String {
+    val trimmed = name.trim()
+    return genitiveName(trimmed, sex)?.let { "Дневник $it" } ?: "Дневник: $trimmed"
+}
+
+/** Имена с беглой гласной: «Павел» → «Павла», а не «Павела». Ключ — в нижнем регистре. */
+private val GENITIVE_EXCEPTIONS = mapOf("павел" to "павла", "лев" to "льва", "пётр" to "петра", "петр" to "петра")
+
+/**
+ * Родительный падеж имени по окончанию: Маша → Маши, Петя → Пети, Мария → Марии, Алиса → Алисы,
+ * Андрей → Андрея, Иван → Ивана; у девочек на мягкий знак — Любовь → Любови, на согласную не
+ * склоняются — Кармен (пол не указан — как мальчика, ADR-0016). Двойные через дефис склоняются по частям.
+ * null — склонять не берёмся: несколько слов, цифры, латиница.
+ */
+internal fun genitiveName(name: String, sex: Sex?): String? {
+    val cyrillic = name.isNotEmpty() && name.all { it == '-' || it in 'а'..'я' || it in 'А'..'Я' || it == 'ё' || it == 'Ё' }
+    if (!cyrillic || name.startsWith("-") || name.endsWith("-")) return null
+    return name.split("-").joinToString("-") { genitiveWord(it, sex) }
+}
+
+private fun genitiveWord(word: String, sex: Sex?): String {
+    val lower = word.lowercase()
+    GENITIVE_EXCEPTIONS[lower]?.let { return matchCase(it, word) }
+    val stem = word.dropLast(1)
+    val ending = when (lower.last()) {
+        'я' -> "и" // Петя → Пети, Мария → Марии, Илья → Ильи
+        'а' -> if (stem.lastOrNull()?.lowercaseChar()?.let { it in "гкхжчшщ" } == true) "и" else "ы" // Маша → Маши, Алиса → Алисы
+        'й' -> "я" // Андрей → Андрея
+        'ь' -> if (sex == Sex.GIRL) "и" else "я" // Любовь → Любови, Игорь → Игоря
+        in "бвгджзклмнпрстфхцчшщ" -> return if (sex == Sex.GIRL) word else matchCase(lower + "а", word) // Иван → Ивана
+        else -> return word // Нико, Мари: на гласные о, е, и, у, ю, ы, э имена не склоняются
+    }
+    return stem + if (word.length > 1 && word == word.uppercase()) ending.uppercase() else ending
+}
+
+/** [declined] в регистре исходного слова: «МАША» → «МАШИ», «маша» → «маши», «Маша» → «Маши». */
+private fun matchCase(declined: String, original: String): String = when {
+    original.length > 1 && original == original.uppercase() -> declined.uppercase()
+    original.first().isUpperCase() -> declined.replaceFirstChar(Char::titlecase)
+    else -> declined
+}
+
 /** Заголовок записи; [sex] — пол ребёнка, чья это запись. */
 fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
     is Feeding -> "Кормление · ${breastLabel(event.breast)}" + if (event.isActive) " · идёт" else ""

@@ -2,15 +2,18 @@ package com.kid.babylog.feature.diary
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +37,9 @@ import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.toLocalDate
+import com.kid.babylog.feature.children.ChildSelector
 import com.kid.babylog.feature.children.ChildSheet
+import com.kid.babylog.feature.children.ChildrenSheet
 import com.kid.babylog.feature.editor.EditEventSheet
 import com.kid.babylog.feature.editor.FeedingStartSheet
 import com.kid.babylog.feature.editor.NewEventSheet
@@ -53,7 +58,12 @@ private const val NONE = -1L
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChange: (ThemeMode) -> Unit) {
+fun DiaryScreen(
+    viewModel: DiaryViewModel,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    initialTab: DiaryTab = DiaryTab.TODAY,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
     var now by remember { mutableLongStateOf(clock.millis()) }
@@ -65,14 +75,21 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
     }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.consumeMessage()
+        state.message?.let { text ->
+            // Остановленный касанием таймер можно вернуть — сообщение висит дольше
+            val undo = state.canUndo
+            val result = snackbarHostState.showSnackbar(
+                message = text,
+                actionLabel = if (undo) "Отменить" else null,
+                duration = if (undo) SnackbarDuration.Long else SnackbarDuration.Short,
+            )
+            viewModel.consumeMessage(undo = result == SnackbarResult.ActionPerformed)
         }
     }
 
     val child = state.child
     // id вместо объектов: переживают поворот экрана
+    var tab by rememberSaveable { mutableStateOf(initialTab) }
     var newEvent by rememberSaveable { mutableStateOf<NewEventKind?>(null) }
     var startingSleep by rememberSaveable { mutableStateOf(false) }
     var startingFeeding by rememberSaveable { mutableStateOf(false) }
@@ -83,9 +100,14 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
     var childSheet by rememberSaveable { mutableStateOf(ChildSheetMode.NONE) }
     var confirmChildDelete by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var showChildren by rememberSaveable { mutableStateOf(false) }
     // История по одному дню, по умолчанию сегодня; при смене ребёнка — снова сегодня
-    var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(now.toLocalDate().toEpochDay()) }
-    val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
+    // NONE — «сегодня»: после полуночи история сама переходит на новый день. Запоминается только
+    // день, выбранный вручную; при смене ребёнка — снова сегодня
+    var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
+    val today = now.toLocalDate()
+    val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
+    val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -96,50 +118,53 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
 
     Scaffold(
         topBar = {
-            // Шапка сливается с фоном экрана, название — фирменным шрифтом, как логотип в макете
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Дневник малыша",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
-                actions = {
-                    IconButton(onClick = { menuOpen = true }) {
-                        AppIcon(R.drawable.ic_more, contentDescription = "Меню")
-                    }
-                },
-            )
+            Column {
+                // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
+                // как логотип в макете, под ним возраст и вес (ADR-0019)
+                TopAppBar(
+                    title = {
+                        if (child != null) {
+                            ChildSelector(child, state.lastWeight, now, onClick = { showChildren = true })
+                        } else {
+                            Text(
+                                "Дневник малыша",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = MaterialTheme.colorScheme.background,
+                    ),
+                    actions = {
+                        IconButton(onClick = { menuOpen = true }) {
+                            AppIcon(R.drawable.ic_more, contentDescription = "Меню")
+                        }
+                    },
+                )
+                DiaryTabs(tab) { tab = it }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (child != null) {
-            DiaryContent(
-                state = state,
-                child = child,
-                now = now,
-                selectedDate = selectedDate,
-                actions = DiaryActions(
-                    onSelectChild = viewModel::selectChild,
-                    onEditChild = { childSheet = ChildSheetMode.EDIT },
-                    onStartSleep = { startingSleep = true },
-                    onEndSleep = { viewModel.endSleep() },
-                    onStartFeeding = { startingFeeding = true },
-                    onEndFeeding = { viewModel.endFeeding() },
-                    onSwitchBreast = { viewModel.switchBreast() },
-                    onAdd = { newEvent = it },
-                    onEditEvent = { editingId = it.id },
-                    onDeleteEvent = { deletingId = it.id },
-                    onSelectDate = { selectedEpochDay = it.toEpochDay() },
-                    onPickDate = { showDaySelector = true },
-                ),
-                modifier = Modifier.padding(padding),
+            val actions = DiaryActions(
+                onStartSleep = { startingSleep = true },
+                onEndSleep = { viewModel.endSleep() },
+                onStartFeeding = { startingFeeding = true },
+                onEndFeeding = { viewModel.endFeeding() },
+                onSwitchBreast = { viewModel.switchBreast() },
+                onAdd = { newEvent = it },
+                onEditEvent = { editingId = it.id },
+                onDeleteEvent = { deletingId = it.id },
+                onSelectDate = selectDay,
+                onPickDate = { showDaySelector = true },
             )
+            when (tab) {
+                DiaryTab.TODAY -> TodayContent(state, child, now, actions, Modifier.padding(padding))
+                DiaryTab.HISTORY -> HistoryContent(state, child, now, selectedDate, actions, Modifier.padding(padding))
+            }
         }
     }
 
@@ -147,7 +172,6 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
         AppSheet(onDismiss = { menuOpen = false }, edgeToEdge = true) { closer ->
             // Пункт закрывает меню и только потом открывает следующий лист или выбор файла
             val pick = { action: () -> Unit -> closer.close { menuOpen = false; action() } }
-            SheetMenuItem(R.drawable.ic_add_child, "Добавить ребёнка", onClick = { pick { childSheet = ChildSheetMode.ADD } })
             SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
             SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
                 pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
@@ -176,7 +200,7 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
 
     if (startingSleep) {
         SleepStartSheet(
-            childName = child.name,
+            activeFeeding = state.activeFeeding,
             onDismiss = { startingSleep = false },
             onSave = {
                 viewModel.startSleep(it)
@@ -187,7 +211,7 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
 
     if (startingFeeding) {
         FeedingStartSheet(
-            childName = child.name,
+            activeSleep = state.activeSleep,
             onDismiss = { startingFeeding = false },
             onSave = { breast, time ->
                 viewModel.startFeeding(time, breast)
@@ -232,9 +256,30 @@ fun DiaryScreen(viewModel: DiaryViewModel, themeMode: ThemeMode, onThemeModeChan
             today = now.toLocalDate(),
             onDismiss = { showDaySelector = false },
             onPick = { day ->
-                selectedEpochDay = day.toEpochDay()
+                selectDay(day)
                 showDaySelector = false
             },
+        )
+    }
+
+    if (showChildren) {
+        ChildrenSheet(
+            children = state.children,
+            selectedId = child.id,
+            now = now,
+            onSelect = {
+                viewModel.selectChild(it)
+                showChildren = false
+            },
+            onEdit = {
+                showChildren = false
+                childSheet = ChildSheetMode.EDIT
+            },
+            onAdd = {
+                showChildren = false
+                childSheet = ChildSheetMode.ADD
+            },
+            onDismiss = { showChildren = false },
         )
     }
 

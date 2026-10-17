@@ -52,14 +52,23 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean = db.withTransaction {
         if (dao.countActive(childId, EventRecord.SLEEP) > 0) return@withTransaction false
+        finishActive(childId, EventRecord.FEEDING, at = start)
         addEvent(Sleep(childId = childId, start = start))
         true
     }
 
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean = db.withTransaction {
         if (dao.countActive(childId, EventRecord.FEEDING) > 0) return@withTransaction false
+        finishActive(childId, EventRecord.SLEEP, at = start)
         addEvent(Feeding(childId = childId, start = start, breast = breast))
         true
+    }
+
+    /** Сон и кормление не идут одновременно (ADR-0020): идущее заканчивается в момент [at], но не раньше своего начала. */
+    private suspend fun finishActive(childId: Long, type: String, at: Long) {
+        dao.activeEvents(childId, type).forEach { event ->
+            dao.updateEvent(event.copy(endTime = maxOf(event.startTime, at.truncatedToSecond())))
+        }
     }
 
     override suspend fun <T> inTransaction(block: suspend () -> T): T = db.withTransaction { block() }

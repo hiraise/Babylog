@@ -18,6 +18,8 @@ data class DiaryUiState(
     val lastWeight: Weight? = null,
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
+    /** У сообщения есть «Отменить»: таймер остановили касанием карточки (ADR-0021). */
+    val canUndo: Boolean = false,
 ) {
     companion object {
         fun of(children: List<Child>, child: Child?, events: List<BabyEvent>) = DiaryUiState(

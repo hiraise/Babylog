@@ -12,14 +12,15 @@ import androidx.compose.runtime.setValue
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.DateTimeField
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
 
-/** Начало кормления (ADR-0015): грудь и «когда»; запускает таймер. */
+/** Начало кормления (ADR-0015): грудь и «когда»; запускает таймер. Идущий [activeSleep] закончится (ADR-0020). */
 @Composable
 fun FeedingStartSheet(
-    childName: String,
+    activeSleep: Sleep?,
     onDismiss: () -> Unit,
     onSave: (breast: Breast, time: Long) -> Unit,
 ) {
@@ -29,14 +30,14 @@ fun FeedingStartSheet(
     val selected = breast
     AppSheet(
         onDismiss = onDismiss,
-        title = "Кормление · $childName",
+        title = "Кормление",
         icon = R.drawable.ic_feeding,
         confirm = SheetAction("Запустить таймер", enabled = selected != null) {
             if (selected != null) onSave(selected, resolveTime(false, minutesAgo, 0L))
         },
     ) {
         BreastChips(breast) { breast = it }
-        TimeAgoPicker(minutesAgo) { minutesAgo = it }
+        TimeAgoPicker(minutesAgo, { minutesAgo = it }, activeSleep?.let { FinishingTimer("Сон", it.start) })
     }
 }
 
