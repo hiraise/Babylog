@@ -46,7 +46,9 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  * подпись [label], без кнопок. Ставь две плитки в ряд: `Row(Modifier.height(IntrinsicSize.Min))`,
  * у каждой `Modifier.weight(1f).fillMaxHeight()` — тогда они одной высоты (ADR-0021).
  *
- * Пока таймер не идёт ([runningSince] = null) — фон карточки, касание — [onStart]. Идёт — фон
+ * Пока таймер не идёт ([runningSince] = null) — фон карточки, касание — [onStart], под подписью —
+ * [idleCaption]: сколько прошло с конца прошлого («не спит 1 ч 20 мин»), чтобы не идти за этим
+ * в «Историю». Идёт — фон
  * `primary`, иконка поднимается, под ней время с [runningSince], подпись —
  * [runningLabel] (например «левая грудь»); касание — [onStop]. [corner] — необязательная кнопка
  * в правом верхнем углу идущего таймера (сменить грудь).
@@ -65,6 +67,7 @@ fun TimerTile(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
     runningLabel: String = label,
+    idleCaption: String? = null,
     corner: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BabyLogTheme.spacing
@@ -124,6 +127,24 @@ fun TimerTile(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                // Уходит, пока выезжает время, и наоборот. Две строки ниже строки времени — высота
+                // плитки по-прежнему задаётся идущим таймером
+                AnimatedVisibility(
+                    visible = !running && idleCaption != null,
+                    enter = fadeIn(tween(TILE_MOTION_MS)) +
+                        expandVertically(tween(TILE_MOTION_MS, easing = FastOutSlowInEasing), expandFrom = Alignment.Top),
+                    exit = fadeOut(tween(TILE_MOTION_MS)) +
+                        shrinkVertically(tween(TILE_MOTION_MS, easing = FastOutSlowInEasing), shrinkTowards = Alignment.Top),
+                ) {
+                    Text(
+                        idleCaption.orEmpty(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             if (running && corner != null) {
                 Box(Modifier.align(Alignment.TopEnd)) { corner() }
@@ -153,6 +174,7 @@ private fun TimerTilePreview() = LightDarkPreview {
             R.drawable.ic_sleep, "Сон", runningSince = null, now = start,
             startLabel = "начать сон", stopLabel = "проснулся", onStart = {}, onStop = {},
             modifier = Modifier.weight(1f).fillMaxHeight(),
+            idleCaption = "не спит 1 ч 20 мин",
         )
         TimerTile(
             R.drawable.ic_feeding, "Кормление", runningSince = start, now = start + 754_000,
