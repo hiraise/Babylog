@@ -94,7 +94,7 @@ internal fun TodayContent(
             }
         }
         item(key = "quick") {
-            QuickActions(actions.onAdd)
+            QuickActions(state.lastDiaper, sleeping = state.activeSleep != null, now = now, onAdd = actions.onAdd)
         }
         item(key = "summary") {
             DaySummaryCard(events = state.events, date = now.toLocalDate(), now = now, sex = child.sex)

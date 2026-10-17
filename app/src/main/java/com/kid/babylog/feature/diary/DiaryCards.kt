@@ -1,9 +1,12 @@
 package com.kid.babylog.feature.diary
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -106,15 +109,43 @@ private fun sinceLast(end: Long?, now: Long): Long? =
 
 private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
 
-/** Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard]. */
+/**
+ * Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard].
+ *
+ * Под «Подгузник» — сколько прошло с последней смены ([diaperCaption]); давно ([diaperOverdue]) —
+ * пояснение выделено. Это только на плитке: сводка дня его не повторяет — одно и то же в двух местах
+ * с разным расчётом расходится.
+ */
 @Composable
-internal fun QuickActions(onAdd: (NewEventKind) -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
-        ActionTile(R.drawable.ic_diaper, "Подгузник", { onAdd(NewEventKind.DIAPER) }, Modifier.weight(1f))
-        ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, Modifier.weight(1f))
-        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, Modifier.weight(1f))
+internal fun QuickActions(lastDiaper: Long?, sleeping: Boolean, now: Long, onAdd: (NewEventKind) -> Unit) {
+    // IntrinsicSize.Min: плитки одной высоты, хотя пояснение есть только у подгузника
+    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
+        val tile = Modifier.weight(1f).fillMaxHeight()
+        ActionTile(
+            R.drawable.ic_diaper,
+            "Подгузник",
+            { onAdd(NewEventKind.DIAPER) },
+            tile,
+            caption = diaperCaption(lastDiaper, now),
+            highlight = diaperOverdue(lastDiaper, sleeping, now),
+        )
+        ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, tile)
+        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile)
     }
 }
+
+/** «2 ч 10 мин назад» — с последней смены подгузника; не меняли или давно ([sinceLast]) — null. */
+internal fun diaperCaption(lastDiaper: Long?, now: Long): String? = sinceLast(lastDiaper, now)?.let(::formatAgo)
+
+/**
+ * Пора ли менять подгузник: с последней смены прошло [DIAPER_CHANGE_MS] и больше. Пока малыш спит —
+ * нет: будить ради подгузника не нужно. Нет пояснения ([diaperCaption] — null) — тоже нет.
+ */
+internal fun diaperOverdue(lastDiaper: Long?, sleeping: Boolean, now: Long): Boolean =
+    !sleeping && (sinceLast(lastDiaper, now) ?: 0) >= DIAPER_CHANGE_MS
+
+/** Подгузник меняют каждые 2–3 часа — после трёх пояснение на плитке выделяется. */
+private const val DIAPER_CHANGE_MS = 3 * 60 * 60 * 1000L
 
 /** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
 @Composable
