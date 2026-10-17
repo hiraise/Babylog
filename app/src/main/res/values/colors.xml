@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFE3EC</color>
+    <!-- Фон значка приложения — primary светлой темы; совпадение проверяет ThemeWindowTest -->
+    <color name="ic_launcher_background">#348333</color>
 
     <!--
         Фон окна и системных панелей до первой отрисовки Compose. Совпадает с background

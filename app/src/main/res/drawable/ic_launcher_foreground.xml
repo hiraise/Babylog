@@ -1,18 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Значок приложения: мама склонилась к малышу у груди. Холст адаптивной иконки 108 × 108,
+    видна середина 72 × 72, главное — в круге диаметром 66.
+    Цвета — из палитры темы (core/ui/theme/Color.kt): мама — onPrimary #FFFFFF, малыш —
+    tertiaryContainer #FEC874, фон — primary (ic_launcher_background в values/colors.xml).
+    Зазор вокруг головы малыша и закрытые глаза — прозрачные вырезы, а не линии цвета фона:
+    этот же рисунок служит монохромным слоем (mipmap-anydpi-v26/ic_launcher.xml), где система
+    закрашивает всё непрозрачное одним цветом.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Месяц -->
+    <!-- Грудь и плечо мамы: круг с вырезом под голову малыша (зазор 2,5) -->
     <path
-        android:fillColor="#7E6BC4"
-        android:pathData="M58,30 A24,24 0 1,0 58,78 A19,19 0 1,1 58,30 Z" />
-    <!-- Звёзды -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M60.473,58.663 A28,28 0 1,0 72.493,76.693 A11.25,11.25 0 0,1 60.473,58.663 Z" />
+    <!-- Пучок -->
     <path
-        android:fillColor="#7E6BC4"
-        android:pathData="M70,40 l1.8,4.2 4.2,1.8 -4.2,1.8 -1.8,4.2 -1.8,-4.2 -4.2,-1.8 4.2,-1.8 Z" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M28.5,38 A5,5 0 1,0 38.5,38 A5,5 0 1,0 28.5,38 Z" />
+    <!-- Голова мамы, закрытый глаз — вырез -->
     <path
-        android:fillColor="#7E6BC4"
-        android:pathData="M76,58 l1.2,2.8 2.8,1.2 -2.8,1.2 -1.2,2.8 -1.2,-2.8 -2.8,-1.2 2.8,-1.2 Z" />
+        android:fillColor="#FFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M34,36 A13,13 0 1,0 60,36 A13,13 0 1,0 34,36 Z M49.82,40.41 Q54,41.79 58.18,40.41 Q54,46.19 49.82,40.41 Z" />
+    <!-- Голова малыша, закрытый глаз — вырез -->
+    <path
+        android:fillColor="#FEC874"
+        android:fillType="evenOdd"
+        android:pathData="M60.25,66 A8.75,8.75 0 1,0 77.75,66 A8.75,8.75 0 1,0 60.25,66 Z M61.93,65.43 Q64.5,66.01 67.07,65.43 Q64.5,70.01 61.93,65.43 Z" />
+    <!-- Завиток на макушке малыша -->
+    <path
+        android:pathData="M69.5,57 C69,52 74,50.5 75.5,53.5"
+        android:strokeWidth="2.5"
+        android:strokeColor="#FEC874"
+        android:strokeLineCap="round" />
 </vector>
