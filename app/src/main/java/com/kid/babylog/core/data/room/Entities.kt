@@ -46,6 +46,33 @@ data class EventEntity(
     val note: String,
 )
 
+/**
+ * Фото записи (ADR-0024): удаляется вместе с записью (`CASCADE`). Записи правятся только `UPDATE`
+ * (`@Update`): `REPLACE` удалил бы строку записи, а с ней каскадом и фото.
+ */
+@Entity(
+    tableName = "event_photos",
+    foreignKeys = [
+        ForeignKey(
+            entity = EventEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["eventId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("eventId")],
+)
+data class EventPhotoEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val eventId: Long,
+    /** Порядок фото в записи, с нуля. */
+    val position: Int,
+    val jpeg: ByteArray,
+)
+
+/** Сколько фото у записи [eventId] — для отметки в истории, без самих фото. */
+data class PhotoCount(val eventId: Long, val count: Int)
+
 fun ChildEntity.toChild() =
     Child(id = id, name = name, birthDate = birthDate, sex = Sex.fromCode(sex), photo = photo?.let(::ChildPhoto))
 

@@ -74,3 +74,15 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         db.execSQL("ALTER TABLE `children` ADD COLUMN `photo` BLOB")
     }
 }
+
+/** v6 → v7: фото записей (ADR-0024) — новая таблица; у прежних записей фото нет. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `event_photos` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`eventId` INTEGER NOT NULL, `position` INTEGER NOT NULL, `jpeg` BLOB NOT NULL, " +
+                "FOREIGN KEY(`eventId`) REFERENCES `events`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_event_photos_eventId` ON `event_photos` (`eventId`)")
+    }
+}

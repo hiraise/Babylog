@@ -4,10 +4,15 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.Diaper
+import com.kid.babylog.core.model.DiaperKind
+import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -97,6 +102,37 @@ class RoomDiaryRepositoryTest {
 
         assertTrue(repo.deleteChild(id))
         assertEquals(listOf(null), repo.allChildren().map { it.photo })
+    }
+
+    @Test
+    fun `event photos keep their order, survive editing the record and go with it`() = withRepository { repo ->
+        val diaper = Diaper(childId = 1, start = T1, kind = DiaperKind.DIRTY)
+        val id = repo.addEvent(diaper)
+        repo.setEventPhotos(id, PhotoEdit(keep = emptyList(), add = listOf(byteArrayOf(1), byteArrayOf(2), byteArrayOf(3))))
+        val (a, b, c) = repo.observeEventPhotos(id).first()
+        assertEquals(listOf(1, 2, 3), listOf(a, b, c).map { it.jpeg.single().toInt() })
+
+        // Убрали второе, переставили, добавили новое — в конец
+        repo.setEventPhotos(id, PhotoEdit(keep = listOf(c.id, a.id), add = listOf(byteArrayOf(4))))
+        assertEquals(listOf(3, 1, 4), repo.observeEventPhotos(id).first().map { it.jpeg.single().toInt() })
+
+        // Правка записи — UPDATE, а не REPLACE: фото не уходят каскадом
+        repo.updateEvent(diaper.copy(id = id, kind = DiaperKind.MIXED))
+        assertEquals(mapOf(id to 3), repo.observePhotoCounts(1).first())
+
+        repo.deleteEvent(diaper.copy(id = id))
+        assertEquals(emptyList<EventPhoto>(), repo.observeEventPhotos(id).first())
+    }
+
+    @Test
+    fun `deleting a child removes the photos of its records`() = withRepository { repo ->
+        val second = repo.addChild("Петя", birthDate = null, sex = null, photo = null)
+        val id = repo.addEvent(Diaper(childId = second, start = T1, kind = DiaperKind.WET))
+        repo.setEventPhotos(id, PhotoEdit(keep = emptyList(), add = listOf(byteArrayOf(1))))
+        assertEquals(mapOf(id to 1), repo.observePhotoCounts(second).first())
+
+        assertTrue(repo.deleteChild(second))
+        assertEquals(emptyList<EventPhoto>(), repo.observeEventPhotos(id).first())
     }
 
     private companion object {

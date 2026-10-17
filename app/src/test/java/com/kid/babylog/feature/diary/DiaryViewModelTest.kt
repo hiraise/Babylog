@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -80,6 +81,21 @@ class DiaryViewModelTest {
         assertEquals(Child(3, "Вася", null, Sex.BOY, photo), vm.state.value.child)
         vm.addChild("вася", birthDate = null, sex = null, photo = null)
         assertEquals(3, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `new diaper is saved with its photos, editing without photos keeps them`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Diaper(childId = 1, start = 1_000, kind = DiaperKind.DIRTY), PhotoEdit(emptyList(), listOf(byteArrayOf(1), byteArrayOf(2))))
+        val diaper = vm.state.value.events.single() as Diaper
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        vm.saveEvent(diaper.copy(note = "зелёный"))
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        val first = repo.photos.value.getValue(diaper.id).first()
+        vm.saveEvent(diaper, PhotoEdit(keep = listOf(first.id), add = emptyList()))
+        assertEquals(mapOf(diaper.id to 1), vm.state.value.photoCounts)
     }
 
     @Test

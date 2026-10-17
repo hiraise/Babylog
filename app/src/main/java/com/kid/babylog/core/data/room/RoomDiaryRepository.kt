@@ -8,8 +8,10 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.flow.Flow
@@ -43,13 +45,25 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
         true
     }
 
-    override suspend fun addEvent(event: BabyEvent) {
-        dao.insertEvent(event.toEntity().truncated().copy(id = 0))
-    }
+    override suspend fun addEvent(event: BabyEvent): Long = dao.insertEvent(event.toEntity().truncated().copy(id = 0))
 
     override suspend fun updateEvent(event: BabyEvent) = dao.updateEvent(event.toEntity().truncated())
 
     override suspend fun deleteEvent(event: BabyEvent) = dao.deleteEvent(event.id)
+
+    override fun observeEventPhotos(eventId: Long): Flow<List<EventPhoto>> =
+        dao.observeEventPhotos(eventId).map { list -> list.map { EventPhoto(it.id, it.jpeg) } }
+
+    override fun observePhotoCounts(childId: Long): Flow<Map<Long, Int>> =
+        dao.observePhotoCounts(childId).map { rows -> rows.associate { it.eventId to it.count } }
+
+    override suspend fun setEventPhotos(eventId: Long, edit: PhotoEdit) = db.withTransaction {
+        dao.deletePhotosExcept(eventId, edit.keep)
+        edit.keep.forEachIndexed { position, id -> dao.movePhoto(id, eventId, position) }
+        edit.add.forEachIndexed { i, jpeg ->
+            dao.insertPhoto(EventPhotoEntity(eventId = eventId, position = edit.keep.size + i, jpeg = jpeg))
+        }
+    }
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean = db.withTransaction {
         if (dao.countActive(childId, EventRecord.SLEEP) > 0) return@withTransaction false

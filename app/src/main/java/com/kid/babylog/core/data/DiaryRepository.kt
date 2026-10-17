@@ -4,6 +4,8 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import kotlinx.coroutines.flow.Flow
 
@@ -32,7 +34,8 @@ interface DiaryRepository {
     /** Удаляет ребёнка вместе с его записями. Последнего ребёнка не удаляет и возвращает false. */
     suspend fun deleteChild(childId: Long): Boolean
 
-    suspend fun addEvent(event: BabyEvent)
+    /** Возвращает id новой записи. */
+    suspend fun addEvent(event: BabyEvent): Long
 
     suspend fun updateEvent(event: BabyEvent)
 
@@ -49,6 +52,15 @@ interface DiaryRepository {
      * Идущий сон заканчивается в момент начала кормления (ADR-0020).
      */
     suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean
+
+    /** Фото записи по порядку (ADR-0024). */
+    fun observeEventPhotos(eventId: Long): Flow<List<EventPhoto>>
+
+    /** Сколько фото у записей ребёнка: id записи → число; записей без фото в ней нет. */
+    fun observePhotoCounts(childId: Long): Flow<Map<Long, Int>>
+
+    /** Оставляет у записи фото [PhotoEdit.keep] в этом порядке, остальные удаляет, добавляет [PhotoEdit.add]. */
+    suspend fun setEventPhotos(eventId: Long, edit: PhotoEdit)
 
     /** Выполняет [block] в одной транзакции: либо применяются все изменения, либо ни одного. */
     suspend fun <T> inTransaction(block: suspend () -> T): T

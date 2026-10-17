@@ -7,9 +7,12 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
+import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -79,6 +82,28 @@ class MigrationTest {
             val photo = ChildPhoto(byteArrayOf(1, 2, 3))
             repo.updateChild(repo.allChildren().single().copy(photo = photo))
             assertEquals(photo, repo.allChildren().single().photo)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migration 6 to 7 adds an empty photo table and keeps the records`() = runBlocking {
+        helper.createDatabase(DB_NAME, 6).use { db ->
+            db.execSQL("INSERT INTO children (id, name, birthDate, sex, photo) VALUES (1, 'Маша', NULL, NULL, NULL)")
+            db.execSQL(
+                "INSERT INTO events (id, childId, type, startTime, endTime, detail, note) VALUES (5, 1, 'DIAPER', ?, NULL, 'DIRTY', '')",
+                arrayOf<Any?>(T1),
+            )
+        }
+        helper.runMigrationsAndValidate(DB_NAME, 7, true, MIGRATION_6_7).close()
+        val db = AppDatabase.build(context)
+        try {
+            val repo = RoomDiaryRepository(db)
+            assertEquals(listOf(Diaper(id = 5, childId = 1, start = T1, kind = DiaperKind.DIRTY)), repo.allEvents())
+            assertEquals(emptyList<EventPhoto>(), repo.observeEventPhotos(5).first())
+            repo.setEventPhotos(5, PhotoEdit(keep = emptyList(), add = listOf(byteArrayOf(1))))
+            assertEquals(mapOf(5L to 1), repo.observePhotoCounts(1).first())
         } finally {
             db.close()
         }
