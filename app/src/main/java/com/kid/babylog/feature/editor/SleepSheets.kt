@@ -53,7 +53,7 @@ internal fun SleepEditSheet(
     val valid = !hasEnd || end >= start
     AppSheet(
         onDismiss = onDismiss,
-        title = "Сон — правка",
+        title = "Сон",
         icon = R.drawable.ic_sleep,
         confirm = SheetAction("Сохранить", enabled = valid) { onSave(start, if (hasEnd) end else null, note.trim()) },
     ) {

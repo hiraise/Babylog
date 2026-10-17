@@ -34,7 +34,7 @@ internal fun WeightSheet(
     val grams = weightText.toIntOrNull()?.takeIf { it in Weight.RANGE }
     AppSheet(
         onDismiss = onDismiss,
-        title = if (isEdit) "Вес — правка" else "Вес",
+        title = "Вес",
         icon = R.drawable.ic_weight,
         confirm = SheetAction("Сохранить", enabled = grams != null) {
             if (grams != null) onSave(grams, resolveTime(isEdit, minutesAgo, editTime), note.trim())
