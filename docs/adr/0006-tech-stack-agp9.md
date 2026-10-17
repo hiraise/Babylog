@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-15
-- **Затрагивает:** `build.gradle.kts`, `app/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `gradle/wrapper/`, `scripts/dev.sh`
+- **Затрагивает:** `build.gradle.kts`, `app/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `gradle/wrapper/`, выбор JDK в `scripts/dev.sh`
 - **Заменяет:** [ADR-0003](0003-tech-stack.md)
 
 ## Контекст

@@ -3,7 +3,7 @@
 - **Статус:** Принято
 - **Дата:** 2026-10-16
 - **Заменяет:** часть [ADR-0006](0006-tech-stack-agp9.md) о `material-icons-core`
-- **Затрагивает:** `core/ui/theme/`, `core/ui/components/`, `core/ui/EventIcons.kt`, UI в `feature/*/`, `res/font/`, `res/drawable/ic_*.xml`, `res/values/`, `res/values-night/` и `res/values-v27/` (`themes.xml`, `colors.xml`, `bools.xml`), `assets/licenses/`, `app/build.gradle.kts`, `scripts/dev.sh`
+- **Затрагивает:** UI в `core/ui/` и `feature/*/`, `res/font/`, `res/drawable/ic_*.xml`, `res/values*/` (`themes.xml`, `colors.xml`, `bools.xml`), библиотеки шрифтов и иконок в `app/build.gradle.kts`
 
 ## Контекст
 

@@ -37,7 +37,10 @@ fun eventIcon(event: BabyEvent): Int = when (event) {
     is Weight -> R.drawable.ic_weight
 }
 
-/** Иконка вида подгузника (ADR-0014): капля — пописал, волны запаха — покакал, капля и волны — и то, и то. */
+/**
+ * Иконка вида подгузника — свои иконки (ADR-0014): капля — пописал, волны запаха — покакал,
+ * капля и волны — и то, и то. Одна иконка на все виды не годится: вид не различить без подписи.
+ */
 @DrawableRes
 fun diaperIcon(kind: DiaperKind): Int = when (kind) {
     DiaperKind.WET -> R.drawable.ic_diaper_wet

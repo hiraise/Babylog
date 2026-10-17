@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `core/ui/components/AppCard.kt` (`containerColor`), `feature/diary/` (`DiaryCards.kt`, `DiaryContent.kt`, `DiaryViewModel.kt`, `DiaryUiState.kt`, `DiaryScreen.kt`), `DiaryViewModelTest`
+- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `feature/diary/` (`DiaryCards.kt`; отмена остановки — `DiaryViewModel.kt`)
 
 ## Контекст
 
