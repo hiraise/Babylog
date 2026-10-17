@@ -10,35 +10,58 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.DateTimeField
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
 
-/** Начало кормления (ADR-0015): грудь и «когда»; запускает таймер. Идущий [activeSleep] закончится (ADR-0020). */
+/**
+ * Начало кормления: грудь и «когда» — запускает таймер (ADR-0015); или бутылочка — объём и что
+ * внутри, сохраняется сразу, без таймера (ADR-0025). Объём и что внутри — как у прошлой бутылочки
+ * [lastBottle]: обычно они день ото дня одни и те же. Идущий [activeSleep] закончится (ADR-0020).
+ */
 @Composable
 fun FeedingStartSheet(
     activeSleep: Sleep?,
+    lastBottle: Bottle?,
     onDismiss: () -> Unit,
     onSave: (breast: Breast, time: Long) -> Unit,
+    onSaveBottle: (volumeMl: Int, milk: Milk?, time: Long) -> Unit,
 ) {
-    var breast by rememberSaveable { mutableStateOf<Breast?>(null) }
+    var choice by rememberSaveable { mutableStateOf<FeedingChoice?>(null) }
+    var volume by rememberSaveable { mutableStateOf(lastBottle?.volumeMl?.toString() ?: "") }
+    var milk by rememberSaveable { mutableStateOf(lastBottle?.milk) }
     var minutesAgo by rememberSaveable { mutableIntStateOf(0) }
     val resolveTime = rememberTimeResolver()
-    val selected = breast
-    AppSheet(
-        onDismiss = onDismiss,
-        title = "Кормление",
-        icon = R.drawable.ic_feeding,
-        confirm = SheetAction("Запустить таймер", enabled = selected != null) {
-            if (selected != null) onSave(selected, resolveTime(false, minutesAgo, 0L))
-        },
-    ) {
-        BreastChips(breast) { breast = it }
+    val volumeMl = bottleVolume(volume)
+    val confirm = when (val selected = choice) {
+        FeedingChoice.BOTTLE -> SheetAction("Сохранить", enabled = volumeMl != null) {
+            if (volumeMl != null) onSaveBottle(volumeMl, milk, resolveTime(false, minutesAgo, 0L))
+        }
+        else -> SheetAction("Запустить таймер", enabled = selected != null) {
+            selected?.breast?.let { onSave(it, resolveTime(false, minutesAgo, 0L)) }
+        }
+    }
+    AppSheet(onDismiss = onDismiss, title = "Кормление", icon = R.drawable.ic_feeding, confirm = confirm) {
+        OptionChips(
+            options = FeedingChoice.entries.map { it to it.label },
+            selected = choice,
+            onSelect = { choice = it },
+        )
+        if (choice == FeedingChoice.BOTTLE) BottleFields(volume, { volume = it }, milk, { milk = it })
         TimeAgoPicker(minutesAgo, { minutesAgo = it }, activeSleep?.let { FinishingTimer("Сон", it.start) })
     }
+}
+
+/** Чем кормят: грудью — таймер, бутылочкой — разовая запись. */
+private enum class FeedingChoice(val label: String, val breast: Breast?) {
+    LEFT("Левая грудь", Breast.LEFT),
+    RIGHT("Правая грудь", Breast.RIGHT),
+    BOTTLE("Бутылочка", null),
 }
 
 /** Правка кормления: грудь, начало и (у законченного) конец. */

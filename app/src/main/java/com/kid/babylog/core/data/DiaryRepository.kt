@@ -1,6 +1,7 @@
 package com.kid.babylog.core.data
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
@@ -61,6 +62,12 @@ interface DiaryRepository {
 
     /** Оставляет у записи фото [PhotoEdit.keep] в этом порядке, остальные удаляет, добавляет [PhotoEdit.add]. */
     suspend fun setEventPhotos(eventId: Long, edit: PhotoEdit)
+
+    /**
+     * Добавляет бутылочку (ADR-0025). Идущий сон, начатый не позже неё, заканчивается в её время:
+     * кормят не во сне (ADR-0020). Сон, начатый позже, — бутылочку записали задним числом, он идёт.
+     */
+    suspend fun addBottle(bottle: Bottle)
 
     /** Выполняет [block] в одной транзакции: либо применяются все изменения, либо ни одного. */
     suspend fun <T> inTransaction(block: suspend () -> T): T

@@ -1,11 +1,13 @@
 package com.kid.babylog.feature.summary
 
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import org.junit.Assert.assertEquals
@@ -142,4 +144,27 @@ class DaySummaryTest {
     /** Строка так, как её читает TalkBack: метка, значение, разбивка с описаниями вместо иконок. */
     private fun SummaryLine.shown() =
         "$label $value" + if (parts.isEmpty()) "" else parts.joinToString(" · ", " (", ")") { "${it.description}×${it.count}" }
+
+    @Test
+    fun `bottles count as feedings with their volume and may be the last feeding`() {
+        val events = listOf(
+            fed(1, at(today, 8), Breast.LEFT),
+            Bottle(2, 1, at(today, 10), volumeMl = 120, milk = Milk.FORMULA),
+            Bottle(3, 1, at(today, 11), volumeMl = 90),
+            Bottle(4, 1, at(yesterday, 22), volumeMl = 150),
+        )
+        val summary = summarizeDay(events, today, now, zone)
+        assertEquals(3, summary.feedings)
+        assertEquals(2 to 210, summary.bottles to summary.bottleMl)
+        assertEquals(
+            "Кормлений: 3 (бутылочкой 2, 210\u00A0мл) · последнее: бутылочка 90\u00A0мл, 1 ч назад",
+            summary.lines(now, null).first().shown(),
+        )
+        // Грудь позже бутылочки — последнее кормление грудью
+        val withBreast = summarizeDay(events + fed(5, at(today, 11, 30), Breast.RIGHT), today, now, zone)
+        assertEquals(
+            "Кормлений: 4 (бутылочкой 2, 210\u00A0мл) · последнее: правая, 30 мин назад",
+            withBreast.lines(now, null).first().shown(),
+        )
+    }
 }

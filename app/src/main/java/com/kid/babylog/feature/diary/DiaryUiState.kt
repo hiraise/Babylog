@@ -1,6 +1,7 @@
 package com.kid.babylog.feature.diary
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
@@ -20,10 +21,15 @@ data class DiaryUiState(
     val activeFeeding: Feeding? = null,
     /** Конец последнего законченного сна: «не спит 1 ч 20 мин» на плитке сна. */
     val lastSleepEnd: Long? = null,
-    /** Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления. */
+    /**
+     * Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления.
+     * Бутылочка — разовая запись: её конец — её время (ADR-0025).
+     */
     val lastFeedingEnd: Long? = null,
     /** Время последней смены подгузника: «2 ч 10 мин назад» на плитке «Подгузник». */
     val lastDiaper: Long? = null,
+    /** Последняя бутылочка: с её объёмом и «что внутри» открывается следующая (ADR-0025). */
+    val lastBottle: Bottle? = null,
     val lastWeight: Weight? = null,
     /** Лекарства из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
     val pastMedicines: List<PastMedicine> = emptyList(),
@@ -42,7 +48,14 @@ data class DiaryUiState(
             activeSleep = events.firstNotNullOfOrNull { (it as? Sleep)?.takeIf(Sleep::isActive) },
             activeFeeding = events.firstNotNullOfOrNull { (it as? Feeding)?.takeIf(Feeding::isActive) },
             lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
-            lastFeedingEnd = events.filterIsInstance<Feeding>().mapNotNull { it.end }.maxOrNull(),
+            lastFeedingEnd = events.mapNotNull {
+                when (it) {
+                    is Feeding -> it.end
+                    is Bottle -> it.start
+                    else -> null
+                }
+            }.maxOrNull(),
+            lastBottle = events.firstNotNullOfOrNull { it as? Bottle },
             lastDiaper = events.firstNotNullOfOrNull { (it as? Diaper)?.start },
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
             pastMedicines = pastMedicines(events),

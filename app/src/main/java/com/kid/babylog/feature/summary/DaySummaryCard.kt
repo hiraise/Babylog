@@ -27,6 +27,7 @@ import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.ui.bottleLabel
 import com.kid.babylog.core.ui.breastLabel
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
@@ -117,13 +118,20 @@ internal data class SummaryPart(@DrawableRes val icon: Int, val count: Int, val 
 internal fun DaySummary.lines(now: Long, sex: Sex?): List<SummaryLine> {
     val feedingValue = buildString {
         append(feedings)
-        lastFeeding?.let {
-            if (it.isActive) {
-                append(" · сейчас ест: ${breastLabel(it.lastBreast)}")
-            } else {
-                // Перерыв между кормлениями считают от начала: «кормить каждые 3 часа»
-                append(" · последнее: ${breastLabel(it.lastBreast)}, ")
-                append(formatAgo((now - it.start).coerceAtLeast(0)))
+        // Неразрывный пробел: число и «мл» не расходятся по строкам
+        if (bottles > 0) append(" (бутылочкой $bottles, $bottleMl\u00A0мл)")
+        val breast = lastFeeding
+        val bottle = lastBottle
+        // Перерыв между кормлениями считают от начала: «кормить каждые 3 часа»; у бутылочки начало и есть время
+        when {
+            breast?.isActive == true -> append(" · сейчас ест: ${breastLabel(breast.lastBreast)}")
+            bottle != null && (breast == null || bottle.start >= breast.start) -> {
+                append(" · последнее: ${bottleLabel(bottle.volumeMl, bottle.milk)}, ")
+                append(formatAgo((now - bottle.start).coerceAtLeast(0)))
+            }
+            breast != null -> {
+                append(" · последнее: ${breastLabel(breast.lastBreast)}, ")
+                append(formatAgo((now - breast.start).coerceAtLeast(0)))
             }
         }
     }

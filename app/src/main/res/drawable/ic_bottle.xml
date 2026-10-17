@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Своя иконка BabyLog (ADR-0014): детская бутылочка — кормление из бутылочки (`Bottle`).
+     В Material Symbols её нет: `water_bottle` — спортивная бутылка без соски. Начертание Material
+     Symbols Rounded wght 300: сетка 24, обводка 1,5 со скруглёнными концами. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Соска: купол уже кольца, стоит на нём -->
+    <path
+        android:pathData="M10 6.5V5.25Q10 2.25 12 2.25Q14 2.25 14 5.25V6.5"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- Кольцо: чуть шире корпуса — по нему бутылочку узнают и в 16 dp -->
+    <path
+        android:pathData="M7.5 6.5H16.5V9H7.5Z"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+    <!-- Корпус со скруглённым дном и три деления объёма слева — выходят из стенки -->
+    <path
+        android:pathData="M8 9V19.5Q8 21.75 10.25 21.75H13.75Q16 21.75 16 19.5V9M8 12.75H10.5M8 15.5H10.5M8 18.25H10.5"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

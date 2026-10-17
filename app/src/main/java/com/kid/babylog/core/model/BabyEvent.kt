@@ -28,6 +28,24 @@ data class Feeding(
     val isActive: Boolean get() = end == null
 }
 
+/**
+ * Кормление из бутылочки (ADR-0025) — разовая запись без таймера: [volumeMl] миллилитров в [start].
+ * [milk] — что в бутылочке, null — не отмечено.
+ */
+data class Bottle(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val volumeMl: Int,
+    val milk: Milk? = null,
+    override val note: String = "",
+) : BabyEvent {
+    companion object {
+        /** Допустимый объём в миллилитрах (защита от опечаток). */
+        val RANGE = 5..500
+    }
+}
+
 data class Diaper(
     override val id: Long = 0,
     override val childId: Long,
@@ -81,4 +99,7 @@ enum class Breast {
 }
 
 enum class DiaperKind { WET, DIRTY, MIXED }
+
+/** Что в бутылочке: смесь или сцеженное грудное молоко. Код в базе и CSV — [name]. */
+enum class Milk { FORMULA, BREAST_MILK }
 

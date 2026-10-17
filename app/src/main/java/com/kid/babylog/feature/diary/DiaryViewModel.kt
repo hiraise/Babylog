@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.isNameTaken
@@ -109,6 +111,12 @@ class DiaryViewModel(
     fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
         val child = state.value.child ?: return@launch
         repository.startFeeding(child.id, start, breast)
+    }
+
+    /** Бутылочка выбранному ребёнку (ADR-0025): разовая запись, идущий сон заканчивается (ADR-0020). */
+    fun addBottle(volumeMl: Int, milk: Milk?, time: Long) = viewModelScope.launch {
+        val child = state.value.child ?: return@launch
+        repository.addBottle(Bottle(childId = child.id, start = time, volumeMl = volumeMl, milk = milk))
     }
 
     /** Смена груди: идущее кормление заканчивается, с той же секунды начинается кормление другой грудью. */

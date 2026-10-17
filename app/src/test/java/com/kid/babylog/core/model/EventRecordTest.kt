@@ -15,6 +15,8 @@ class EventRecordTest {
         Sleep(id = 4, childId = 7, start = 10_000, end = null),
         Medicine(id = 5, childId = 7, start = 4_000, name = "Витамин D", note = "1 капля"),
         Weight(id = 6, childId = 7, start = 5_000, grams = 4350),
+        Bottle(id = 8, childId = 7, start = 6_000, volumeMl = 120, milk = Milk.FORMULA, note = "докорм"),
+        Bottle(id = 9, childId = 7, start = 7_000, volumeMl = 90),
     )
 
     @Test
@@ -58,5 +60,17 @@ class EventRecordTest {
         assertTrue(!children.isNameTaken("Маша", exceptId = 1))
         assertTrue(!isValidChildName("   "))
         assertTrue(!isValidChildName("x".repeat(Child.MAX_NAME_LENGTH + 1)))
+    }
+
+    @Test
+    fun `bottle detail is volume and optional milk code`() {
+        assertEquals("120:FORMULA", Bottle(childId = 1, start = 0, volumeMl = 120, milk = Milk.FORMULA).toRecord().detail)
+        assertEquals("90", Bottle(childId = 1, start = 0, volumeMl = 90).toRecord().detail)
+        val parsed = EventRecord("bottle", 1_000, null, " 60 : breast_milk ", "").toEvent(childId = 1) as Bottle
+        assertEquals(60 to Milk.BREAST_MILK, parsed.volumeMl to parsed.milk)
+        // Объём вне диапазона, неизвестный код, лишняя часть — запись некорректна
+        listOf("0", "501", "abc", "120:JUICE", "120:FORMULA:x", "").forEach {
+            assertNull(it, EventRecord(EventRecord.BOTTLE, 1_000, null, it, "").toEvent(childId = 1))
+        }
     }
 }

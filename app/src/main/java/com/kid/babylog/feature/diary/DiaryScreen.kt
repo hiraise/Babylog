@@ -214,9 +214,14 @@ fun DiaryScreen(
     if (startingFeeding) {
         FeedingStartSheet(
             activeSleep = state.activeSleep,
+            lastBottle = state.lastBottle,
             onDismiss = { startingFeeding = false },
             onSave = { breast, time ->
                 viewModel.startFeeding(time, breast)
+                startingFeeding = false
+            },
+            onSaveBottle = { volumeMl, milk, time ->
+                viewModel.addBottle(volumeMl, milk, time)
                 startingFeeding = false
             },
         )
