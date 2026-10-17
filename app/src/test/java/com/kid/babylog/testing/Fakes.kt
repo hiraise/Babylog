@@ -4,7 +4,10 @@ import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toEvent
 import com.kid.babylog.core.model.toRecord
@@ -35,9 +38,9 @@ class FakeDiaryRepository(
     override suspend fun allEvents(): List<BabyEvent> =
         events.value.sortedWith(compareBy<BabyEvent> { it.start }.thenBy { it.id })
 
-    override suspend fun addChild(name: String, birthDate: Long?): Long {
+    override suspend fun addChild(name: String, birthDate: Long?, sex: Sex?): Long {
         val id = nextChildId++
-        children.value += Child(id, name.trim(), birthDate)
+        children.value += Child(id, name.trim(), birthDate, sex)
         return id
     }
 
@@ -66,7 +69,17 @@ class FakeDiaryRepository(
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean {
         if (events.value.any { it.childId == childId && it is Sleep && it.isActive }) return false
+        events.value.filterIsInstance<Feeding>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         addEvent(Sleep(childId = childId, start = start))
+        return true
+    }
+
+    override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {
+        if (events.value.any { it.childId == childId && it is Feeding && it.isActive }) return false
+        events.value.filterIsInstance<Sleep>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
+        addEvent(Feeding(childId = childId, start = start, breast = breast))
         return true
     }
 

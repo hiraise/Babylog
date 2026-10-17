@@ -13,7 +13,8 @@ import java.time.format.DateTimeFormatter
  * CSV-формат (ADR-0009): `type,start,end,detail,note,child`.
  * Время — локальное, "yyyy-MM-dd HH:mm:ss" (при импорте допускается 'T' как разделитель
  * и время без секунд). Экранирование по RFC 4180. Строка PROFILE описывает ребёнка:
- * дата рождения в `start` (может быть пустой), имя в `child`.
+ * дата рождения в `start` (может быть пустой), пол в `detail` (`BOY`/`GIRL`, может быть пустым,
+ * ADR-0016), имя в `child`.
  */
 object CsvCodec {
 
@@ -44,7 +45,7 @@ object CsvCodec {
         for (child in children) {
             sb.append(PROFILE_ROW).append(',')
                 .append(child.birthDate?.let { formatTime(it) } ?: "")
-                .append(",,,,")
+                .append(",,").append(child.sex?.name ?: "").append(",,")
                 .append(escape(child.name)).append("\r\n")
         }
         for (event in events) {

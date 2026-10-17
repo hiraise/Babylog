@@ -9,7 +9,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.formatDayHeader
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
@@ -80,9 +80,9 @@ internal fun DayNavRow(
     }
 }
 
-/** Список дней с записями (новые сверху) и числом записей в каждом. */
+/** Список дней с записями (новые сверху) и числом записей в каждом; тап по дню выбирает его. */
 @Composable
-internal fun DaySelectorDialog(
+internal fun DaySelectorSheet(
     days: List<LocalDate>,
     events: List<BabyEvent>,
     selectedDate: LocalDate,
@@ -92,40 +92,39 @@ internal fun DaySelectorDialog(
 ) {
     val counts = remember(events) { events.groupingBy { it.start.toLocalDate() }.eachCount() }
     val spacing = BabyLogTheme.spacing
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { AppIcon(R.drawable.ic_calendar, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        title = { Text("Выбрать день") },
-        text = {
-            LazyColumn(modifier = Modifier.heightIn(max = 420.dp).selectableGroup()) {
-                items(days.sortedDescending(), key = { it.toEpochDay() }) { day ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .selectable(selected = day == selectedDate, role = Role.RadioButton) { onPick(day) }
-                            .padding(vertical = spacing.m, horizontal = spacing.xs),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // У Inter загружены веса до SemiBold: Bold был бы синтетическим
-                        Text(
-                            formatDayHeader(day, today),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (day == selectedDate) FontWeight.SemiBold else null,
-                            color = if (day == selectedDate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            "${counts[day] ?: 0}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    // Список прокручивается сам (LazyColumn), поэтому лист без своей прокрутки
+    AppSheet(
+        onDismiss = onDismiss,
+        title = "Выбрать день",
+        icon = R.drawable.ic_calendar,
+        scrollable = false,
+        edgeToEdge = true,
+    ) { closer ->
+        LazyColumn(modifier = Modifier.heightIn(max = 420.dp).selectableGroup()) {
+            items(days.sortedDescending(), key = { it.toEpochDay() }) { day ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .selectable(selected = day == selectedDate, role = Role.RadioButton) { closer.close { onPick(day) } }
+                        .padding(vertical = spacing.m, horizontal = spacing.l),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // У Inter загружены веса до SemiBold: Bold был бы синтетическим
+                    Text(
+                        formatDayHeader(day, today),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (day == selectedDate) FontWeight.SemiBold else null,
+                        color = if (day == selectedDate) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "${counts[day] ?: 0}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Закрыть") }
-        },
-    )
+        }
+    }
 }

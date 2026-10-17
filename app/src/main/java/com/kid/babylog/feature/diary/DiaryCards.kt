@@ -1,96 +1,98 @@
 package com.kid.babylog.feature.diary
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.ui.breastLabel
+import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.components.ActionTile
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.ItemRow
+import com.kid.babylog.core.ui.components.TimerCornerButton
+import com.kid.babylog.core.ui.components.TimerTile
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
-import com.kid.babylog.core.ui.formatClock
-import com.kid.babylog.core.ui.formatTimer
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.editor.NewEventKind
 
-/** Таймер сна выбранного ребёнка: «Уснул…» или идущий сон с кнопкой «Проснулся». */
+/** Таймер сна — плитка в ряду с кормлением (ADR-0021): касание начинает сон, во время сна — заканчивает. */
 @Composable
-internal fun SleepCard(childName: String, activeSleep: Sleep?, now: Long, onStart: () -> Unit, onEnd: () -> Unit) {
-    val spacing = BabyLogTheme.spacing
-    if (activeSleep != null) {
-        AppCard(Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(spacing.xs),
-            ) {
-                Text("$childName спит", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    "с ${formatClock(activeSleep.start)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                // Цифры Nunito одной ширины: строка таймера не дрожит, когда меняются секунды
-                Text(
-                    formatTimer((now - activeSleep.start).coerceAtLeast(0)),
-                    style = MaterialTheme.typography.displayMedium,
-                )
-                Button(
-                    onClick = onEnd,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = spacing.s),
-                ) {
-                    Text("Проснулся")
-                }
-            }
-        }
-    } else {
-        AppCard(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = spacing.l, vertical = spacing.m),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(spacing.m),
-            ) {
-                AppIcon(R.drawable.ic_sleep, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text("Сон", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                Button(onClick = onStart) { Text("Уснул…") }
-            }
-        }
-    }
+internal fun SleepCard(
+    child: Child,
+    activeSleep: Sleep?,
+    now: Long,
+    onStart: () -> Unit,
+    onEnd: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TimerTile(
+        icon = R.drawable.ic_sleep,
+        label = "Сон",
+        runningSince = activeSleep?.start,
+        now = now,
+        startLabel = "начать сон",
+        stopLabel = bySex(child.sex, "проснулся", "проснулась"),
+        onStart = onStart,
+        onStop = onEnd,
+        modifier = modifier,
+    )
 }
 
-/** Плитки быстрого добавления записей. Сон начинается отдельно — в [SleepCard]. */
+/**
+ * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
+ * во время кормления — заканчивает; ⇄ в углу меняет грудь.
+ */
+@Composable
+internal fun FeedingCard(
+    activeFeeding: Feeding?,
+    now: Long,
+    onStart: () -> Unit,
+    onEnd: () -> Unit,
+    onSwitchBreast: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TimerTile(
+        icon = R.drawable.ic_feeding,
+        label = "Кормление",
+        runningSince = activeFeeding?.start,
+        now = now,
+        startLabel = "начать кормление",
+        stopLabel = "закончить кормление",
+        onStart = onStart,
+        onStop = onEnd,
+        modifier = modifier,
+        runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
+        corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
+    )
+}
+
+/** Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard]. */
 @Composable
 internal fun QuickActions(onAdd: (NewEventKind) -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
-        ActionTile(R.drawable.ic_feeding, "Кормление", { onAdd(NewEventKind.FEEDING) }, Modifier.weight(1f))
         ActionTile(R.drawable.ic_diaper, "Подгузник", { onAdd(NewEventKind.DIAPER) }, Modifier.weight(1f))
         ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, Modifier.weight(1f))
         ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, Modifier.weight(1f))
     }
 }
 
-/** Строка истории: нажатие на карточку — правка, корзина — удаление. */
+/** Строка истории: нажатие на карточку — правка, корзина — удаление. [sex] — пол ребёнка, чья запись. */
 @Composable
-internal fun EventRow(event: BabyEvent, onEdit: () -> Unit, onDelete: () -> Unit) {
+internal fun EventRow(event: BabyEvent, sex: Sex?, onEdit: () -> Unit, onDelete: () -> Unit) {
     val spacing = BabyLogTheme.spacing
     AppCard(
         modifier = Modifier.fillMaxWidth(),
@@ -101,7 +103,7 @@ internal fun EventRow(event: BabyEvent, onEdit: () -> Unit, onDelete: () -> Unit
     ) {
         ItemRow(
             icon = eventIcon(event),
-            title = eventTitle(event),
+            title = eventTitle(event, sex),
             subtitle = eventTimeLine(event),
             note = event.note,
             trailing = {

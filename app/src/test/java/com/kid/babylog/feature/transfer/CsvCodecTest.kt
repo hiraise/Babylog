@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -34,7 +35,7 @@ class CsvCodecTest {
     @Test
     fun `round trip preserves all fields and children`() {
         val events = listOf(
-            Feeding(childId = 1, start = ms("2026-08-15 14:30:00"), breast = Breast.LEFT),
+            Feeding(childId = 1, start = ms("2026-08-15 14:30:00"), end = ms("2026-08-15 14:45:10"), breast = Breast.LEFT),
             Diaper(childId = 2, start = ms("2026-08-15 15:10:05"), kind = DiaperKind.MIXED, note = "обычный"),
             Sleep(childId = 1, start = ms("2026-08-15 13:00:00"), end = ms("2026-08-15 14:20:59")),
             Medicine(childId = 2, start = ms("2026-08-15 09:00:00"), name = "Витамин D", note = "1 капля"),
@@ -60,6 +61,12 @@ class CsvCodecTest {
         assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "", "", "Маша"), rows[1])
         // Без даты рождения строка всё равно есть: она переносит имя ребёнка
         assertEquals(listOf("PROFILE", "", "", "", "", "Петя, младший"), rows[2])
+    }
+
+    @Test
+    fun `profile row keeps sex in detail`() {
+        val csv = CsvCodec.encode(listOf(masha.copy(sex = Sex.GIRL)), emptyList())
+        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "GIRL", "", "Маша"), CsvCodec.parseRows(csv)[1])
     }
 
     @Test

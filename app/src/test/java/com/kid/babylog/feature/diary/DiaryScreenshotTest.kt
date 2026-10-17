@@ -1,8 +1,8 @@
 package com.kid.babylog.feature.diary
 
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
-import com.github.takahirom.roborazzi.RoborazziOptions
 import com.github.takahirom.roborazzi.captureRoboImage
+import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
@@ -10,12 +10,14 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
+import com.kid.babylog.testing.SCREENSHOT_OPTIONS
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -57,38 +59,42 @@ class DiaryScreenshotTest {
     fun `day with records, dark`() = capture("diary_day_dark", sampleDiary(), dark = true)
 
     @Test
+    fun `feeding in progress`() = capture("diary_feeding", sampleDiary(feedingNow = true), dark = false)
+
+    @Test
+    fun `history tab`() = capture("diary_history", sampleDiary(), dark = false, tab = DiaryTab.HISTORY)
+
+    @Test
     fun `first launch`() = capture("diary_first_launch", FakeDiaryRepository(), dark = false)
 
-    private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean) {
+    private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean, tab: DiaryTab = DiaryTab.TODAY) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
-        captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = OPTIONS) {
+        captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel)
+                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = tab)
             }
         }
     }
 
-    /** Двое детей; у Маши за сегодня записи всех типов и идёт сон. */
-    private fun sampleDiary() = FakeDiaryRepository(
-        listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z")), Child(2, "Петя", null)),
+    /** Двое детей; у Маши за сегодня записи всех типов и идёт сон, а при [feedingNow] — кормление. */
+    private fun sampleDiary(feedingNow: Boolean = false) = FakeDiaryRepository(
+        listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z"), Sex.GIRL), Child(2, "Петя", null, Sex.BOY)),
     ).apply {
         events.value = listOf<BabyEvent>(
             Weight(id = 1, childId = 1, start = at("2026-10-15T06:10:00Z"), grams = 6350),
-            Feeding(id = 2, childId = 1, start = at("2026-10-15T06:30:00Z"), breast = Breast.LEFT),
+            Feeding(id = 2, childId = 1, start = at("2026-10-15T06:30:00Z"), end = at("2026-10-15T06:45:00Z"), breast = Breast.LEFT),
             Diaper(id = 3, childId = 1, start = at("2026-10-15T07:05:00Z"), kind = DiaperKind.MIXED),
             Medicine(id = 4, childId = 1, start = at("2026-10-15T07:20:00Z"), name = "Витамин D", note = "1 капля"),
             Sleep(id = 5, childId = 1, start = at("2026-10-15T07:40:00Z"), end = at("2026-10-15T08:55:00Z")),
-            Feeding(id = 6, childId = 1, start = at("2026-10-15T09:00:00Z"), breast = Breast.RIGHT, note = "долго"),
-            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")),
+            Feeding(
+                id = 6, childId = 1, start = at("2026-10-15T09:00:00Z"), end = at("2026-10-15T09:35:00Z"),
+                breast = Breast.RIGHT, note = "долго",
+            ),
+        ) + listOfNotNull(
+            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")).takeIf { !feedingNow },
+            Feeding(id = 8, childId = 1, start = at("2026-10-15T09:48:00Z"), breast = Breast.LEFT).takeIf { feedingNow },
         )
     }
 
     private fun at(iso: String): Long = Instant.parse(iso).toEpochMilli()
-
-    private companion object {
-        // Mac (эталоны) и Linux (CI) сглаживают шрифты чуть по-разному: допускаем 1 % отличающихся пикселей
-        val OPTIONS = RoborazziOptions(
-            compareOptions = RoborazziOptions.CompareOptions(changeThreshold = 0.01f),
-        )
-    }
 }

@@ -6,7 +6,9 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.PrefsSelectedChildStore
+import com.kid.babylog.core.data.PrefsThemeModeStore
 import com.kid.babylog.core.data.SelectedChildStore
+import com.kid.babylog.core.data.ThemeModeStore
 import com.kid.babylog.core.data.room.AppDatabase
 import com.kid.babylog.core.data.room.RoomDiaryRepository
 import com.kid.babylog.feature.diary.DiaryViewModel
@@ -27,6 +29,8 @@ class AppContainer(context: Context) {
     val repository: DiaryRepository = RoomDiaryRepository(database)
 
     val selectedChild: SelectedChildStore = PrefsSelectedChildStore(context)
+
+    val themeMode: ThemeModeStore = PrefsThemeModeStore(context)
 
     val documents: DocumentStore = ContentResolverDocumentStore(context)
 

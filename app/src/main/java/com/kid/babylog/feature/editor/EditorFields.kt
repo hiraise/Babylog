@@ -1,6 +1,5 @@
 package com.kid.babylog.feature.editor
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.kid.babylog.core.ui.DateTimeField
 import com.kid.babylog.core.ui.LocalClock
-import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -36,19 +34,22 @@ private val TIME_OPTIONS = listOf(
     "−1 ч" to 60,
 )
 
-/** Иконка типа записи над заголовком диалога (слот `icon` у `AlertDialog`). */
-@Composable
-internal fun DialogIcon(@DrawableRes id: Int) {
-    AppIcon(id, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-}
+/**
+ * Таймер, который закончится, когда начнётся новый (ADR-0020): [what] — «Кормление» или «Сон»,
+ * [start] — его начало. Конец не раньше начала.
+ */
+class FinishingTimer(val what: String, val start: Long)
 
-/** Выбор «когда это было»: сейчас или N минут назад. */
+/**
+ * Выбор «когда это было»: сейчас или N минут назад. С [finishing] под временем — когда закончится
+ * идущий другой таймер: сон и кормление не идут одновременно.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit) {
+internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit, finishing: FinishingTimer? = null) {
     val clock = LocalClock.current
     val spacing = BabyLogTheme.spacing
-    // Часы тикают, пока диалог открыт, чтобы подпись не расходилась с реально сохраняемым временем
+    // Часы тикают, пока лист открыт, чтобы подпись не расходилась с реально сохраняемым временем
     var now by remember { mutableLongStateOf(clock.millis()) }
     LaunchedEffect(clock) {
         while (true) {
@@ -71,12 +72,20 @@ internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit) {
                 )
             }
         }
+        val time = now - minutesAgo * 60_000L
         Text(
-            "Время: " + formatClock(now - minutesAgo * 60_000L),
+            "Время: " + formatClock(time),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = spacing.xs),
         )
+        if (finishing != null) {
+            Text(
+                "${finishing.what} закончится в ${formatClock(maxOf(finishing.start, time))}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -111,6 +120,7 @@ internal fun <T> OptionChips(
     options: List<Pair<T, String>>, // значение и подпись
     selected: T?,
     onSelect: (T) -> Unit,
+    icon: (T) -> Int? = { null }, // иконка варианта перед подписью, null — без иконки
 ) {
     FlowRow(
         modifier = Modifier.selectableGroup(),
@@ -121,6 +131,7 @@ internal fun <T> OptionChips(
                 selected = selected == value,
                 onClick = { onSelect(value) },
                 label = label,
+                icon = icon(value),
             )
         }
     }

@@ -30,6 +30,7 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  * оптический размер под 24 dp; у opsz 48 штрихи для такого размера тоньше задуманных. Источник —
  * `fonts.gstatic.com/s/i/short-term/release/materialsymbolsrounded/<имя>/wght300/24px.svg`:
  * `d` из SVG переносится в `pathData`, обёртка (`viewport` 960, `translateY` 960) — как у соседних файлов.
+ * Если подходящего символа нет, иконку рисуют сами по ADR-0014 (как `ic_diaper_wet`).
  *
  * @param contentDescription текст для TalkBack; `null` — иконка декоративна: рядом есть подпись
  *   или смысл понятен из текста.
@@ -53,6 +54,9 @@ fun AppIcon(
 private val AllIcons = listOf(
     R.drawable.ic_feeding to "feeding",
     R.drawable.ic_diaper to "diaper",
+    R.drawable.ic_diaper_wet to "diaper_wet",
+    R.drawable.ic_diaper_dirty to "diaper_dirty",
+    R.drawable.ic_diaper_mixed to "diaper_mixed",
     R.drawable.ic_sleep to "sleep",
     R.drawable.ic_medicine to "medicine",
     R.drawable.ic_weight to "weight",
@@ -67,6 +71,8 @@ private val AllIcons = listOf(
     R.drawable.ic_chevron_right to "chevron_right",
     R.drawable.ic_export to "export",
     R.drawable.ic_import to "import",
+    R.drawable.ic_theme to "theme",
+    R.drawable.ic_swap to "swap",
 )
 
 @Preview(name = "AppIcon — все иконки", widthDp = 720)

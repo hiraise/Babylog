@@ -45,7 +45,7 @@ private fun TextStyle.inter(weight: FontWeight, size: TextUnit, lineHeight: Text
  * - `displayMedium` — таймер сна. У Nunito нет OpenType-функции `tnum`, но она и не нужна: цифры
  *   в нём одной ширины (600/1000 em) и без кернинга между собой, так что таймер не прыгает.
  *   У Inter цифры пропорциональные: для ровных колонок чисел добавляй `fontFeatureSettings = "tnum"`.
- * - `headlineSmall` — заголовки диалогов и название приложения в шапке.
+ * - `headlineSmall` — заголовки нижних листов и название приложения в шапке.
  * - `labelLarge` — кнопки, `TextButton` и чипы. Material 3 сам берёт его ещё для пунктов
  *   `DropdownMenuItem` и подзаголовка «Выберите дату» в `DatePicker`. Подзаголовок пусть остаётся
  *   таким, а пункт меню — обычный текст: задавай ему `Text(…, style = MaterialTheme.typography.bodyLarge)`,

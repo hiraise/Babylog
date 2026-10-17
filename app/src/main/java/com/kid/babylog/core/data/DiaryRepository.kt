@@ -1,7 +1,9 @@
 package com.kid.babylog.core.data
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Sex
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -22,7 +24,7 @@ interface DiaryRepository {
     suspend fun allEvents(): List<BabyEvent>
 
     /** Возвращает id нового ребёнка. Имя проверяет вызывающий код ([com.kid.babylog.core.model.isNameTaken]). */
-    suspend fun addChild(name: String, birthDate: Long?): Long
+    suspend fun addChild(name: String, birthDate: Long?, sex: Sex?): Long
 
     suspend fun updateChild(child: Child)
 
@@ -35,8 +37,17 @@ interface DiaryRepository {
 
     suspend fun deleteEvent(event: BabyEvent)
 
-    /** Начинает сон ребёнка, если он ещё не спит; false — активный сон уже есть. */
+    /**
+     * Начинает сон ребёнка, если он ещё не спит; false — активный сон уже есть. Идущее кормление
+     * заканчивается в момент начала сна: сон и кормление не идут одновременно (ADR-0020).
+     */
     suspend fun startSleep(childId: Long, start: Long): Boolean
+
+    /**
+     * Начинает кормление ребёнка грудью [breast], если он ещё не ест; false — кормление уже идёт.
+     * Идущий сон заканчивается в момент начала кормления (ADR-0020).
+     */
+    suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean
 
     /** Выполняет [block] в одной транзакции: либо применяются все изменения, либо ни одного. */
     suspend fun <T> inTransaction(block: suspend () -> T): T

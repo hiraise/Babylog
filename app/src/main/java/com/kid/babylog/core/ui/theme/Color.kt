@@ -26,7 +26,7 @@ private val OnTertiaryFixedVariant = Color(0xFF5D4200)
  * - `background`, `surface` — фон экрана и верхняя панель;
  * - `surfaceContainerLow` — карточки; глубину им даёт тень [Shadows.card], а не тон, поэтому
  *   `surfaceTint` равен `surface`;
- * - `surfaceContainer` — меню; `surfaceContainerHigh` — диалоги и пикеры;
+ * - `surfaceContainer` — меню; `surfaceContainerHigh` — нижние листы и пикеры;
  * - `surfaceContainerHighest` — заливка без акцентного текста: циферблат `TimePicker`, дорожка `Switch`.
  *   Текст `primary` и `error` на нём даёт 4,1–4,5:1, ниже нормы. Поэтому поля ввода — только
  *   `OutlinedTextField`: у `TextField` с заливкой на этом фоне лежат подпись в фокусе и текст ошибки.

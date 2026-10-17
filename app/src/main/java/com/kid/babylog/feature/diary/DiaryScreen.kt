@@ -2,19 +2,18 @@ package com.kid.babylog.feature.diary
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,28 +27,43 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kid.babylog.R
+import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.components.AppSheet
+import com.kid.babylog.core.ui.components.SheetAction
+import com.kid.babylog.core.ui.components.SheetMenuItem
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.toLocalDate
-import com.kid.babylog.feature.children.ChildDialog
-import com.kid.babylog.feature.editor.EditEventDialog
-import com.kid.babylog.feature.editor.NewEventDialog
+import com.kid.babylog.feature.children.ChildSelector
+import com.kid.babylog.feature.children.ChildSheet
+import com.kid.babylog.feature.children.ChildrenSheet
+import com.kid.babylog.feature.editor.EditEventSheet
+import com.kid.babylog.feature.editor.FeedingStartSheet
+import com.kid.babylog.feature.editor.NewEventSheet
 import com.kid.babylog.feature.editor.NewEventKind
-import com.kid.babylog.feature.editor.SleepStartDialog
+import com.kid.babylog.feature.editor.SleepStartSheet
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 
-private enum class ChildDialogMode { NONE, ADD, EDIT }
+private enum class ChildSheetMode { NONE, ADD, EDIT }
 
 private const val NONE = -1L
 
-/** Главный экран: подключает [DiaryViewModel] к [DiaryContent] и показывает диалоги. */
+/**
+ * Главный экран: подключает [DiaryViewModel] к [DiaryContent] и показывает нижние листы (ADR-0018).
+ * Тему применяет `MainActivity` (ADR-0017): экран только показывает выбор и сообщает о новом.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiaryScreen(viewModel: DiaryViewModel) {
+fun DiaryScreen(
+    viewModel: DiaryViewModel,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
+    initialTab: DiaryTab = DiaryTab.TODAY,
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
     var now by remember { mutableLongStateOf(clock.millis()) }
@@ -61,25 +75,39 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
-        state.message?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.consumeMessage()
+        state.message?.let { text ->
+            // Остановленный касанием таймер можно вернуть — сообщение висит дольше
+            val undo = state.canUndo
+            val result = snackbarHostState.showSnackbar(
+                message = text,
+                actionLabel = if (undo) "Отменить" else null,
+                duration = if (undo) SnackbarDuration.Long else SnackbarDuration.Short,
+            )
+            viewModel.consumeMessage(undo = result == SnackbarResult.ActionPerformed)
         }
     }
 
     val child = state.child
     // id вместо объектов: переживают поворот экрана
+    var tab by rememberSaveable { mutableStateOf(initialTab) }
     var newEvent by rememberSaveable { mutableStateOf<NewEventKind?>(null) }
     var startingSleep by rememberSaveable { mutableStateOf(false) }
+    var startingFeeding by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableLongStateOf(NONE) }
     var deletingId by rememberSaveable { mutableLongStateOf(NONE) }
     var showDaySelector by rememberSaveable { mutableStateOf(false) }
-    var childDialog by rememberSaveable { mutableStateOf(ChildDialogMode.NONE) }
+    var showThemeSheet by rememberSaveable { mutableStateOf(false) }
+    var childSheet by rememberSaveable { mutableStateOf(ChildSheetMode.NONE) }
     var confirmChildDelete by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+    var showChildren by rememberSaveable { mutableStateOf(false) }
     // История по одному дню, по умолчанию сегодня; при смене ребёнка — снова сегодня
-    var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(now.toLocalDate().toEpochDay()) }
-    val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
+    // NONE — «сегодня»: после полуночи история сама переходит на новый день. Запоминается только
+    // день, выбранный вручную; при смене ребёнка — снова сегодня
+    var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
+    val today = now.toLocalDate()
+    val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
+    val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -90,83 +118,78 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
 
     Scaffold(
         topBar = {
-            // Шапка сливается с фоном экрана, название — фирменным шрифтом, как логотип в макете
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Дневник малыша",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.background,
-                ),
-                actions = {
-                    IconButton(onClick = { menuOpen = true }) {
-                        AppIcon(R.drawable.ic_more, contentDescription = "Меню")
-                    }
-                    DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                        // Пункты меню M3 набирает labelLarge — стилем кнопок; меню — обычный текст
-                        DropdownMenuItem(
-                            text = { Text("Добавить ребёнка", style = MaterialTheme.typography.bodyLarge) },
-                            leadingIcon = { AppIcon(R.drawable.ic_add_child, contentDescription = null) },
-                            onClick = {
-                                menuOpen = false
-                                childDialog = ChildDialogMode.ADD
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Экспорт в CSV", style = MaterialTheme.typography.bodyLarge) },
-                            leadingIcon = { AppIcon(R.drawable.ic_export, contentDescription = null) },
-                            onClick = {
-                                menuOpen = false
-                                exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv")
-                            },
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Импорт из CSV", style = MaterialTheme.typography.bodyLarge) },
-                            leadingIcon = { AppIcon(R.drawable.ic_import, contentDescription = null) },
-                            onClick = {
-                                menuOpen = false
-                                importLauncher.launch(arrayOf("*/*"))
-                            },
-                        )
-                    }
-                },
-            )
+            Column {
+                // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
+                // как логотип в макете, под ним возраст и вес (ADR-0019)
+                TopAppBar(
+                    title = {
+                        if (child != null) {
+                            ChildSelector(child, state.lastWeight, now, onClick = { showChildren = true })
+                        } else {
+                            Text(
+                                "Дневник малыша",
+                                style = MaterialTheme.typography.headlineSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        scrolledContainerColor = MaterialTheme.colorScheme.background,
+                    ),
+                    actions = {
+                        IconButton(onClick = { menuOpen = true }) {
+                            AppIcon(R.drawable.ic_more, contentDescription = "Меню")
+                        }
+                    },
+                )
+                DiaryTabs(tab) { tab = it }
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (child != null) {
-            DiaryContent(
-                state = state,
-                child = child,
-                now = now,
-                selectedDate = selectedDate,
-                actions = DiaryActions(
-                    onSelectChild = viewModel::selectChild,
-                    onEditChild = { childDialog = ChildDialogMode.EDIT },
-                    onStartSleep = { startingSleep = true },
-                    onEndSleep = { viewModel.endSleep() },
-                    onAdd = { newEvent = it },
-                    onEditEvent = { editingId = it.id },
-                    onDeleteEvent = { deletingId = it.id },
-                    onSelectDate = { selectedEpochDay = it.toEpochDay() },
-                    onPickDate = { showDaySelector = true },
-                ),
-                modifier = Modifier.padding(padding),
+            val actions = DiaryActions(
+                onStartSleep = { startingSleep = true },
+                onEndSleep = { viewModel.endSleep() },
+                onStartFeeding = { startingFeeding = true },
+                onEndFeeding = { viewModel.endFeeding() },
+                onSwitchBreast = { viewModel.switchBreast() },
+                onAdd = { newEvent = it },
+                onEditEvent = { editingId = it.id },
+                onDeleteEvent = { deletingId = it.id },
+                onSelectDate = selectDay,
+                onPickDate = { showDaySelector = true },
             )
+            when (tab) {
+                DiaryTab.TODAY -> TodayContent(state, child, now, actions, Modifier.padding(padding))
+                DiaryTab.HISTORY -> HistoryContent(state, child, now, selectedDate, actions, Modifier.padding(padding))
+            }
         }
+    }
+
+    if (menuOpen) {
+        AppSheet(onDismiss = { menuOpen = false }, edgeToEdge = true) { closer ->
+            // Пункт закрывает меню и только потом открывает следующий лист или выбор файла
+            val pick = { action: () -> Unit -> closer.close { menuOpen = false; action() } }
+            SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
+            SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
+                pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
+            })
+            SheetMenuItem(R.drawable.ic_import, "Импорт из CSV", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+        }
+    }
+
+    if (showThemeSheet) {
+        ThemeSheet(mode = themeMode, onSelect = onThemeModeChange, onDismiss = { showThemeSheet = false })
     }
 
     if (child == null) return
 
     newEvent?.let { kind ->
-        NewEventDialog(
+        NewEventSheet(
             kind = kind,
-            childId = child.id,
+            child = child,
             onDismiss = { newEvent = null },
             onSave = {
                 viewModel.saveEvent(it)
@@ -176,8 +199,8 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     }
 
     if (startingSleep) {
-        SleepStartDialog(
-            childName = child.name,
+        SleepStartSheet(
+            activeFeeding = state.activeFeeding,
             onDismiss = { startingSleep = false },
             onSave = {
                 viewModel.startSleep(it)
@@ -186,10 +209,22 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
         )
     }
 
+    if (startingFeeding) {
+        FeedingStartSheet(
+            activeSleep = state.activeSleep,
+            onDismiss = { startingFeeding = false },
+            onSave = { breast, time ->
+                viewModel.startFeeding(time, breast)
+                startingFeeding = false
+            },
+        )
+    }
+
     state.events.find { it.id == editingId }?.let { event ->
         key(event.id) {
-            EditEventDialog(
+            EditEventSheet(
                 event = event,
+                sex = child.sex,
                 onDismiss = { editingId = NONE },
                 onSave = {
                     viewModel.saveEvent(it)
@@ -200,77 +235,97 @@ fun DiaryScreen(viewModel: DiaryViewModel) {
     }
 
     state.events.find { it.id == deletingId }?.let { event ->
-        AlertDialog(
-            onDismissRequest = { deletingId = NONE },
-            icon = { AppIcon(eventIcon(event), contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("Удалить запись?") },
-            text = { Text("${eventTitle(event)}\n${eventTimeLine(event)}") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteEvent(event)
-                    deletingId = NONE
-                }) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+        AppSheet(
+            onDismiss = { deletingId = NONE },
+            title = "Удалить запись?",
+            icon = eventIcon(event),
+            confirm = SheetAction("Удалить", destructive = true) {
+                viewModel.deleteEvent(event)
+                deletingId = NONE
             },
-            dismissButton = { TextButton(onClick = { deletingId = NONE }) { Text("Отмена") } },
-        )
+        ) {
+            Text("${eventTitle(event, child.sex)}\n${eventTimeLine(event)}", style = MaterialTheme.typography.bodyMedium)
+        }
     }
 
     if (showDaySelector) {
-        DaySelectorDialog(
+        DaySelectorSheet(
             days = historyDays(state.events, now.toLocalDate()),
             events = state.events,
             selectedDate = selectedDate,
             today = now.toLocalDate(),
             onDismiss = { showDaySelector = false },
             onPick = { day ->
-                selectedEpochDay = day.toEpochDay()
+                selectDay(day)
                 showDaySelector = false
             },
         )
     }
 
-    when (childDialog) {
-        ChildDialogMode.ADD -> ChildDialog(
+    if (showChildren) {
+        ChildrenSheet(
+            children = state.children,
+            selectedId = child.id,
+            now = now,
+            onSelect = {
+                viewModel.selectChild(it)
+                showChildren = false
+            },
+            onEdit = {
+                showChildren = false
+                childSheet = ChildSheetMode.EDIT
+            },
+            onAdd = {
+                showChildren = false
+                childSheet = ChildSheetMode.ADD
+            },
+            onDismiss = { showChildren = false },
+        )
+    }
+
+    when (childSheet) {
+        ChildSheetMode.ADD -> ChildSheet(
             initial = null,
             children = state.children,
-            onDismiss = { childDialog = ChildDialogMode.NONE },
-            onSave = { name, birthDate ->
-                viewModel.addChild(name, birthDate)
-                childDialog = ChildDialogMode.NONE
+            onDismiss = { childSheet = ChildSheetMode.NONE },
+            onSave = { name, birthDate, sex ->
+                viewModel.addChild(name, birthDate, sex)
+                childSheet = ChildSheetMode.NONE
             },
         )
-        ChildDialogMode.EDIT -> ChildDialog(
+        ChildSheetMode.EDIT -> ChildSheet(
             initial = child,
             children = state.children,
-            onDismiss = { childDialog = ChildDialogMode.NONE },
-            onSave = { name, birthDate ->
-                viewModel.updateChild(child.copy(name = name, birthDate = birthDate))
-                childDialog = ChildDialogMode.NONE
+            onDismiss = { childSheet = ChildSheetMode.NONE },
+            onSave = { name, birthDate, sex ->
+                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex))
+                childSheet = ChildSheetMode.NONE
             },
             // Последнего ребёнка удалить нельзя
             onDelete = if (state.children.size > 1) {
                 {
-                    childDialog = ChildDialogMode.NONE
+                    childSheet = ChildSheetMode.NONE
                     confirmChildDelete = true
                 }
             } else null,
         )
-        ChildDialogMode.NONE -> Unit
+        ChildSheetMode.NONE -> Unit
     }
 
     if (confirmChildDelete) {
-        AlertDialog(
-            onDismissRequest = { confirmChildDelete = false },
-            icon = { AppIcon(R.drawable.ic_delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-            title = { Text("Удалить «${child.name}»?") },
-            text = { Text("Записи этого ребёнка (${state.events.size}) тоже будут удалены. Отменить это нельзя.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.deleteChild(child)
-                    confirmChildDelete = false
-                }) { Text("Удалить", color = MaterialTheme.colorScheme.error) }
+        AppSheet(
+            onDismiss = { confirmChildDelete = false },
+            title = "Удалить «${child.name}»?",
+            icon = R.drawable.ic_delete,
+            confirm = SheetAction("Удалить", destructive = true) {
+                viewModel.deleteChild(child)
+                confirmChildDelete = false
             },
-            dismissButton = { TextButton(onClick = { confirmChildDelete = false }) { Text("Отмена") } },
-        )
+        ) {
+            Text(
+                "Записи этого ребёнка (${state.events.size}) тоже будут удалены. Отменить это нельзя.",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }

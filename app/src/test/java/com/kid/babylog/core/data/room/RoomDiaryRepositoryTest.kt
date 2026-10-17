@@ -1,8 +1,11 @@
 package com.kid.babylog.core.data.room
 
 import androidx.test.platform.app.InstrumentationRegistry
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -46,6 +49,21 @@ class RoomDiaryRepositoryTest {
     }
 
     @Test
+    fun `active feeding is the only one and sleep ends it`() = withRepository { repo ->
+        assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.LEFT))
+        assertFalse(repo.startFeeding(childId = 1, start = T2, breast = Breast.RIGHT))
+        // Сон и кормление не идут одновременно (ADR-0020): начало сна заканчивает кормление
+        assertTrue(repo.startSleep(childId = 1, start = T2))
+        assertEquals(
+            listOf(Feeding(id = 1, childId = 1, start = T1, end = T2, breast = Breast.LEFT), Sleep(id = 2, childId = 1, start = T2)),
+            repo.allEvents(),
+        )
+        // …и наоборот; конец не раньше начала, даже если новое «было» раньше
+        assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.RIGHT))
+        assertEquals(Sleep(id = 2, childId = 1, start = T2, end = T2), repo.allEvents().last { it is Sleep })
+    }
+
+    @Test
     fun `time is stored with second precision`() = withRepository { repo ->
         repo.addEvent(Medicine(childId = 1, start = T1 + 750, name = "Витамин D"))
         assertEquals(T1, repo.allEvents().single().start)
@@ -53,7 +71,8 @@ class RoomDiaryRepositoryTest {
 
     @Test
     fun `deleting a child removes only its records and never the last child`() = withRepository { repo ->
-        val second = repo.addChild("Петя", birthDate = null)
+        val second = repo.addChild("Петя", birthDate = null, sex = Sex.BOY)
+        assertEquals(Child(second, "Петя", null, Sex.BOY), repo.allChildren().last())
         repo.addEvent(Medicine(childId = 1, start = T1, name = "Витамин D"))
         repo.addEvent(Medicine(childId = second, start = T2, name = "Нурофен"))
 

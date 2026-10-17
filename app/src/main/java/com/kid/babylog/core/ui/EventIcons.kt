@@ -22,18 +22,27 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * Иконка типа записи (ADR-0010) — для строки истории, сводки и диалогов вместо эмодзи.
- * Сводка, диалоги и быстрые действия ссылаются на те же файлы `R.drawable.ic_<тип>` напрямую:
+ * Иконка типа записи (ADR-0010) — для строки истории, сводки и листов вместо эмодзи.
+ * Сводка, листы и быстрые действия ссылаются на те же файлы `R.drawable.ic_<тип>` напрямую:
  * чтобы сменить символ типа, замени файл `res/drawable/ic_<тип>.xml`, а не ссылки в коде.
- * Вид подгузника и сторону кормления иконка не различает: они в тексте записи ([eventTitle]).
+ * Подгузник показан по виду ([diaperIcon]); сторону кормления иконка не различает: она в тексте
+ * записи ([eventTitle]).
  */
 @DrawableRes
 fun eventIcon(event: BabyEvent): Int = when (event) {
     is Feeding -> R.drawable.ic_feeding
-    is Diaper -> R.drawable.ic_diaper
+    is Diaper -> diaperIcon(event.kind)
     is Sleep -> R.drawable.ic_sleep
     is Medicine -> R.drawable.ic_medicine
     is Weight -> R.drawable.ic_weight
+}
+
+/** Иконка вида подгузника (ADR-0014): капля — пописал, волны запаха — покакал, капля и волны — и то, и то. */
+@DrawableRes
+fun diaperIcon(kind: DiaperKind): Int = when (kind) {
+    DiaperKind.WET -> R.drawable.ic_diaper_wet
+    DiaperKind.DIRTY -> R.drawable.ic_diaper_dirty
+    DiaperKind.MIXED -> R.drawable.ic_diaper_mixed
 }
 
 @Preview(name = "Иконки записей", widthDp = 720)
@@ -43,6 +52,8 @@ private fun EventIconsPreview() = LightDarkPreview {
         .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
     listOf(
         Feeding(childId = 1, start = start, breast = Breast.LEFT),
+        Diaper(childId = 1, start = start, kind = DiaperKind.WET),
+        Diaper(childId = 1, start = start, kind = DiaperKind.DIRTY),
         Diaper(childId = 1, start = start, kind = DiaperKind.MIXED),
         Sleep(childId = 1, start = start, end = start + 85 * 60_000L),
         Medicine(childId = 1, start = start, name = "Витамин D", note = "3 капли"),
@@ -51,7 +62,7 @@ private fun EventIconsPreview() = LightDarkPreview {
         AppCard(Modifier.fillMaxWidth()) {
             ItemRow(
                 icon = eventIcon(event),
-                title = eventTitle(event),
+                title = eventTitle(event, sex = null),
                 subtitle = eventTimeLine(event),
                 note = event.note,
             )

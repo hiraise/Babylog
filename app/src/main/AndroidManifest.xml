@@ -14,7 +14,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:configChanges="uiMode">
+            <!-- uiMode: смену темы (системной или выбранной в приложении) Activity принимает сама,
+                 без пересоздания окна — иначе экран моргает (ADR-0017) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

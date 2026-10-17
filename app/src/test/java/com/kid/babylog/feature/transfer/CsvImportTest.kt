@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -58,19 +59,24 @@ class CsvImportTest {
     @Test
     fun `reimporting own export changes nothing`() = runTest {
         val repo = FakeDiaryRepository(listOf(Child(1, "Маша", ms("2026-05-20 00:00:00")), Child(2, "Петя", null)))
-        repo.addEvent(Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), breast = Breast.LEFT, note = "a, \"b\""))
-        repo.addEvent(Feeding(childId = 2, start = ms("2026-08-15 10:00:00"), breast = Breast.LEFT, note = "a, \"b\""))
+        val start = ms("2026-08-15 10:00:00")
+        repo.addEvent(Feeding(childId = 1, start = start, end = start + 600_000, breast = Breast.LEFT, note = "a, \"b\""))
+        repo.addEvent(Feeding(childId = 2, start = start, end = start, breast = Breast.LEFT, note = "a, \"b\""))
         repo.addEvent(Sleep(childId = 2, start = ms("2026-08-15 11:00:00"), end = ms("2026-08-15 12:30:00")))
+        // Кормление идёт во время экспорта: в файле оно без конца, но в базе уже есть
+        repo.addEvent(Feeding(childId = 1, start = ms("2026-08-15 13:00:00"), breast = Breast.RIGHT))
         val result = importCsv(repo, exportCsv(repo).text, defaultChildId = 1)
-        assertEquals(ImportResult(duplicates = 3), result)
-        assertEquals(3, repo.events.value.size)
+        assertEquals(ImportResult(duplicates = 4), result)
+        assertEquals(4, repo.events.value.size)
     }
 
     @Test
     fun `export imports into another phone with the same children and records`() = runTest {
         val source = FakeDiaryRepository(listOf(Child(1, "Маша", ms("2026-05-20 00:00:00")), Child(2, "Петя", null)))
         source.addEvent(Diaper(childId = 2, start = ms("2026-08-16 08:00:00"), kind = DiaperKind.WET))
-        source.addEvent(Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), breast = Breast.RIGHT))
+        source.addEvent(
+            Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), end = ms("2026-08-15 10:20:00"), breast = Breast.RIGHT),
+        )
         val target = FakeDiaryRepository() // новый телефон: один «Малыш» без записей
         importCsv(target, exportCsv(source).text, defaultChildId = 1)
 
@@ -78,6 +84,17 @@ class CsvImportTest {
             repo.children.value.first { it.id == e.childId }.let { it.name to it.birthDate } to e.toRecord()
         }.toSet()
         assertEquals(snapshot(source), snapshot(target))
+    }
+
+    @Test
+    fun `feeding without end from an old file has no duration and no timer`() = runTest {
+        val repo = FakeDiaryRepository()
+        importCsv(repo, legacyFile, defaultChildId = 1)
+        val feeding = repo.events.value.filterIsInstance<Feeding>().single()
+        assertEquals(ms("2026-08-15 10:00:00"), feeding.end)
+        assertEquals(feeding.start, feeding.end)
+        // Повторный импорт того же файла находит и кормление, уже закрытое при первом импорте
+        assertEquals(2, importCsv(repo, legacyFile, defaultChildId = 1).duplicates)
     }
 
     @Test
@@ -109,6 +126,36 @@ class CsvImportTest {
         assertEquals(4, result.errors)
         assertEquals(0, result.added)
         assertEquals(listOf(Child.DEFAULT_NAME), repo.children.value.map { it.name })
+    }
+
+    @Test
+    fun `sex from file is set only when missing and old files leave it alone`() = runTest {
+        val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null), Child(2, "Петя", null, Sex.BOY)))
+        val csv = "PROFILE,,,GIRL,,Маша\r\n" + "PROFILE,,,girl,,Петя\r\n" + "PROFILE,,,BOY,,Вася\r\n"
+        val result = importCsv(repo, csv, defaultChildId = 1)
+        assertEquals(1, result.sexesSet)
+        assertEquals(1, result.sexConflicts)
+        assertEquals(1, result.childrenAdded)
+        assertEquals(listOf(Sex.GIRL, Sex.BOY, Sex.BOY), repo.children.value.map { it.sex })
+        // Файл без пола (до ADR-0016) пол не сбрасывает
+        importCsv(repo, legacyFile, defaultChildId = 1)
+        assertEquals(Sex.GIRL, repo.children.value.first().sex)
+    }
+
+    @Test
+    fun `unknown sex code is an error and creates no child`() = runTest {
+        val repo = FakeDiaryRepository()
+        val result = importCsv(repo, "PROFILE,,,MAYBE,,Вася\r\n", defaultChildId = 1)
+        assertEquals(1, result.errors)
+        assertEquals(listOf(Child.DEFAULT_NAME), repo.children.value.map { it.name })
+    }
+
+    @Test
+    fun `sex survives export to another phone`() = runTest {
+        val source = FakeDiaryRepository(listOf(Child(1, "Маша", null, Sex.GIRL)))
+        val target = FakeDiaryRepository()
+        importCsv(target, exportCsv(source).text, defaultChildId = 1)
+        assertEquals(Sex.GIRL, target.children.value.first { it.name == "Маша" }.sex)
     }
 
     @Test

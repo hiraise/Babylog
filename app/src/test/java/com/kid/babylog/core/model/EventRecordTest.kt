@@ -8,7 +8,8 @@ import org.junit.Test
 class EventRecordTest {
 
     private val events = listOf(
-        Feeding(id = 1, childId = 7, start = 1_000, breast = Breast.RIGHT, note = "ночь"),
+        Feeding(id = 1, childId = 7, start = 1_000, end = 1_900, breast = Breast.RIGHT, note = "ночь"),
+        Feeding(id = 7, childId = 7, start = 11_000, end = null, breast = Breast.LEFT),
         Diaper(id = 2, childId = 7, start = 2_000, kind = DiaperKind.MIXED),
         Sleep(id = 3, childId = 7, start = 3_000, end = 9_000, note = "дома"),
         Sleep(id = 4, childId = 7, start = 10_000, end = null),
@@ -32,9 +33,11 @@ class EventRecordTest {
     }
 
     @Test
-    fun `end is kept only for sleep`() {
+    fun `end is kept only for sleep and feeding`() {
         val feeding = EventRecord(EventRecord.FEEDING, 1_000, 2_000, "LEFT", "").toEvent(childId = 1)!!
-        assertNull(feeding.toRecord().end)
+        assertEquals(2_000L, feeding.toRecord().end)
+        val diaper = EventRecord(EventRecord.DIAPER, 1_000, 2_000, "WET", "").toEvent(childId = 1)!!
+        assertNull(diaper.toRecord().end)
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import java.time.Instant
@@ -54,7 +55,7 @@ fun formatAgo(millis: Long): String {
     return formatDuration(millis) + " назад"
 }
 
-/** Таймер сна: «1:23:45» или «23:45» */
+/** Таймер сна и кормления: «1:23:45» или «23:45» */
 fun formatTimer(millis: Long): String {
     val totalSeconds = millis / 1000
     val h = totalSeconds / 3600
@@ -68,26 +69,84 @@ fun breastLabel(breast: Breast): String = when (breast) {
     Breast.RIGHT -> "правая"
 }
 
-fun diaperLabel(kind: DiaperKind): String = when (kind) {
-    DiaperKind.WET -> "пописал"
-    DiaperKind.DIRTY -> "покакал"
+/**
+ * Слово по полу ребёнка (ADR-0016): женский род — для девочки, мужской — для мальчика и когда пол
+ * не указан. Где звучит естественно, пиши без рода: «Маша спит», «Маша ест».
+ */
+fun bySex(sex: Sex?, masculine: String, feminine: String): String = if (sex == Sex.GIRL) feminine else masculine
+
+fun diaperLabel(kind: DiaperKind, sex: Sex?): String = when (kind) {
+    DiaperKind.WET -> bySex(sex, "пописал", "пописала")
+    DiaperKind.DIRTY -> bySex(sex, "покакал", "покакала")
     DiaperKind.MIXED -> "и то, и то"
 }
 
-fun eventTitle(event: BabyEvent): String = when (event) {
-    is Feeding -> "Кормление · ${breastLabel(event.breast)}"
-    is Diaper -> "Подгузник · ${diaperLabel(event.kind)}"
+/**
+ * Заголовок главного экрана: «Дневник Маши» — имя в родительном падеже ([genitiveName]). Имя,
+ * которое правила не склоняют уверенно (несколько слов, не кириллица), — «Дневник: Петя, младший».
+ */
+fun diaryTitle(name: String, sex: Sex?): String {
+    val trimmed = name.trim()
+    return genitiveName(trimmed, sex)?.let { "Дневник $it" } ?: "Дневник: $trimmed"
+}
+
+/** Имена с беглой гласной: «Павел» → «Павла», а не «Павела». Ключ — в нижнем регистре. */
+private val GENITIVE_EXCEPTIONS = mapOf("павел" to "павла", "лев" to "льва", "пётр" to "петра", "петр" to "петра")
+
+/**
+ * Родительный падеж имени по окончанию: Маша → Маши, Петя → Пети, Мария → Марии, Алиса → Алисы,
+ * Андрей → Андрея, Иван → Ивана; у девочек на мягкий знак — Любовь → Любови, на согласную не
+ * склоняются — Кармен (пол не указан — как мальчика, ADR-0016). Двойные через дефис склоняются по частям.
+ * null — склонять не берёмся: несколько слов, цифры, латиница.
+ */
+internal fun genitiveName(name: String, sex: Sex?): String? {
+    val cyrillic = name.isNotEmpty() && name.all { it == '-' || it in 'а'..'я' || it in 'А'..'Я' || it == 'ё' || it == 'Ё' }
+    if (!cyrillic || name.startsWith("-") || name.endsWith("-")) return null
+    return name.split("-").joinToString("-") { genitiveWord(it, sex) }
+}
+
+private fun genitiveWord(word: String, sex: Sex?): String {
+    val lower = word.lowercase()
+    GENITIVE_EXCEPTIONS[lower]?.let { return matchCase(it, word) }
+    val stem = word.dropLast(1)
+    val ending = when (lower.last()) {
+        'я' -> "и" // Петя → Пети, Мария → Марии, Илья → Ильи
+        'а' -> if (stem.lastOrNull()?.lowercaseChar()?.let { it in "гкхжчшщ" } == true) "и" else "ы" // Маша → Маши, Алиса → Алисы
+        'й' -> "я" // Андрей → Андрея
+        'ь' -> if (sex == Sex.GIRL) "и" else "я" // Любовь → Любови, Игорь → Игоря
+        in "бвгджзклмнпрстфхцчшщ" -> return if (sex == Sex.GIRL) word else matchCase(lower + "а", word) // Иван → Ивана
+        else -> return word // Нико, Мари: на гласные о, е, и, у, ю, ы, э имена не склоняются
+    }
+    return stem + if (word.length > 1 && word == word.uppercase()) ending.uppercase() else ending
+}
+
+/** [declined] в регистре исходного слова: «МАША» → «МАШИ», «маша» → «маши», «Маша» → «Маши». */
+private fun matchCase(declined: String, original: String): String = when {
+    original.length > 1 && original == original.uppercase() -> declined.uppercase()
+    original.first().isUpperCase() -> declined.replaceFirstChar(Char::titlecase)
+    else -> declined
+}
+
+/** Заголовок записи; [sex] — пол ребёнка, чья это запись. */
+fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
+    is Feeding -> "Кормление · ${breastLabel(event.breast)}" + if (event.isActive) " · идёт" else ""
+    is Diaper -> "Подгузник · ${diaperLabel(event.kind, sex)}"
     is Sleep -> if (event.isActive) "Сон · идёт" else "Сон"
     is Medicine -> "Лекарство · ${event.name}"
     is Weight -> "Вес · ${formatWeight(event.grams)}"
 }
 
 fun eventTimeLine(event: BabyEvent): String = when (event) {
-    is Sleep -> event.end?.let { end ->
-        "${formatClock(event.start)}–${formatClock(end)} · ${formatDuration(end - event.start)}"
-    } ?: "с ${formatClock(event.start)}"
-    is Feeding, is Diaper, is Medicine, is Weight -> formatClock(event.start)
+    is Sleep -> timeRange(event.start, event.end)
+    // Кормления до ADR-0015 — без длительности: конец равен началу
+    is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
+    is Diaper, is Medicine, is Weight -> formatClock(event.start)
 }
+
+/** «13:40–15:05 · 1 ч 25 мин»; идущий таймер — «с 13:40». */
+private fun timeRange(start: Long, end: Long?): String = end?.let {
+    "${formatClock(start)}–${formatClock(it)} · ${formatDuration(it - start)}"
+} ?: "с ${formatClock(start)}"
 
 /** «850 г» до килограмма, дальше «4,35 кг» (без хвостовых нулей) */
 fun formatWeight(grams: Int): String {
@@ -98,8 +157,8 @@ fun formatWeight(grams: Int): String {
 }
 
 /** Возраст по-русски: «12 дн.», «2 мес 10 дн.», «1 г 3 мес» */
-fun formatAge(birth: LocalDate, today: LocalDate): String {
-    if (birth > today) return "ещё не родился"
+fun formatAge(birth: LocalDate, today: LocalDate, sex: Sex?): String {
+    if (birth > today) return bySex(sex, "ещё не родился", "ещё не родилась")
     val period = Period.between(birth, today)
     val years = period.years
     val months = period.months

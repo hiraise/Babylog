@@ -5,6 +5,8 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
@@ -18,6 +20,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -71,9 +74,9 @@ class DiaryViewModelTest {
     @Test
     fun `new child is selected and duplicate names are ignored`() = runTest {
         val vm = viewModel()
-        vm.addChild(" Вася ", birthDate = null)
-        assertEquals("Вася", vm.state.value.child?.name)
-        vm.addChild("вася", birthDate = null)
+        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY)
+        assertEquals(Child(3, "Вася", null, Sex.BOY), vm.state.value.child)
+        vm.addChild("вася", birthDate = null, sex = null)
         assertEquals(3, vm.state.value.children.size)
     }
 
@@ -98,6 +101,62 @@ class DiaryViewModelTest {
         assertNull(vm.state.value.activeSleep)
         val sleep = vm.state.value.events.single() as com.kid.babylog.core.model.Sleep
         assertEquals(Instant.parse("2026-10-15T10:00:00Z").toEpochMilli(), sleep.end)
+    }
+
+    @Test
+    fun `switching breast splits the feeding at one second and end stops it`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 600_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startFeeding(now.toEpochMilli(), Breast.RIGHT) // второе кормление не начинается
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
+        vm.switchBreast()
+        val second = Instant.parse("2026-10-15T10:00:00Z").toEpochMilli()
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+        assertEquals(second, vm.state.value.activeFeeding?.start)
+        vm.endFeeding()
+        assertNull(vm.state.value.activeFeeding)
+        val feedings = vm.state.value.events.filterIsInstance<Feeding>().sortedBy { it.start }
+        assertEquals(listOf(Breast.LEFT, Breast.RIGHT), feedings.map { it.breast })
+        assertEquals(listOf(second, second), feedings.map { it.end })
+        assertEquals(second, feedings[1].start) // правая начата ровно в конце левой: одно кормление в сводке
+    }
+
+    @Test
+    fun `sleep and feeding never run together`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 1_800_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startSleep(start + 600_000)
+        assertNull(vm.state.value.activeFeeding)
+        // Кормление закончилось в момент начала сна — с точностью до секунды, как хранит репозиторий
+        assertEquals(Instant.parse("2026-10-15T09:40:00Z").toEpochMilli(), vm.state.value.events.filterIsInstance<Feeding>().single().end)
+        vm.startFeeding(start + 1_200_000, Breast.RIGHT)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+    }
+
+    @Test
+    fun `stopping a timer by tap can be undone`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        assertEquals("Сон: 1 ч", vm.state.value.message)
+        assertTrue(vm.state.value.canUndo)
+        vm.consumeMessage(undo = true)
+        assertNull(vm.state.value.events.filterIsInstance<Sleep>().single().end)
+        assertFalse(vm.state.value.canUndo)
+    }
+
+    @Test
+    fun `undo does not resume a timer once another one started`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        vm.startFeeding(now.toEpochMilli(), Breast.LEFT)
+        vm.consumeMessage(undo = true)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
     }
 
     @Test

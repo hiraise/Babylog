@@ -18,7 +18,8 @@ private val DefaultSpacing = Spacing()
  * Динамический цвет (Material You) не используется: цвета одинаковы на всех устройствах.
  *
  * @param clock часы для [LocalClock]: в приложении — `AppContainer.clock`, в превью и тестах — свои.
- * @param darkTheme тёмная тема; по умолчанию — как в системе (так же выбирает и окно, `values-night`).
+ * @param darkTheme тёмная тема; по умолчанию — как в системе. В приложении её передаёт `MainActivity`
+ *   с учётом темы, выбранной в настройке (ADR-0017).
  */
 @Composable
 fun BabyLogTheme(
