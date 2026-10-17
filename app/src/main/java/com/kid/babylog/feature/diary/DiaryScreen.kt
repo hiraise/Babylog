@@ -190,7 +190,7 @@ fun DiaryScreen(
         NewEventSheet(
             kind = kind,
             child = child,
-            medicineNames = state.medicineNames,
+            pastMedicines = state.pastMedicines,
             onDismiss = { newEvent = null },
             onSave = {
                 viewModel.saveEvent(it)
@@ -226,7 +226,7 @@ fun DiaryScreen(
             EditEventSheet(
                 event = event,
                 sex = child.sex,
-                medicineNames = state.medicineNames,
+                pastMedicines = state.pastMedicines,
                 onDismiss = { editingId = NONE },
                 onSave = {
                     viewModel.saveEvent(it)

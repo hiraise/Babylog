@@ -31,13 +31,14 @@ class MedicineSuggestionsScreenshotTest {
     @Test
     fun `medicine suggestions`() =
         captureRoboImage("src/test/screenshots/medicine_suggestions.png", roborazziOptions = SCREENSHOT_OPTIONS) {
-            val names = listOf("Витамин D", "Виферон", "Нурофен", "Вибуркол свечи детские гомеопатические")
+            val medicines = listOf("Витамин D", "Виферон", "Нурофен", "Вибуркол свечи детские гомеопатические")
+                .map { PastMedicine(it) }
             Column {
                 for (dark in listOf(false, true)) {
                     BabyLogTheme(clock = clock, darkTheme = dark) {
                         Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                             Column(Modifier.fillMaxWidth().padding(BabyLogTheme.spacing.l)) {
-                                MedicineNameField(TextFieldValue("Ви"), {}, medicineSuggestions(names, "Ви"))
+                                MedicineNameField(TextFieldValue("Ви"), {}, medicineSuggestions(medicines, "Ви"), {})
                             }
                         }
                     }

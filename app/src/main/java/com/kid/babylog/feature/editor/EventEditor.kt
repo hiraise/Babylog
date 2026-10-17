@@ -13,12 +13,12 @@ import com.kid.babylog.core.model.Weight
 /** Кнопки быстрого добавления. Сон и кормление начинаются отдельно — через [SleepStartSheet] и [FeedingStartSheet]. */
 enum class NewEventKind { DIAPER, MEDICINE, WEIGHT }
 
-/** Лист новой записи для ребёнка [child]. [medicineNames] — подсказки названий лекарств ([pastMedicineNames]). */
+/** Лист новой записи для ребёнка [child]. [pastMedicines] — подсказки в листе лекарства. */
 @Composable
 fun NewEventSheet(
     kind: NewEventKind,
     child: Child,
-    medicineNames: List<String>,
+    pastMedicines: List<PastMedicine>,
     onDismiss: () -> Unit,
     onSave: (BabyEvent) -> Unit,
 ) {
@@ -27,7 +27,7 @@ fun NewEventSheet(
         NewEventKind.DIAPER -> DiaperSheet(null, child.sex, onDismiss) { diaperKind, time, note ->
             onSave(Diaper(childId = childId, start = time, kind = diaperKind, note = note))
         }
-        NewEventKind.MEDICINE -> MedicineSheet(null, medicineNames, onDismiss) { name, time, note ->
+        NewEventKind.MEDICINE -> MedicineSheet(null, pastMedicines, onDismiss) { name, time, note ->
             onSave(Medicine(childId = childId, start = time, name = name, note = note))
         }
         NewEventKind.WEIGHT -> WeightSheet(null, onDismiss) { grams, time, note ->
@@ -38,13 +38,13 @@ fun NewEventSheet(
 
 /**
  * Лист правки существующей записи; id и ребёнок сохраняются. [sex] — пол ребёнка, чья запись,
- * [medicineNames] — подсказки названий лекарств ([pastMedicineNames]).
+ * [pastMedicines] — подсказки в листе лекарства.
  */
 @Composable
 fun EditEventSheet(
     event: BabyEvent,
     sex: Sex?,
-    medicineNames: List<String>,
+    pastMedicines: List<PastMedicine>,
     onDismiss: () -> Unit,
     onSave: (BabyEvent) -> Unit,
 ) {
@@ -55,7 +55,7 @@ fun EditEventSheet(
         is Diaper -> DiaperSheet(event, sex, onDismiss) { kind, time, note ->
             onSave(event.copy(kind = kind, start = time, note = note))
         }
-        is Medicine -> MedicineSheet(event, medicineNames, onDismiss) { name, time, note ->
+        is Medicine -> MedicineSheet(event, pastMedicines, onDismiss) { name, time, note ->
             onSave(event.copy(name = name, start = time, note = note))
         }
         is Weight -> WeightSheet(event, onDismiss) { grams, time, note ->

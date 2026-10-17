@@ -78,9 +78,9 @@ class DiaryViewModelTest {
         vm.saveEvent(Medicine(childId = 1, start = 1_000, name = "Витамин D"))
         vm.saveEvent(Medicine(childId = 1, start = 3_000, name = "Нурофен"))
         vm.saveEvent(Medicine(childId = 2, start = 2_000, name = "Эспумизан"))
-        assertEquals(listOf("Нурофен", "Витамин D"), vm.state.value.medicineNames)
+        assertEquals(listOf("Нурофен", "Витамин D"), vm.state.value.pastMedicines.map { it.name })
         vm.selectChild(2)
-        assertEquals(listOf("Эспумизан"), vm.state.value.medicineNames)
+        assertEquals(listOf("Эспумизан"), vm.state.value.pastMedicines.map { it.name })
     }
 
     @Test
