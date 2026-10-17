@@ -48,7 +48,7 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  *
  * Пока таймер не идёт ([runningSince] = null) — фон карточки, касание — [onStart], под подписью —
  * [idleCaption]: сколько прошло с конца прошлого («не спит 1 ч 20 мин»), чтобы не идти за этим
- * в «Историю». Идёт — фон
+ * в «Историю», — до трёх строк: в плитку они помещаются в высоту идущего таймера. Идёт — фон
  * `primary`, иконка поднимается, под ней время с [runningSince], подпись —
  * [runningLabel] (например «левая грудь»); касание — [onStop]. [corner] — необязательная кнопка
  * в правом верхнем углу идущего таймера (сменить грудь).
@@ -127,7 +127,7 @@ fun TimerTile(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // Уходит, пока выезжает время, и наоборот. Две строки ниже строки времени — высота
+                // Уходит, пока выезжает время, и наоборот. Три строки ниже строки времени — высота
                 // плитки по-прежнему задаётся идущим таймером
                 AnimatedVisibility(
                     visible = !running && idleCaption != null,
@@ -141,7 +141,7 @@ fun TimerTile(
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
