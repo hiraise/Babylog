@@ -4,7 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** Кадр фото в круге (ADR-0022): квадрат всегда внутри фото, точка под пальцами остаётся под ними. */
+/** Кадр фото в круге (ADR-0023): квадрат всегда внутри фото, точка под пальцами остаётся под ними. */
 class PhotoCropTest {
 
     @Test

@@ -19,7 +19,7 @@ data class ChildEntity(
     val birthDate: Long?,
     /** Код [com.kid.babylog.core.model.Sex], null — пол не указан. */
     val sex: String? = null,
-    /** JPEG [com.kid.babylog.core.model.ChildPhoto], null — фото нет (ADR-0022). */
+    /** JPEG [com.kid.babylog.core.model.ChildPhoto], null — фото нет (ADR-0023). */
     val photo: ByteArray? = null,
 )
 

@@ -20,7 +20,7 @@ import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import kotlin.math.abs
 
-/** Обработка фото на настоящих Bitmap (Robolectric NATIVE): поворот по EXIF, размер, кадр (ADR-0022). */
+/** Обработка фото на настоящих Bitmap (Robolectric NATIVE): поворот по EXIF, размер, кадр (ADR-0023). */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PhotoBitmapsTest {

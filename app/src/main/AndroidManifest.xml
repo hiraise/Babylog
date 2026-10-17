@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
         <!-- Файл, куда системная камера кладёт снимок для фото ребёнка: приложению не нужно разрешение
-             CAMERA, а камера получает доступ только к этому файлу (ADR-0022) -->
+             CAMERA, а камера получает доступ только к этому файлу (ADR-0023) -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.photos"

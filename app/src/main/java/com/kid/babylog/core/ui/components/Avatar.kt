@@ -30,7 +30,7 @@ import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
- * Аватар ребёнка: [photo] в круге (ADR-0022), а без фото — круг `primaryContainer` с иконкой по полу
+ * Аватар ребёнка: [photo] в круге (ADR-0023), а без фото — круг `primaryContainer` с иконкой по полу
  * [avatarIcon] цвета `onPrimaryContainer` (ADR-0019). Фото, которое не декодируется, — тоже иконка.
  *
  * Используй рядом с именем ребёнка: в шапке, списке детей. Аватар декоративный — TalkBack его
