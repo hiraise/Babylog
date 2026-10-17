@@ -66,12 +66,14 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
     }
 
     /** Сон и кормление не идут одновременно (ADR-0020): идущее заканчивается в момент [at], но не раньше своего начала. */
-    override suspend fun addBottle(bottle: Bottle) = db.withTransaction {
-        val at = bottle.start.truncatedToSecond()
-        dao.activeEvents(bottle.childId, EventRecord.SLEEP).filter { it.startTime <= at }.forEach { sleep ->
-            dao.updateEvent(sleep.copy(endTime = at))
+    override suspend fun addBottle(bottle: Bottle) {
+        db.withTransaction {
+            val at = bottle.start.truncatedToSecond()
+            dao.activeEvents(bottle.childId, EventRecord.SLEEP).filter { it.startTime <= at }.forEach { sleep ->
+                dao.updateEvent(sleep.copy(endTime = at))
+            }
+            addEvent(bottle)
         }
-        addEvent(bottle)
     }
 
     private suspend fun finishActive(childId: Long, type: String, at: Long) {
