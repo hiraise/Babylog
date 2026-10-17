@@ -16,7 +16,8 @@
   (`@RunWith(RobolectricTestRunner::class)`), в `app/src/test`. Эмулятор в CI не нужен.
 - Тестовые библиотеки — только в `testImplementation`: `org.robolectric:robolectric` (MIT),
   `androidx.room:room-testing`, `io.github.takahirom.roborazzi:roborazzi` и `roborazzi-compose`
-  (Apache-2.0), плагин `io.github.takahirom.roborazzi`.
+  (Apache-2.0), плагин `io.github.takahirom.roborazzi`. Список дополнен `ui-test-junit4` —
+  [ADR-0022](0022-compose-ui-tests.md).
 - Каждую миграцию покрывай в `MigrationTest`: `runMigrationsAndValidate` против схемы из
   `app/schemas/` и открытие старой базы через `AppDatabase.build` с проверкой всех записей.
   Схемы подключены к assets варианта debug — тестам на JVM доступны только они.
