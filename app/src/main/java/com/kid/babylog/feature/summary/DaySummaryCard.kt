@@ -27,13 +27,10 @@ import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Sex
-import com.kid.babylog.core.ui.bottleLabel
-import com.kid.babylog.core.ui.breastLabel
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.diaperIcon
 import com.kid.babylog.core.ui.diaperLabel
-import com.kid.babylog.core.ui.formatAgo
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import java.time.LocalDate
@@ -50,7 +47,7 @@ fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex
     // Пересчитываем раз в минуту, а не на каждый тик секундного таймера
     val minuteNow = now / 60_000
     val lines = remember(events, date, minuteNow, sex) {
-        summarizeDay(events, date, now, ZoneId.systemDefault()).lines(now, sex)
+        summarizeDay(events, date, now, ZoneId.systemDefault()).lines(sex)
     }
     val spacing = BabyLogTheme.spacing
     AppCard(Modifier.fillMaxWidth()) {
@@ -78,7 +75,7 @@ fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex
                                     if (i > 0) append(" · ")
                                     // TalkBack читает вместо иконки её описание: «пописал»
                                     appendInlineContent(part.inlineId, part.description)
-                                    append("×${part.count}")
+                                    append("×${part.count}${part.suffix}")
                                 }
                                 append(")")
                             }
@@ -99,7 +96,7 @@ fun DaySummaryCard(events: List<BabyEvent>, date: LocalDate, now: Long, sex: Sex
 }
 
 /**
- * Строка сводки: иконка, метка («Кормлений:») и значение («5 · последнее: левая, 25 мин назад»).
+ * Строка сводки: иконка, метка («Кормлений:») и значение («5»).
  * [parts] — разбивка значения иконками: у подгузников «3 (💧×2 · 💨×1)» с иконками вида.
  */
 internal data class SummaryLine(
@@ -109,40 +106,31 @@ internal data class SummaryLine(
     val parts: List<SummaryPart> = emptyList(),
 )
 
-/** Часть разбивки: иконка, сколько раз и описание для TalkBack («пописал»). */
-internal data class SummaryPart(@DrawableRes val icon: Int, val count: Int, val description: String) {
+/**
+ * Часть разбивки: иконка, сколько раз, описание для TalkBack («пописал») и [suffix] после числа —
+ * «, 210 мл» у бутылочек.
+ */
+internal data class SummaryPart(@DrawableRes val icon: Int, val count: Int, val description: String, val suffix: String = "") {
     val inlineId: String get() = "part_$icon"
 }
 
 /** Строки карточки: кормления, подгузники, сон, лекарства. */
-internal fun DaySummary.lines(now: Long, sex: Sex?): List<SummaryLine> {
-    val feedingValue = buildString {
-        append(feedings)
-        // Неразрывный пробел: число и «мл» не расходятся по строкам
-        if (bottles > 0) append(" (бутылочкой $bottles, $bottleMl\u00A0мл)")
-        val breast = lastFeeding
-        val bottle = lastBottle
-        // Перерыв между кормлениями считают от начала: «кормить каждые 3 часа»; у бутылочки начало и есть время
-        when {
-            breast?.isActive == true -> append(" · сейчас ест: ${breastLabel(breast.lastBreast)}")
-            bottle != null && (breast == null || bottle.start >= breast.start) -> {
-                append(" · последнее: ${bottleLabel(bottle.volumeMl, bottle.milk)}, ")
-                append(formatAgo((now - bottle.start).coerceAtLeast(0)))
-            }
-            breast != null -> {
-                append(" · последнее: ${breastLabel(breast.lastBreast)}, ")
-                append(formatAgo((now - breast.start).coerceAtLeast(0)))
-            }
-        }
+internal fun DaySummary.lines(sex: Sex?): List<SummaryLine> {
+    // Разбивка кормлений — только когда были бутылочки: «5 (грудь×3 · бутылочка×2, 210 мл)»;
+    // одной грудью разбивать нечего. Неразрывный пробел: число и «мл» не расходятся по строкам
+    val feedingParts = if (bottles == 0) {
+        emptyList()
+    } else {
+        listOfNotNull(
+            SummaryPart(R.drawable.ic_feeding, breastFeedings, "грудью").takeIf { breastFeedings > 0 },
+            SummaryPart(R.drawable.ic_bottle, bottles, "бутылочкой", suffix = ", $bottleMl\u00A0мл"),
+        )
     }
     // Разбивка по видам — иконками вида подгузника, как в истории: капля, волны, оба знака
     val diaperParts = DiaperKind.entries
         .filter { (diapers[it] ?: 0) > 0 }
         .map { SummaryPart(diaperIcon(it), diapers.getValue(it), diaperLabel(it, sex)) }
-    val sleepValue = buildString {
-        append(if (sleepMillis > 0) formatDuration(sleepMillis) else "0 мин")
-        if (sleepingNow) append(" · сейчас спит")
-    }
+    val sleepValue = if (sleepMillis > 0) formatDuration(sleepMillis) else "0 мин"
     val medsValue = buildString {
         append(medicines.sumOf { it.second })
         if (medicines.isNotEmpty()) {
@@ -153,7 +141,7 @@ internal fun DaySummary.lines(now: Long, sex: Sex?): List<SummaryLine> {
         }
     }
     return listOf(
-        SummaryLine(R.drawable.ic_feeding, "Кормлений:", feedingValue),
+        SummaryLine(R.drawable.ic_feeding, "Кормлений:", feedings.toString(), feedingParts),
         SummaryLine(R.drawable.ic_diaper, "Подгузников:", diaperCount.toString(), diaperParts),
         SummaryLine(R.drawable.ic_sleep, "Сон:", sleepValue),
         SummaryLine(R.drawable.ic_medicine, "Лекарств:", medsValue),

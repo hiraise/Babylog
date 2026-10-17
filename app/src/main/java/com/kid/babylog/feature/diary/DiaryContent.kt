@@ -84,7 +84,7 @@ internal fun TodayContent(
                 SleepCard(child, state.activeSleep, state.lastSleepEnd, now, actions.onStartSleep, actions.onEndSleep, tile)
                 FeedingCard(
                     activeFeeding = state.activeFeeding,
-                    lastFeedingEnd = state.lastFeedingEnd,
+                    lastFeeding = state.lastFeeding,
                     now = now,
                     onStart = actions.onStartFeeding,
                     onEnd = actions.onEndFeeding,

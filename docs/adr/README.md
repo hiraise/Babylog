@@ -32,3 +32,4 @@ AI-агенты, поэтому ADR пишутся в первую очеред�
 | [0020](0020-sleep-feeding-exclusive.md) | Сон и кормление не идут одновременно: начало одного заканчивает другое | Принято | `startSleep`, `startFeeding`, `testing/Fakes.kt`, листы старта в `feature/editor/` |
 | [0021](0021-tap-to-stop-timer.md) | Сон и кормление — плитки в один ряд; касание начинает и заканчивает таймер, «Отменить» в снекбаре возвращает его | Принято | `TimerTile`, `DiaryCards.kt`, отмена остановки в `DiaryViewModel.kt` |
 | [0025](0025-bottle-feeding.md) | Бутылочка — разовая запись `Bottle` (тип `BOTTLE`, объём в мл и что внутри), заканчивает идущий сон | Принято | `Bottle`, `EventRecord.kt`, `addBottle`, `FeedingStartSheet`, сводка, `feature/transfer/`, README «Формат CSV» |
+| [0026](0026-summary-day-totals.md) | Сводка дня — только итоги дня; что сейчас и что было последним — на плитках | Принято | `DaySummary`, `DaySummaryCard`, подписи плиток в `DiaryCards.kt`, `DiaryUiState.lastFeeding` |

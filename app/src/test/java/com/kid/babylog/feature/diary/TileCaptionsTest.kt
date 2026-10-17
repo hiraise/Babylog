@@ -17,9 +17,10 @@ class TileCaptionsTest {
     @Test
     fun `captions count from the end of the last sleep and feeding`() {
         assertEquals("не спит 1 ч 20 мин", awakeCaption(now - 80 * minute, now))
-        assertEquals("закончилось 40 мин назад", afterFeedingCaption(now - 40 * minute, now))
+        assertEquals("левая, 40 мин назад", afterFeedingCaption(LastFeeding(now - 40 * minute, Breast.LEFT), now))
+        assertEquals("бутылочка, 2 ч назад", afterFeedingCaption(LastFeeding(now - 120 * minute, breast = null), now))
         assertEquals("не спит меньше минуты", awakeCaption(now - 10_000, now))
-        assertEquals("закончилось только что", afterFeedingCaption(now - 10_000, now))
+        assertEquals("правая, только что", afterFeedingCaption(LastFeeding(now - 10_000, Breast.RIGHT), now))
     }
 
     @Test
@@ -27,7 +28,7 @@ class TileCaptionsTest {
         assertNull(awakeCaption(null, now))
         assertNull(afterFeedingCaption(null, now))
         assertNull(awakeCaption(now - 24 * 60 * minute, now))
-        assertEquals("закончилось 23 ч 59 мин назад", afterFeedingCaption(now - (24 * 60 - 1) * minute, now))
+        assertEquals("левая, 23 ч 59 мин назад", afterFeedingCaption(LastFeeding(now - (24 * 60 - 1) * minute, Breast.LEFT), now))
     }
 
     @Test
@@ -40,6 +41,6 @@ class TileCaptionsTest {
         )
         val state = DiaryUiState.of(listOf(Child(1, "Маша", null)), Child(1, "Маша", null), events)
         assertEquals(now - 90 * minute, state.lastSleepEnd)
-        assertEquals(now - 30 * minute, state.lastFeedingEnd)
+        assertEquals(LastFeeding(now - 30 * minute, Breast.RIGHT), state.lastFeeding)
     }
 }

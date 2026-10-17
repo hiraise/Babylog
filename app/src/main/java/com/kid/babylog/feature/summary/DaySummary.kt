@@ -12,28 +12,25 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-/** Итоги одного дня для одного ребёнка. */
+/**
+ * Итоги одного дня для одного ребёнка (ADR-0026): сколько и сколько всего. Что идёт сейчас и что
+ * было последним, здесь нет — это показывают плитки «Сегодня».
+ */
 data class DaySummary(
-    val isToday: Boolean,
-    /**
-     * Кормления, начатые в этот день, вместе с бутылочками; смена груди не считается новым
-     * кормлением ([feedingSessions]).
-     */
-    val feedings: Int,
-    /** Последнее кормление грудью вообще, не только за этот день; есть только у сегодняшней сводки. */
-    val lastFeeding: FeedingSession?,
-    /** Бутылочки этого дня (ADR-0025): сколько раз и сколько всего миллилитров; входят и в [feedings]. */
+    /** Кормления грудью, начатые в этот день; смена груди не считается новым кормлением ([feedingSessions]). */
+    val breastFeedings: Int,
+    /** Бутылочки этого дня (ADR-0025): сколько раз и сколько всего миллилитров. */
     val bottles: Int,
     val bottleMl: Int,
-    /** Последняя бутылочка вообще; есть только у сегодняшней сводки — как [lastFeeding]. */
-    val lastBottle: Bottle?,
     val diapers: Map<DiaperKind, Int>,
     /** Сон, пересекающийся с этими сутками; активный считается до `now`. */
     val sleepMillis: Long,
-    val sleepingNow: Boolean,
     /** Лекарства: название из последней записи и число приёмов; названия сравниваются без регистра. */
     val medicines: List<Pair<String, Int>>,
 ) {
+    /** Все кормления дня: грудью и бутылочкой. */
+    val feedings: Int get() = breastFeedings + bottles
+
     val diaperCount: Int get() = diapers.values.sum()
 }
 
@@ -62,7 +59,6 @@ fun feedingSessions(events: List<BabyEvent>): List<FeedingSession> {
 fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: ZoneId): DaySummary {
     val dayStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
     val dayEnd = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-    val isToday = date == Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     // Новые сверху: так «последнее» — первое в списке
     val newestFirst = events.sortedWith(compareByDescending<BabyEvent> { it.start }.thenByDescending { it.id })
     val dayEvents = newestFirst.filter { it.start in dayStart until dayEnd }
@@ -82,15 +78,11 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
         .map { group -> group.first().name.trim() to group.size }
 
     return DaySummary(
-        isToday = isToday,
-        feedings = feedings.count { it.start in dayStart until dayEnd } + dayBottles.size,
-        lastFeeding = if (isToday) feedings.lastOrNull() else null,
+        breastFeedings = feedings.count { it.start in dayStart until dayEnd },
         bottles = dayBottles.size,
         bottleMl = dayBottles.sumOf { it.volumeMl },
-        lastBottle = if (isToday) newestFirst.firstNotNullOfOrNull { it as? Bottle } else null,
         diapers = dayEvents.filterIsInstance<Diaper>().groupingBy { it.kind }.eachCount(),
         sleepMillis = sleepMillis,
-        sleepingNow = isToday && sleeps.any { it.isActive },
         medicines = medicines,
     )
 }
