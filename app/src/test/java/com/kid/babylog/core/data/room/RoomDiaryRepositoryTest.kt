@@ -3,6 +3,7 @@ package com.kid.babylog.core.data.room
 import androidx.test.platform.app.InstrumentationRegistry
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
@@ -71,7 +72,7 @@ class RoomDiaryRepositoryTest {
 
     @Test
     fun `deleting a child removes only its records and never the last child`() = withRepository { repo ->
-        val second = repo.addChild("Петя", birthDate = null, sex = Sex.BOY)
+        val second = repo.addChild("Петя", birthDate = null, sex = Sex.BOY, photo = null)
         assertEquals(Child(second, "Петя", null, Sex.BOY), repo.allChildren().last())
         repo.addEvent(Medicine(childId = 1, start = T1, name = "Витамин D"))
         repo.addEvent(Medicine(childId = second, start = T2, name = "Нурофен"))
@@ -80,6 +81,22 @@ class RoomDiaryRepositoryTest {
         assertEquals(listOf(1L), repo.allChildren().map { it.id })
         assertEquals(listOf(1L), repo.allEvents().map { it.childId })
         assertFalse(repo.deleteChild(1))
+    }
+
+    @Test
+    fun `child photo is stored, replaced and removed with the child`() = withRepository { repo ->
+        val first = ChildPhoto(byteArrayOf(1, 2, 3))
+        val id = repo.addChild("Петя", birthDate = null, sex = null, photo = first)
+        assertEquals(first, repo.allChildren().last().photo)
+
+        val second = ChildPhoto(byteArrayOf(4, 5))
+        repo.updateChild(repo.allChildren().last().copy(photo = second))
+        assertEquals(second, repo.allChildren().last().photo)
+        repo.updateChild(repo.allChildren().last().copy(photo = null))
+        assertEquals(null, repo.allChildren().last().photo)
+
+        assertTrue(repo.deleteChild(id))
+        assertEquals(listOf(null), repo.allChildren().map { it.photo })
     }
 
     private companion object {

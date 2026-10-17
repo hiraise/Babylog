@@ -6,6 +6,7 @@ import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -38,9 +39,9 @@ class FakeDiaryRepository(
     override suspend fun allEvents(): List<BabyEvent> =
         events.value.sortedWith(compareBy<BabyEvent> { it.start }.thenBy { it.id })
 
-    override suspend fun addChild(name: String, birthDate: Long?, sex: Sex?): Long {
+    override suspend fun addChild(name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?): Long {
         val id = nextChildId++
-        children.value += Child(id, name.trim(), birthDate, sex)
+        children.value += Child(id, name.trim(), birthDate, sex, photo)
         return id
     }
 

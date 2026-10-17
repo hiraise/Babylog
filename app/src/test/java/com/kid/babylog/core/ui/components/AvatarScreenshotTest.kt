@@ -48,7 +48,7 @@ class AvatarScreenshotTest {
                                     horizontalArrangement = Arrangement.spacedBy(spacing.m),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    listOf(null, Sex.BOY, Sex.GIRL).forEach { Avatar(it, size = size) }
+                                    listOf(null, Sex.BOY, Sex.GIRL).forEach { Avatar(it, photo = null, size = size) }
                                 }
                             }
                         }

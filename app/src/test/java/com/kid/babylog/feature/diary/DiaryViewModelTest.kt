@@ -2,6 +2,7 @@ package com.kid.babylog.feature.diary
 
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -84,11 +85,12 @@ class DiaryViewModelTest {
     }
 
     @Test
-    fun `new child is selected and duplicate names are ignored`() = runTest {
+    fun `new child is selected with its photo and duplicate names are ignored`() = runTest {
         val vm = viewModel()
-        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY)
-        assertEquals(Child(3, "Вася", null, Sex.BOY), vm.state.value.child)
-        vm.addChild("вася", birthDate = null, sex = null)
+        val photo = ChildPhoto(byteArrayOf(1, 2, 3))
+        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY, photo = photo)
+        assertEquals(Child(3, "Вася", null, Sex.BOY, photo), vm.state.value.child)
+        vm.addChild("вася", birthDate = null, sex = null, photo = null)
         assertEquals(3, vm.state.value.children.size)
     }
 

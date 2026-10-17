@@ -4,9 +4,11 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.platform.app.InstrumentationRegistry
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -58,6 +60,25 @@ class MigrationTest {
         val db = AppDatabase.build(context)
         try {
             assertEquals(listOf(Child(1, "Маша", BIRTH, sex = null)), RoomDiaryRepository(db).allChildren())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migration 5 to 6 produces schema 6 and children keep their data without a photo`() = runBlocking {
+        helper.createDatabase(DB_NAME, 5).use { db ->
+            db.execSQL("INSERT INTO children (id, name, birthDate, sex) VALUES (1, 'Маша', ?, 'GIRL')", arrayOf<Any?>(BIRTH))
+        }
+        helper.runMigrationsAndValidate(DB_NAME, 6, true, MIGRATION_5_6).close()
+        val db = AppDatabase.build(context)
+        try {
+            val repo = RoomDiaryRepository(db)
+            assertEquals(listOf(Child(1, "Маша", BIRTH, Sex.GIRL, photo = null)), repo.allChildren())
+            // Колонка принимает фото: у прежних детей его можно поставить после обновления
+            val photo = ChildPhoto(byteArrayOf(1, 2, 3))
+            repo.updateChild(repo.allChildren().single().copy(photo = photo))
+            assertEquals(photo, repo.allChildren().single().photo)
         } finally {
             db.close()
         }
