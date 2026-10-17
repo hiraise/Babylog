@@ -32,6 +32,8 @@ import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.ChoiceChip
 import com.kid.babylog.core.ui.components.SheetAction
 import com.kid.babylog.core.ui.formatDate
+import com.kid.babylog.core.ui.photo.deletePhotoFile
+import com.kid.babylog.core.ui.photo.rememberPhotoPicker
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
@@ -60,7 +62,7 @@ fun ChildSheet(
     val picker = rememberPhotoPicker(
         onPicked = {
             photoError = null
-            cropSource = it
+            cropSource = it.first()
         },
         onError = { photoError = it },
     )
@@ -142,12 +144,12 @@ fun ChildSheet(
         PhotoCropSheet(
             source = source,
             onDismiss = {
-                deletePhotoSource(source)
+                deletePhotoFile(source)
                 cropSource = null
             },
             onDone = {
                 photo = it
-                deletePhotoSource(source)
+                deletePhotoFile(source)
                 cropSource = null
             },
         )

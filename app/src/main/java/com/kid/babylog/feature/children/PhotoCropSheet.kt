@@ -41,10 +41,14 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.scale
 import com.kid.babylog.R
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
+import com.kid.babylog.core.ui.photo.loadUpright
+import com.kid.babylog.core.ui.photo.scaledToFit
+import com.kid.babylog.core.ui.photo.toJpeg
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
@@ -57,7 +61,7 @@ import kotlin.math.roundToInt
 @Composable
 internal fun PhotoCropSheet(source: String, onDismiss: () -> Unit, onDone: (ChildPhoto) -> Unit) {
     val loaded by produceState<Result<Bitmap>?>(null, source) {
-        value = withContext(Dispatchers.IO) { runCatching { loadForCrop(source) } }
+        value = withContext(Dispatchers.IO) { runCatching { loadUpright(source, CROP_SOURCE_MAX) } }
     }
     val bitmap = loaded?.getOrNull()
     val image = remember(bitmap) { bitmap?.asImageBitmap() }
@@ -157,6 +161,24 @@ private fun cropActions(apply: (pan: Offset, zoom: Float) -> Unit): List<CustomA
         action("Сдвинуть фото вправо", pan = Offset(0.25f, 0f)),
     )
 }
+
+/**
+ * Квадрат [square] из [source] — в JPEG [ChildPhoto.SIZE]×[ChildPhoto.SIZE]. Кадр меньше 512 px
+ * (маленькое фото, сильное увеличение) растягивается до размера.
+ */
+internal fun cropPhoto(source: Bitmap, square: CropSquare): ChildPhoto {
+    val side = square.side.roundToInt().coerceIn(1, minOf(source.width, source.height))
+    val left = square.left.roundToInt().coerceIn(0, source.width - side)
+    val top = square.top.roundToInt().coerceIn(0, source.height - side)
+    val cropped = Bitmap.createBitmap(source, left, top, side, side).scaledToFit(ChildPhoto.SIZE)
+    val sized = if (cropped.width == ChildPhoto.SIZE) cropped else cropped.scale(ChildPhoto.SIZE, ChildPhoto.SIZE)
+    return ChildPhoto(sized.toJpeg(JPEG_QUALITY))
+}
+
+/** Длинная сторона фото в окне кадрирования: при [MAX_CROP_ZOOM] в кадре остаётся ~512 px. */
+private const val CROP_SOURCE_MAX = 2048
+
+private const val JPEG_QUALITY = 90
 
 /** Всё в листе, кроме окна: ручка, заголовок, подсказка, кнопки и отступы. */
 private val SHEET_CHROME = 240.dp

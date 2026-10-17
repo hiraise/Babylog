@@ -5,7 +5,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import com.kid.babylog.core.model.ChildPhoto
+import org.junit.Assert.assertTrue
 import java.io.ByteArrayOutputStream
+import kotlin.math.abs
 
 /**
  * «Фото» для тестов — рисуется кодом, файла в репозитории нет: небо сверху, трава снизу и
@@ -39,3 +41,9 @@ fun testPhoto(): ChildPhoto {
 const val SKY = 0xFF8EC5FF.toInt()
 const val GRASS = 0xFF5DA85A.toInt()
 const val FACE = 0xFFF6C9A0.toInt()
+
+/** Цвет пикселя с допуском на сжатие JPEG. */
+fun assertColor(expected: Int, actual: Int) {
+    val close = listOf(Color::red, Color::green, Color::blue).all { channel -> abs(channel(expected) - channel(actual)) <= 16 }
+    assertTrue("ожидался #%06X, а не #%06X".format(expected and 0xFFFFFF, actual and 0xFFFFFF), close)
+}
