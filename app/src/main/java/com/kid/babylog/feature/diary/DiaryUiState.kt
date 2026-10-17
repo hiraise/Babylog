@@ -5,7 +5,8 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
-import com.kid.babylog.feature.editor.pastMedicineNames
+import com.kid.babylog.feature.editor.PastMedicine
+import com.kid.babylog.feature.editor.pastMedicines
 
 /** Всё, что главный экран показывает из данных. Эфемерное состояние UI (открытые листы) — в Compose. */
 data class DiaryUiState(
@@ -21,8 +22,8 @@ data class DiaryUiState(
     /** Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления. */
     val lastFeedingEnd: Long? = null,
     val lastWeight: Weight? = null,
-    /** Названия лекарств из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
-    val medicineNames: List<String> = emptyList(),
+    /** Лекарства из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
+    val pastMedicines: List<PastMedicine> = emptyList(),
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
     /** У сообщения есть «Отменить»: таймер остановили касанием карточки (ADR-0021). */
@@ -38,7 +39,7 @@ data class DiaryUiState(
             lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
             lastFeedingEnd = events.filterIsInstance<Feeding>().mapNotNull { it.end }.maxOrNull(),
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
-            medicineNames = pastMedicineNames(events),
+            pastMedicines = pastMedicines(events),
         )
     }
 }
