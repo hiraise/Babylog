@@ -170,6 +170,10 @@ check_adr_rules() {
     report "ADR-0014: иконка не из Material Symbols Rounded и без пометки «ADR-0014» своей иконки" "$hits" || failed=1
     hits="$(grep -rnHE '\b(AlertDialog|BasicAlertDialog|DatePickerDialog|DropdownMenu|DropdownMenuItem)\(|^import androidx\.compose\.ui\.window\.Dialog' "$code" || true)"
     report "ADR-0018: всплывающие окна — только нижние листы AppSheet (без AlertDialog, DropdownMenu, DatePickerDialog)" "$hits" || failed=1
+    hits="$(grep -nHE 'android\.permission\.(CAMERA|READ_MEDIA_|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE)' "$main/AndroidManifest.xml" || true)"
+    report "ADR-0022: фото снимают и выбирают системные камера и пикер — без разрешений на камеру и память" "$hits" || failed=1
+    hits="$(grep -nHE 'io\.coil-kt|com\.github\.bumptech|com\.squareup\.picasso|com\.yalantis' "$ROOT"/*.gradle.kts "$ROOT"/app/*.gradle.kts || true)"
+    report "ADR-0022: библиотеки загрузки и кадрирования фото (Coil, Glide, Picasso, uCrop) не подключаются" "$hits" || failed=1
     return "$failed"
 }
 

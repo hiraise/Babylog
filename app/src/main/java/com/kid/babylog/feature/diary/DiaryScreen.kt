@@ -288,8 +288,8 @@ fun DiaryScreen(
             initial = null,
             children = state.children,
             onDismiss = { childSheet = ChildSheetMode.NONE },
-            onSave = { name, birthDate, sex ->
-                viewModel.addChild(name, birthDate, sex)
+            onSave = { name, birthDate, sex, photo ->
+                viewModel.addChild(name, birthDate, sex, photo)
                 childSheet = ChildSheetMode.NONE
             },
         )
@@ -297,8 +297,8 @@ fun DiaryScreen(
             initial = child,
             children = state.children,
             onDismiss = { childSheet = ChildSheetMode.NONE },
-            onSave = { name, birthDate, sex ->
-                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex))
+            onSave = { name, birthDate, sex, photo ->
+                viewModel.updateChild(child.copy(name = name, birthDate = birthDate, sex = sex, photo = photo))
                 childSheet = ChildSheetMode.NONE
             },
             // Последнего ребёнка удалить нельзя

@@ -7,6 +7,7 @@ import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
@@ -28,8 +29,8 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
 
     override suspend fun allEvents(): List<BabyEvent> = dao.getAllEvents().toEvents()
 
-    override suspend fun addChild(name: String, birthDate: Long?, sex: Sex?): Long =
-        dao.insertChild(Child(id = 0, name = name.trim(), birthDate = birthDate, sex = sex).toEntity())
+    override suspend fun addChild(name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?): Long =
+        dao.insertChild(Child(id = 0, name = name.trim(), birthDate = birthDate, sex = sex, photo = photo).toEntity())
 
     override suspend fun updateChild(child: Child) =
         dao.updateChild(child.copy(name = child.name.trim()).toEntity())
