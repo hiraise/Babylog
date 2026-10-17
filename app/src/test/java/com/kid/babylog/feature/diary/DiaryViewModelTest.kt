@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.testing.FakeDiaryRepository
@@ -69,6 +70,17 @@ class DiaryViewModelTest {
         assertEquals(listOf(1L), vm.state.value.events.map { it.childId })
         vm.selectChild(2)
         assertTrue(vm.state.value.events.single() is Diaper)
+    }
+
+    @Test
+    fun `medicine suggestions come from the selected child's records`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Medicine(childId = 1, start = 1_000, name = "Витамин D"))
+        vm.saveEvent(Medicine(childId = 1, start = 3_000, name = "Нурофен"))
+        vm.saveEvent(Medicine(childId = 2, start = 2_000, name = "Эспумизан"))
+        assertEquals(listOf("Нурофен", "Витамин D"), vm.state.value.medicineNames)
+        vm.selectChild(2)
+        assertEquals(listOf("Эспумизан"), vm.state.value.medicineNames)
     }
 
     @Test
