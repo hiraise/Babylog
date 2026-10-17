@@ -2,6 +2,7 @@ package com.kid.babylog.feature.diary
 
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -19,6 +20,8 @@ data class DiaryUiState(
     val lastSleepEnd: Long? = null,
     /** Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления. */
     val lastFeedingEnd: Long? = null,
+    /** Время последней смены подгузника: «2 ч 10 мин назад» на плитке «Подгузник». */
+    val lastDiaper: Long? = null,
     val lastWeight: Weight? = null,
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
@@ -34,6 +37,7 @@ data class DiaryUiState(
             activeFeeding = events.firstNotNullOfOrNull { (it as? Feeding)?.takeIf(Feeding::isActive) },
             lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
             lastFeedingEnd = events.filterIsInstance<Feeding>().mapNotNull { it.end }.maxOrNull(),
+            lastDiaper = events.firstNotNullOfOrNull { (it as? Diaper)?.start },
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
         )
     }

@@ -2,13 +2,20 @@ package com.kid.babylog.feature.diary
 
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Diaper
+import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sleep
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Подписи плиток сна и кормления, пока таймер не идёт: сколько прошло с конца прошлого. */
+/**
+ * Подписи плиток: у сна и кормления, пока таймер не идёт, — сколько прошло с конца прошлого;
+ * у подгузника — с последней смены, а через 3 часа без сна подпись выделяется.
+ */
 class TileCaptionsTest {
 
     private val now = 1_786_000_000_000L
@@ -41,5 +48,34 @@ class TileCaptionsTest {
         val state = DiaryUiState.of(listOf(Child(1, "Маша", null)), Child(1, "Маша", null), events)
         assertEquals(now - 90 * minute, state.lastSleepEnd)
         assertEquals(now - 30 * minute, state.lastFeedingEnd)
+    }
+
+    @Test
+    fun `diaper caption counts from the last change and disappears after a day`() {
+        assertEquals("2 ч 10 мин назад", diaperCaption(now - 130 * minute, now))
+        assertEquals("только что", diaperCaption(now - 10_000, now))
+        assertNull(diaperCaption(null, now))
+        assertNull(diaperCaption(now - 24 * 60 * minute, now))
+    }
+
+    @Test
+    fun `diaper is overdue after three hours unless the baby sleeps`() {
+        assertFalse(diaperOverdue(now - (3 * 60 - 1) * minute, sleeping = false, now = now))
+        assertTrue(diaperOverdue(now - 3 * 60 * minute, sleeping = false, now = now))
+        assertFalse(diaperOverdue(now - 4 * 60 * minute, sleeping = true, now = now))
+        // Без подписи (сутки и больше, не меняли) — и без выделения
+        assertFalse(diaperOverdue(now - 24 * 60 * minute, sleeping = false, now = now))
+        assertFalse(diaperOverdue(null, sleeping = false, now = now))
+    }
+
+    @Test
+    fun `last diaper is the latest change of any kind`() {
+        val events = listOf(
+            Diaper(id = 3, childId = 1, start = now - 20 * minute, kind = DiaperKind.WET),
+            Sleep(id = 2, childId = 1, start = now - 200 * minute, end = now - 90 * minute),
+            Diaper(id = 1, childId = 1, start = now - 300 * minute, kind = DiaperKind.DIRTY),
+        )
+        val state = DiaryUiState.of(listOf(Child(1, "Маша", null)), Child(1, "Маша", null), events)
+        assertEquals(now - 20 * minute, state.lastDiaper)
     }
 }
