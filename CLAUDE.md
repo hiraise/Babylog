@@ -84,7 +84,8 @@ README пишется для людей. Обнови его, если изме�
   CI — [ADR-0011](docs/adr/0011-ci-github-actions.md). Gradle нужен JDK 17+: если в `JAVA_HOME`
   Java ниже, скрипт сам возьмёт JDK из Android Studio.
 - Изменения UI проверяй скриншот-тестами, миграции — тестами миграций, а не вручную
-  ([ADR-0013](docs/adr/0013-jvm-android-tests.md)). Намеренно поменял вид — перезапиши эталоны
+  ([ADR-0013](docs/adr/0013-jvm-android-tests.md)); нажатия и ввод — UI-тестами Compose
+  ([ADR-0022](docs/adr/0022-compose-ui-tests.md)). Намеренно поменял вид — перезапиши эталоны
   `scripts/dev.sh goldens` и закоммить изменившиеся PNG; картинки при этом не открывай.
 - Эмулятор — для того, что тестом не проверить (системный выбор файла, поворот, телефон):
   `scripts/dev.sh run|logcat|db|screenshot` (debug-сборка `com.kid.babylog.debug` с отдельной

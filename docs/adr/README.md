@@ -31,3 +31,4 @@ AI-агенты, поэтому ADR пишутся в первую очеред�
 | [0019](0019-diary-tabs.md) | Главный экран — ребёнок в шапке («Дневник Маши», лист «Дети»), вкладки «Сегодня» (таймеры, плитки, сводка) и «История» | Принято | `DiaryScreen.kt`, `DiaryContent.kt`, `ChildSelector.kt`, `Avatar.kt`, `diaryTitle` |
 | [0020](0020-sleep-feeding-exclusive.md) | Сон и кормление не идут одновременно: начало одного заканчивает другое | Принято | `startSleep`, `startFeeding`, `testing/Fakes.kt`, листы старта в `feature/editor/` |
 | [0021](0021-tap-to-stop-timer.md) | Сон и кормление — плитки в один ряд; касание начинает и заканчивает таймер, «Отменить» в снекбаре возвращает его | Принято | `TimerTile`, `DiaryCards.kt`, отмена остановки в `DiaryViewModel.kt` |
+| [0022](0022-compose-ui-tests.md) | Нажатия и ввод на экранах проверяются UI-тестами Compose на JVM (`ui-test-junit4`), без `ui-test-manifest` | Принято | `app/build.gradle.kts`, `app/src/test/`, `testing/ComposeTesting.kt` |
