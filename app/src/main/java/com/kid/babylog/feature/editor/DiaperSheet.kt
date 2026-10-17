@@ -32,7 +32,7 @@ internal fun DiaperSheet(
     val selected = kind
     AppSheet(
         onDismiss = onDismiss,
-        title = if (isEdit) "Подгузник — правка" else "Подгузник",
+        title = "Подгузник",
         icon = R.drawable.ic_diaper,
         confirm = SheetAction("Сохранить", enabled = selected != null) {
             if (selected != null) onSave(selected, resolveTime(isEdit, minutesAgo, editTime), note.trim())

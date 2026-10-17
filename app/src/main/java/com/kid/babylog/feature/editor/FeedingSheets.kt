@@ -57,7 +57,7 @@ internal fun FeedingEditSheet(
     val valid = !hasEnd || end >= start
     AppSheet(
         onDismiss = onDismiss,
-        title = "Кормление — правка",
+        title = "Кормление",
         icon = R.drawable.ic_feeding,
         confirm = SheetAction("Сохранить", enabled = valid) {
             onSave(breast, start, if (hasEnd) end else null, note.trim())

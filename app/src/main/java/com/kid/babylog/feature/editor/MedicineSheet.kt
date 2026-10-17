@@ -32,7 +32,7 @@ internal fun MedicineSheet(
     val resolveTime = rememberTimeResolver()
     AppSheet(
         onDismiss = onDismiss,
-        title = if (isEdit) "Лекарство — правка" else "Лекарство",
+        title = "Лекарство",
         icon = R.drawable.ic_medicine,
         confirm = SheetAction("Сохранить", enabled = name.isNotBlank()) {
             onSave(name.trim(), resolveTime(isEdit, minutesAgo, editTime), note.trim())
