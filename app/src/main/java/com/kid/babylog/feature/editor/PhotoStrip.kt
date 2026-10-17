@@ -2,6 +2,7 @@ package com.kid.babylog.feature.editor
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -75,7 +76,8 @@ internal fun PhotoStrip(
                 modifier = Modifier
                     .size(THUMB_SIZE)
                     .clip(shape)
-                    .background(colors.surfaceContainerLow)
+                    // Рамка: на фоне листа плитка без неё — одна иконка, не видно, что это место под фото
+                    .border(1.dp, colors.outlineVariant, shape)
                     .clickable(enabled = !processing, onClickLabel = "добавить фото", role = Role.Button, onClick = onAdd)
                     .semantics { contentDescription = if (processing) "Фото добавляется" else "Добавить фото" },
                 contentAlignment = Alignment.Center,
