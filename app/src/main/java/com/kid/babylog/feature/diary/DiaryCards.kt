@@ -66,13 +66,14 @@ internal fun SleepCard(
  * Таймер кормления (ADR-0015) — плитка в ряду со сном (ADR-0021): касание начинает кормление,
  * во время кормления — заканчивает; ⇄ в углу меняет грудь.
  *
- * Пока кормление не идёт — сколько прошло с его конца ([afterFeedingCaption]): можно ли купать или
- * класть на живот. Сводка дня считает от начала кормления — по ней решают, когда кормить снова.
+ * Пока кормление не идёт — чем кормили и сколько прошло с конца ([afterFeedingCaption]): какой
+ * грудью начинать теперь и можно ли купать или класть на живот. Только здесь: сводка дня — итоги
+ * дня, «последнее» она не повторяет (ADR-0026).
  */
 @Composable
 internal fun FeedingCard(
     activeFeeding: Feeding?,
-    lastFeedingEnd: Long?,
+    lastFeeding: LastFeeding?,
     now: Long,
     onStart: () -> Unit,
     onEnd: () -> Unit,
@@ -90,7 +91,7 @@ internal fun FeedingCard(
         onStop = onEnd,
         modifier = modifier,
         runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
-        idleCaption = afterFeedingCaption(lastFeedingEnd, now),
+        idleCaption = afterFeedingCaption(lastFeeding, now),
         corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
     )
 }
@@ -99,9 +100,12 @@ internal fun FeedingCard(
 internal fun awakeCaption(lastSleepEnd: Long?, now: Long): String? =
     sinceLast(lastSleepEnd, now)?.let { "не спит ${formatDuration(it)}" }
 
-/** «закончилось 40 мин назад» — с конца последнего кормления; не было или давно ([sinceLast]) — null. */
-internal fun afterFeedingCaption(lastFeedingEnd: Long?, now: Long): String? =
-    sinceLast(lastFeedingEnd, now)?.let { "закончилось ${formatAgo(it)}" }
+/**
+ * «левая, 40 мин назад», «бутылочка, 2 ч назад» — чем кормили и сколько прошло с конца последнего
+ * кормления; не было или давно ([sinceLast]) — null.
+ */
+internal fun afterFeedingCaption(lastFeeding: LastFeeding?, now: Long): String? =
+    sinceLast(lastFeeding?.end, now)?.let { "${lastFeeding?.breast?.let(::breastLabel) ?: "бутылочка"}, ${formatAgo(it)}" }
 
 /** Сколько прошло с [end]; сутки и больше — null: так долго не спят и не едят, просто не записывали. */
 private fun sinceLast(end: Long?, now: Long): Long? =

@@ -2,6 +2,7 @@ package com.kid.babylog.feature.diary
 
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
+import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
@@ -21,11 +22,8 @@ data class DiaryUiState(
     val activeFeeding: Feeding? = null,
     /** Конец последнего законченного сна: «не спит 1 ч 20 мин» на плитке сна. */
     val lastSleepEnd: Long? = null,
-    /**
-     * Конец последнего законченного кормления: «закончилось 40 мин назад» на плитке кормления.
-     * Бутылочка — разовая запись: её конец — её время (ADR-0025).
-     */
-    val lastFeedingEnd: Long? = null,
+    /** Последнее законченное кормление: «левая, 40 мин назад» на плитке кормления (ADR-0026). */
+    val lastFeeding: LastFeeding? = null,
     /** Время последней смены подгузника: «2 ч 10 мин назад» на плитке «Подгузник». */
     val lastDiaper: Long? = null,
     /** Последняя бутылочка: с её объёмом и «что внутри» открывается следующая (ADR-0025). */
@@ -48,13 +46,13 @@ data class DiaryUiState(
             activeSleep = events.firstNotNullOfOrNull { (it as? Sleep)?.takeIf(Sleep::isActive) },
             activeFeeding = events.firstNotNullOfOrNull { (it as? Feeding)?.takeIf(Feeding::isActive) },
             lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
-            lastFeedingEnd = events.mapNotNull {
+            lastFeeding = events.mapNotNull {
                 when (it) {
-                    is Feeding -> it.end
-                    is Bottle -> it.start
+                    is Feeding -> it.end?.let { end -> LastFeeding(end, it.breast) }
+                    is Bottle -> LastFeeding(it.start, breast = null)
                     else -> null
                 }
-            }.maxOrNull(),
+            }.maxByOrNull { it.end },
             lastBottle = events.firstNotNullOfOrNull { it as? Bottle },
             lastDiaper = events.firstNotNullOfOrNull { (it as? Diaper)?.start },
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
@@ -63,3 +61,9 @@ data class DiaryUiState(
         )
     }
 }
+
+/**
+ * Законченное кормление для плитки: когда закончилось и чем — грудью [breast] (при смене груди —
+ * последней) или из бутылочки (null). Бутылочка — разовая запись: её конец — её время (ADR-0025).
+ */
+data class LastFeeding(val end: Long, val breast: Breast?)
