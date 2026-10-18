@@ -4,6 +4,7 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -21,8 +22,9 @@ data class AnalyticsModel(
     /** Ритм последних 7 суток — независимо от периода; null — за неделю записей нет. */
     val rhythm: RhythmModel?,
     val metrics: List<MetricModel>,
-    /** Вес — за всё время; null — взвешиваний нет. */
-    val weight: WeightModel?,
+    /** Вес и рост — за всё время; null — замеров нет. */
+    val weight: GrowthModel?,
+    val height: GrowthModel?,
     val medicines: List<MedicineLine>,
 )
 
@@ -31,13 +33,13 @@ data class AnalyticsModel(
  * Карточка «Бутылочка» есть, только если за период были бутылочки.
  */
 fun analyticsModel(events: List<BabyEvent>, period: AnalyticsPeriod, now: Long, zone: ZoneId, sex: Sex?): AnalyticsModel {
-    if (events.isEmpty()) return AnalyticsModel(hasRecords = false, rhythm = null, metrics = emptyList(), weight = null, medicines = emptyList())
+    if (events.isEmpty()) return AnalyticsModel(hasRecords = false, rhythm = null, metrics = emptyList(), weight = null, height = null, medicines = emptyList())
     val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
     val length = period.days
     val days: List<DayStats>
     val previous: List<DayStats>
     if (length == null) {
-        // «Всё время» — с первой записи режима: вес с рождения не растягивает графики на пустые недели
+        // «Всё время» — с первой записи режима: вес и рост с рождения не растягивают графики на пустые недели
         val firstRoutine = events.filter { it.isRoutine }.minOfOrNull { it.start } ?: now
         val firstDay = Instant.ofEpochMilli(firstRoutine).atZone(zone).toLocalDate()
         // Недели — с понедельника: столбики «всего времени» совпадают с календарными неделями
@@ -57,6 +59,7 @@ fun analyticsModel(events: List<BabyEvent>, period: AnalyticsPeriod, now: Long, 
             .filter { it != Metric.BOTTLES || days.any { day -> day.bottles > 0 } }
             .map { metricModel(it, period, days, previous, sex) },
         weight = weightModel(events, now, zone),
+        height = heightModel(events, now, zone),
         medicines = medicineLines(events, since, now, zone),
     )
 }
@@ -65,5 +68,5 @@ fun analyticsModel(events: List<BabyEvent>, period: AnalyticsPeriod, now: Long, 
 private val BabyEvent.isRoutine: Boolean
     get() = when (this) {
         is Feeding, is Bottle, is Sleep, is Diaper -> true
-        is Medicine, is Weight -> false
+        is Medicine, is Weight, is Height -> false
     }

@@ -4,6 +4,7 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -84,7 +85,7 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
             }
             is Bottle -> instant(event.start)?.let(instants::add)
             is Diaper -> instant(event.start)?.let(diapers::add)
-            is Medicine, is Weight -> Unit
+            is Medicine, is Weight, is Height -> Unit
         }
     }
     val name = if (day.complete) day.date.format(DAY_NAME) else "сегодня"

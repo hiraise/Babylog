@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -111,7 +112,7 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
                 }
             }
             // Вес и лекарства в суточные итоги не входят: у них свои карточки
-            is Medicine, is Weight -> Unit
+            is Medicine, is Weight, is Height -> Unit
         }
     }
     return days.map { (date, day) ->

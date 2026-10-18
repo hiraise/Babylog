@@ -194,12 +194,12 @@ internal fun RhythmCard(model: RhythmModel, onOpenDay: (LocalDate) -> Unit) {
     }
 }
 
-/** Вес за всё время: последний вес, прибавка, линия по взвешиваниям. */
+/** Вес или рост за всё время: последний замер, прибавка, линия по замерам цвета [color]. */
 @Composable
-internal fun WeightCard(model: WeightModel) {
+internal fun GrowthCard(model: GrowthModel, @DrawableRes icon: Int, title: String, color: Color) {
     AppCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
-            CardHeader(R.drawable.ic_weight, "Вес", "за всё время")
+            CardHeader(icon, title, "за всё время")
             Headline(model.value, model.date, model.note)
             if (model.points.size >= 2) {
                 LineChart(
@@ -209,7 +209,7 @@ internal fun WeightCard(model: WeightModel) {
                     yMax = model.yMax,
                     yTicks = model.yTicks.map { AxisTick(it.value, it.label) },
                     xTicks = model.xTicks.map { AxisTick(it.value, it.label) },
-                    color = BabyLogTheme.chartColors.weight,
+                    color = color,
                     description = model.description,
                 )
             }

@@ -18,6 +18,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.ui.components.AppCard
@@ -28,7 +29,7 @@ import java.time.ZoneId
 
 /**
  * Вкладка «Аналитика» (ADR-0028): период, «Ритм дня», графики кормлений, бутылочки, сна и подгузников,
- * вес и лекарства. Всё считается из [events] выбранного ребёнка при показе ([analyticsModel]).
+ * вес, рост и лекарства. Всё считается из [events] выбранного ребёнка при показе ([analyticsModel]).
  *
  * Касание столбика показывает итоги под графиком, «В историю» и касание строки ритма открывают день
  * в «Истории» ([onOpenDay]). Период и выбранный столбик переживают поворот; при смене ребёнка выбор
@@ -78,7 +79,10 @@ fun AnalyticsContent(
             }
         }
         model.weight?.let { weight ->
-            item(key = "weight") { WeightCard(weight) }
+            item(key = "weight") { GrowthCard(weight, R.drawable.ic_weight, "Вес", BabyLogTheme.chartColors.weight) }
+        }
+        model.height?.let { height ->
+            item(key = "height") { GrowthCard(height, R.drawable.ic_height, "Рост", BabyLogTheme.chartColors.height) }
         }
         if (model.medicines.isNotEmpty()) {
             item(key = "medicines") { MedicinesCard(model.medicines) }

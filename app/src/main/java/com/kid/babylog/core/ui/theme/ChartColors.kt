@@ -25,6 +25,7 @@ class ChartColors(
     val diaperMixed: Color,
     val diaperDirty: Color,
     val weight: Color,
+    val height: Color,
 )
 
 internal val LightChartColors = ChartColors(
@@ -34,6 +35,7 @@ internal val LightChartColors = ChartColors(
     diaperMixed = Color(0xFFD55181),
     diaperDirty = Color(0xFFB37A00),
     weight = Color(0xFFEB6834),
+    height = Color(0xFF0F8A6A),
 )
 
 /** Тёмная палитра — те же оттенки, но светлее для тёмной карточки; зелёный темнее `primary`, чтобы не светился. */
@@ -44,6 +46,7 @@ internal val DarkChartColors = ChartColors(
     diaperMixed = Color(0xFFD55181),
     diaperDirty = Color(0xFFC98500),
     weight = Color(0xFFD95926),
+    height = Color(0xFF199E70),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }

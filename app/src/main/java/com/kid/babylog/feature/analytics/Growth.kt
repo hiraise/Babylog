@@ -1,9 +1,11 @@
 package com.kid.babylog.feature.analytics
 
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.RU
+import com.kid.babylog.core.ui.formatHeight
 import com.kid.babylog.core.ui.formatWeight
 import java.time.Instant
 import java.time.LocalDate
@@ -19,10 +21,10 @@ import kotlin.math.roundToInt
 data class Tick(val value: Float, val label: String)
 
 /**
- * Карточка «Вес» — всегда за всё время: взвешивают редко, за неделю точек нет. [points] — дни от
- * первого взвешивания и килограммы; график рисуется от двух взвешиваний.
+ * Карточка замера — веса или роста — всегда за всё время: меряют редко, за неделю точек нет.
+ * [points] — дни от первого замера и значение в единицах оси (кг, см); график — от двух замеров.
  */
-data class WeightModel(
+data class GrowthModel(
     val value: String,
     val date: String,
     val note: String?,
@@ -35,37 +37,92 @@ data class WeightModel(
     val description: String,
 )
 
-/** Прибавку считаем к взвешиванию не ближе стольких дней: между соседними разница — в пределах ошибки весов. */
-private const val GAIN_MIN_DAYS = 14L
+/** Замер: время и значение в единицах записи (граммы, миллиметры). */
+private class Measurement(val id: Long, val start: Long, val value: Int)
+
+/**
+ * Чем вес отличается от роста на карточке: единицы оси и подписей, и как считать прибавку —
+ * к замеру не ближе [baseDays] дней (ближе разница — в пределах ошибки замера), за [rateDays] дней.
+ */
+private class GrowthKind(
+    val title: String,
+    val unit: String,
+    val toAxis: (Int) -> Float,
+    val format: (Int) -> String,
+    val baseDays: Long,
+    val rateDays: Float,
+    val rateLabel: String,
+    /** Прибавка за [rateDays] в единицах записи → «95 г», «2,5 см». */
+    val formatRate: (Float) -> String,
+    val measurements: (Int) -> String,
+)
+
+private val WEIGHT = GrowthKind(
+    title = "Вес",
+    unit = "кг",
+    toAxis = { it / 1000f },
+    format = ::formatWeight,
+    baseDays = 14,
+    rateDays = 7f,
+    rateLabel = "в неделю",
+    formatRate = { grams -> "${(grams / 5).roundToInt() * 5} г" },
+    measurements = { n -> "$n ${plural(n, "взвешивание", "взвешивания", "взвешиваний")}" },
+)
+
+/** Рост меряют раз в месяц с точностью до 0,5 см (ADR-0027): прибавка — в месяц, база — не ближе 4 недель. */
+private val HEIGHT = GrowthKind(
+    title = "Рост",
+    unit = "см",
+    toAxis = { it / 10f },
+    format = ::formatHeight,
+    baseDays = 28,
+    rateDays = 30.44f,
+    rateLabel = "в месяц",
+    formatRate = { millimeters -> "%.1f см".format(RU, millimeters / 10) },
+    measurements = { n -> "$n ${plural(n, "замер", "замера", "замеров")}" },
+)
+
 private const val DAY_MILLIS = 86_400_000f
+
+/** Деления оси значений: шаг — наименьший из этих, при котором делений не больше [MAX_TICKS]. */
+private val STEPS = listOf(1, 2, 5, 10, 20, 50)
+private const val MAX_TICKS = 5
 
 private val DAY_MONTH = DateTimeFormatter.ofPattern("d MMM", RU)
 private val MONTH = DateTimeFormatter.ofPattern("LLL", RU)
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm")
 
-fun weightModel(events: List<BabyEvent>, now: Long, zone: ZoneId): WeightModel? {
-    val weights = events.filterIsInstance<Weight>().sortedWith(compareBy<Weight> { it.start }.thenBy { it.id })
-    val last = weights.lastOrNull() ?: return null
-    val first = weights.first()
-    fun dateOf(t: Long): LocalDate = Instant.ofEpochMilli(t).atZone(zone).toLocalDate()
-    val today = dateOf(now)
+fun weightModel(events: List<BabyEvent>, now: Long, zone: ZoneId): GrowthModel? =
+    growthModel(WEIGHT, events.filterIsInstance<Weight>().map { Measurement(it.id, it.start, it.grams) }, now, zone)
 
-    val base = weights.lastOrNull { it.start <= last.start - GAIN_MIN_DAYS * DAY_MILLIS.toLong() }
+fun heightModel(events: List<BabyEvent>, now: Long, zone: ZoneId): GrowthModel? =
+    growthModel(HEIGHT, events.filterIsInstance<Height>().map { Measurement(it.id, it.start, it.millimeters) }, now, zone)
+
+private fun growthModel(kind: GrowthKind, all: List<Measurement>, now: Long, zone: ZoneId): GrowthModel? {
+    val measurements = all.sortedWith(compareBy<Measurement> { it.start }.thenBy { it.id })
+    val last = measurements.lastOrNull() ?: return null
+    val first = measurements.first()
+    fun dateOf(t: Long): LocalDate = Instant.ofEpochMilli(t).atZone(zone).toLocalDate()
+
+    val base = measurements.lastOrNull { it.start <= last.start - kind.baseDays * DAY_MILLIS.toLong() }
     val note = base?.let {
-        val days = (last.start - it.start) / DAY_MILLIS
-        val perWeek = ((last.grams - it.grams) * 7 / days / 5).roundToInt() * 5
-        val sign = if (perWeek >= 0) "+" else "−"
-        "$sign${abs(perWeek)} г в неделю с ${dateOf(it.start).format(DAY_MONTH)}"
+        val rate = (last.value - it.value) * kind.rateDays / ((last.start - it.start) / DAY_MILLIS)
+        val sign = if (rate >= 0) "+" else "−"
+        "$sign${kind.formatRate(abs(rate))} ${kind.rateLabel} с ${dateOf(it.start).format(DAY_MONTH)}"
     }
 
-    val points = weights.map { (it.start - first.start) / DAY_MILLIS to it.grams / 1000f }
-    val yMin = floor(weights.minOf { it.grams } / 1000f)
-    val yMax = ceil(weights.maxOf { it.grams } / 1000f).let { if (it <= yMin) yMin + 1 else it }
-    val step = if (yMax - yMin <= 4) 1 else 2
-    val yValues = generateSequence(yMin) { it + step }.takeWhile { it <= yMax }.toList()
-    val yTicks = yValues.mapIndexed { i, kg -> Tick(kg, kg.roundToInt().toString() + if (i == yValues.lastIndex) " кг" else "") }
+    val points = measurements.map { (it.start - first.start) / DAY_MILLIS to kind.toAxis(it.value) }
+    val low = measurements.minOf { kind.toAxis(it.value) }
+    val high = measurements.maxOf { kind.toAxis(it.value) }
+    val step = STEPS.firstOrNull { (ceil(high / it) - floor(low / it)) < MAX_TICKS } ?: STEPS.last()
+    val yMin = floor(low / step) * step
+    val yMax = (ceil(high / step) * step).let { if (it <= yMin) yMin + step else it }
+    val yValues = generateSequence(yMin) { it + step }.takeWhile { it <= yMax + step / 2f }.toList()
+    val yTicks = yValues.mapIndexed { i, value ->
+        Tick(value, value.roundToInt().toString() + if (i == yValues.lastIndex) " ${kind.unit}" else "")
+    }
 
-    // Деления по оси времени — начала месяцев; на коротком отрезке — первое и последнее взвешивание
+    // Деления по оси времени — начала месяцев; на коротком отрезке — первый и последний замер
     val firstDate = dateOf(first.start)
     val lastDate = dateOf(last.start)
     val monthStarts = generateSequence(firstDate.withDayOfMonth(1).plusMonths(1)) { it.plusMonths(1) }
@@ -75,9 +132,9 @@ fun weightModel(events: List<BabyEvent>, now: Long, zone: ZoneId): WeightModel? 
     val xTicks = monthStarts.takeIf { it.size >= 2 }
         ?: listOf(Tick(0f, firstDate.format(DAY_MONTH)), Tick(points.last().first, lastDate.format(DAY_MONTH)))
 
-    return WeightModel(
-        value = formatWeight(last.grams),
-        date = dayName(lastDate, today),
+    return GrowthModel(
+        value = kind.format(last.value),
+        date = dayName(lastDate, dateOf(now)),
         note = note,
         points = points,
         xMax = maxOf(points.last().first, 1f),
@@ -85,9 +142,8 @@ fun weightModel(events: List<BabyEvent>, now: Long, zone: ZoneId): WeightModel? 
         yMax = yMax,
         yTicks = yTicks,
         xTicks = xTicks,
-        description = "Вес с ${firstDate.format(DAY_MONTH)}: ${weights.size} " +
-            "${plural(weights.size, "взвешивание", "взвешивания", "взвешиваний")}, " +
-            "от ${formatWeight(weights.minOf { it.grams })} до ${formatWeight(weights.maxOf { it.grams })}",
+        description = "${kind.title} с ${firstDate.format(DAY_MONTH)}: ${kind.measurements(measurements.size)}, " +
+            "от ${kind.format(measurements.minOf { it.value })} до ${kind.format(measurements.maxOf { it.value })}",
     )
 }
 

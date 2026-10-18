@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -174,5 +175,20 @@ class AnalyticsModelTest {
         assertEquals("14 окт.", weight.date)
         // Взвешивание 4 октября ближе двух недель — прибавка от 12 сентября: 500 г за 32 дня
         assertEquals("+110 г в неделю с 12 сент.", weight.note)
+    }
+
+    @Test
+    fun `height gain is per month against a measurement at least four weeks earlier`() {
+        val events = listOf(
+            Height(1, 1, at(day(91), 11), 575),
+            Height(2, 1, at(day(30), 11), 600),
+            Height(3, 1, at(day(10), 11), 625),
+        )
+        val height = model(events).height!!
+        assertEquals("62,5 см", height.value)
+        // Замер 18 сентября ближе четырёх недель — прибавка от 19 июля: 5 см за 81 день
+        assertEquals("+1,9 см в месяц с 19 июл.", height.note)
+        assertEquals(listOf("56", "58", "60", "62", "64 см"), height.yTicks.map { it.label })
+        assertNull(model(listOf(Diaper(1, 1, at(day(1), 8), DiaperKind.WET))).height)
     }
 }

@@ -32,7 +32,9 @@ import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.formatAgo
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDuration
+import com.kid.babylog.core.ui.formatShortDay
 import com.kid.babylog.core.ui.theme.BabyLogTheme
+import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.editor.NewEventKind
 
 /**
@@ -125,12 +127,20 @@ private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
  * Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard].
  *
  * Под «Подгузник» — сколько прошло с последней смены ([diaperCaption]); давно ([diaperOverdue]) —
- * пояснение выделено. Это только на плитке: сводка дня его не повторяет — одно и то же в двух местах
+ * пояснение выделено. Под «Вес» и «Рост» — дата последнего замера ([measuredCaption]); сам вес и рост —
+ * в шапке под именем. Это только на плитках: сводка дня их не повторяет — одно и то же в двух местах
  * с разным расчётом расходится.
  */
 @Composable
-internal fun QuickActions(lastDiaper: Long?, sleeping: Boolean, now: Long, onAdd: (NewEventKind) -> Unit) {
-    // IntrinsicSize.Min: плитки одной высоты, хотя пояснение есть только у подгузника
+internal fun QuickActions(
+    lastDiaper: Long?,
+    lastWeight: Long?,
+    lastHeight: Long?,
+    sleeping: Boolean,
+    now: Long,
+    onAdd: (NewEventKind) -> Unit,
+) {
+    // IntrinsicSize.Min: плитки одной высоты, даже когда пояснение есть не у всех
     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
         val tile = Modifier.weight(1f).fillMaxHeight()
         ActionTile(
@@ -142,9 +152,18 @@ internal fun QuickActions(lastDiaper: Long?, sleeping: Boolean, now: Long, onAdd
             highlight = diaperOverdue(lastDiaper, sleeping, now),
         )
         ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, tile)
-        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile)
+        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile, caption = measuredCaption(lastWeight, now))
+        ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile, caption = measuredCaption(lastHeight, now))
     }
 }
+
+/**
+ * Когда взвешивали или мерили рост в последний раз: «сегодня», «вчера», «15 окт.» ([formatShortDay]).
+ * Дата, а не «… назад», как у подгузника: замеры редкие, и следующий (у врача — раз в месяц) отсчитывают
+ * по дате. Суточного срока, как у [sinceLast], нет: замер месячной давности — тоже последний. Не было — null.
+ */
+internal fun measuredCaption(lastMeasured: Long?, now: Long): String? =
+    lastMeasured?.let { formatShortDay(it.toLocalDate(), now.toLocalDate()) }
 
 /** «2 ч 10 мин назад» — с последней смены подгузника; не меняли или давно ([sinceLast]) — null. */
 internal fun diaperCaption(lastDiaper: Long?, now: Long): String? = sinceLast(lastDiaper, now)?.let(::formatAgo)

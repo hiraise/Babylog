@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sleep
@@ -17,7 +18,8 @@ import kotlin.random.Random
 /**
  * Дневник 4-месячной девочки за [days] суток по [now] включительно — для скриншотов «Аналитики».
  * Режим как в жизни: ночь с 1–2 пробуждениями на кормление, 3–4 дневных сна, кормления после сна,
- * иногда бутылочка смеси на ночь, подгузники, витамин D по утрам, вес с рождения раз в две недели.
+ * иногда бутылочка смеси на ночь, подгузники, витамин D по утрам, вес с рождения раз в две недели,
+ * рост — раз в месяц.
  * Сон и кормление не пересекаются (ADR-0020). Записи детерминированы [seed]: эталоны не плывут.
  */
 fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days: Int = 60, seed: Int = 20261018): List<BabyEvent> {
@@ -87,6 +89,11 @@ fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days:
             val start = today.minusDays(148L - age).atStartOfDay(zone).plusHours(10).toInstant().toEpochMilli()
             events += Weight(id++, childId, start, grams)
         }
+    // Рост у врача раз в месяц, с точностью до 0,5 см
+    listOf(0 to 500, 31 to 540, 59 to 575, 87 to 600, 122 to 625, 144 to 645).forEach { (age, millimeters) ->
+        val start = today.minusDays(148L - age).atStartOfDay(zone).plusHours(11).toInstant().toEpochMilli()
+        events += Height(id++, childId, start, millimeters)
+    }
     val nurofen = today.minusDays(4).atStartOfDay(zone).plusHours(22).toInstant().toEpochMilli()
     events += Medicine(id++, childId, nurofen, "Нурофен", note = "2,5 мл")
     events += Medicine(id++, childId, nurofen + 86_400_000L, "Нурофен", note = "2,5 мл")

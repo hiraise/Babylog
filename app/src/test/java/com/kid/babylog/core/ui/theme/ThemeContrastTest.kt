@@ -138,6 +138,7 @@ class ThemeContrastTest {
             listOf(
                 "sleep" to chart.sleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,
                 "diaperMixed" to chart.diaperMixed, "diaperDirty" to chart.diaperDirty, "weight" to chart.weight,
+                "height" to chart.height,
             ).mapNotNull { (series, color) ->
                 val ratio = contrast(color, scheme.surfaceContainerLow)
                 if (ratio >= NON_TEXT_MINIMUM) return@mapNotNull null

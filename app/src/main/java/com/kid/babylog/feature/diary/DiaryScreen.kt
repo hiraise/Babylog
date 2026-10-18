@@ -122,11 +122,11 @@ fun DiaryScreen(
         topBar = {
             Column {
                 // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
-                // как логотип в макете, под ним возраст и вес (ADR-0019)
+                // как логотип в макете, под ним возраст, вес и рост (ADR-0019, ADR-0027)
                 TopAppBar(
                     title = {
                         if (child != null) {
-                            ChildSelector(child, state.lastWeight, now, onClick = { showChildren = true })
+                            ChildSelector(child, state.lastWeight, state.lastHeight, now, onClick = { showChildren = true })
                         } else {
                             Text(
                                 "Дневник малыша",
