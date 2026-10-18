@@ -7,13 +7,14 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 
 /** Кнопки быстрого добавления. Сон и кормление начинаются отдельно — через [SleepStartSheet] и [FeedingStartSheet]. */
-enum class NewEventKind { DIAPER, MEDICINE, WEIGHT }
+enum class NewEventKind { DIAPER, MEDICINE, WEIGHT, HEIGHT }
 
 /**
  * Лист новой записи для ребёнка [child]. [pastMedicines] — подсказки в листе лекарства. [onSave]
@@ -37,6 +38,9 @@ fun NewEventSheet(
         }
         NewEventKind.WEIGHT -> WeightSheet(null, onDismiss) { grams, time, note ->
             onSave(Weight(childId = childId, start = time, grams = grams, note = note), null)
+        }
+        NewEventKind.HEIGHT -> HeightSheet(null, onDismiss) { millimeters, time, note ->
+            onSave(Height(childId = childId, start = time, millimeters = millimeters, note = note), null)
         }
     }
 }
@@ -72,6 +76,9 @@ fun EditEventSheet(
         }
         is Weight -> WeightSheet(event, onDismiss) { grams, time, note ->
             save(event.copy(grams = grams, start = time, note = note))
+        }
+        is Height -> HeightSheet(event, onDismiss) { millimeters, time, note ->
+            save(event.copy(millimeters = millimeters, start = time, note = note))
         }
         is Sleep -> SleepEditSheet(event, sex, onDismiss) { start, end, note ->
             save(event.copy(start = start, end = end, note = note))

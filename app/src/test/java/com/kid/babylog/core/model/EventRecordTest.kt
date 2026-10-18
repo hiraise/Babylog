@@ -15,6 +15,7 @@ class EventRecordTest {
         Sleep(id = 4, childId = 7, start = 10_000, end = null),
         Medicine(id = 5, childId = 7, start = 4_000, name = "Витамин D", note = "1 капля"),
         Weight(id = 6, childId = 7, start = 5_000, grams = 4350),
+        Height(id = 10, childId = 7, start = 5_500, millimeters = 625, note = "у врача"),
         Bottle(id = 8, childId = 7, start = 6_000, volumeMl = 120, milk = Milk.FORMULA, note = "докорм"),
         Bottle(id = 9, childId = 7, start = 7_000, volumeMl = 90),
     )
@@ -51,6 +52,16 @@ class EventRecordTest {
         assertNull(EventRecord(EventRecord.WEIGHT, 1, null, "не число", "").toEvent(childId = 1))
         assertNull(EventRecord(EventRecord.WEIGHT, 1, null, "100", "").toEvent(childId = 1))
         assertNull(EventRecord(EventRecord.WEIGHT, 1, null, "99999", "").toEvent(childId = 1))
+        // Рост — в миллиметрах, целым: «62.5» — не сантиметры, а ошибка
+        assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "62.5", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "62", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "1501", "").toEvent(childId = 1))
+    }
+
+    @Test
+    fun `height detail is millimeters`() {
+        assertEquals("625", Height(childId = 1, start = 0, millimeters = 625).toRecord().detail)
+        assertEquals(500, (EventRecord("height", 1_000, null, " 500 ", "").toEvent(childId = 1) as Height).millimeters)
     }
 
     @Test

@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
@@ -40,6 +41,7 @@ class CsvCodecTest {
             Sleep(childId = 1, start = ms("2026-08-15 13:00:00"), end = ms("2026-08-15 14:20:59")),
             Medicine(childId = 2, start = ms("2026-08-15 09:00:00"), name = "Витамин D", note = "1 капля"),
             Weight(childId = 1, start = ms("2026-08-15 10:00:00"), grams = 4350, note = "после кормления"),
+            Height(childId = 1, start = ms("2026-08-15 10:05:00"), millimeters = 545, note = "у врача"),
         )
         val csv = CsvCodec.encode(listOf(masha, petya), events)
         assertEquals(events, decode(csv, listOf(masha, petya)))

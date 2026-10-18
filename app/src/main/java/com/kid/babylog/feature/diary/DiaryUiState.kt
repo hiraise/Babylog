@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.feature.editor.PastMedicine
@@ -29,7 +30,9 @@ data class DiaryUiState(
     val lastDiaper: Long? = null,
     /** Последняя бутылочка: с её объёмом и «что внутри» открывается следующая (ADR-0025). */
     val lastBottle: Bottle? = null,
+    /** Последние вес и рост: в шапке под именем и датой — на плитках «Вес» и «Рост» (ADR-0027). */
     val lastWeight: Weight? = null,
+    val lastHeight: Height? = null,
     /** Лекарства из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
     val pastMedicines: List<PastMedicine> = emptyList(),
     /** Сколько фото у записей: id записи → число, для отметки в истории (ADR-0024). */
@@ -51,6 +54,7 @@ data class DiaryUiState(
             lastBottle = events.firstNotNullOfOrNull { it as? Bottle },
             lastDiaper = events.firstNotNullOfOrNull { (it as? Diaper)?.start },
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
+            lastHeight = events.firstNotNullOfOrNull { it as? Height },
             pastMedicines = pastMedicines(events),
             photoCounts = photoCounts,
         )
