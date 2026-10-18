@@ -131,6 +131,23 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun `chart colors stand out on the card`() {
+        // Ряды графиков «Аналитики» — нетекстовые элементы на карточке: не меньше 3:1 (ADR-0028)
+        val charts = listOf(Triple("светлая", LightColors, LightChartColors), Triple("тёмная", DarkColors, DarkChartColors))
+        val failures = charts.flatMap { (name, scheme, chart) ->
+            listOf(
+                "sleep" to chart.sleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,
+                "diaperMixed" to chart.diaperMixed, "diaperDirty" to chart.diaperDirty, "weight" to chart.weight,
+            ).mapNotNull { (series, color) ->
+                val ratio = contrast(color, scheme.surfaceContainerLow)
+                if (ratio >= NON_TEXT_MINIMUM) return@mapNotNull null
+                "$name: $series ${color.hex()} на карточке — ${"%.2f".format(RU, ratio)}:1"
+            }
+        }
+        assertTrue("Цвет графика сливается с карточкой:\n" + failures.joinToString("\n"), failures.isEmpty())
+    }
+
+    @Test
     fun `no role is left from the base Material scheme`() {
         val leftovers = PALETTES.flatMap { palette ->
             ROLES.filter { role ->

@@ -178,6 +178,8 @@ check_adr_rules() {
     report "ADR-0023: библиотеки загрузки и кадрирования фото (Coil, Glide, Picasso, uCrop) не подключаются" "$hits" || failed=1
     hits="$(grep -nH 'OnConflictStrategy.REPLACE' "$code/core/data/room/DiaryDao.kt" || true)"
     report "ADR-0024: записи меняются только UPDATE — REPLACE удалил бы их фото каскадом" "$hits" || failed=1
+    hits="$(grep -nHiE 'patrykandpatrick|vico|MPAndroidChart|ycharts' "$ROOT"/*.gradle.kts "$ROOT"/app/*.gradle.kts || true)"
+    report "ADR-0028: графики рисуют свои компоненты core/ui/components/chart/ — библиотеки графиков не подключаются" "$hits" || failed=1
     return "$failed"
 }
 

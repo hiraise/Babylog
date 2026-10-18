@@ -35,8 +35,8 @@ import com.kid.babylog.feature.editor.NewEventKind
 import com.kid.babylog.feature.summary.DaySummaryCard
 import java.time.LocalDate
 
-/** Вкладки главного экрана (ADR-0019). */
-enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История") }
+/** Вкладки главного экрана (ADR-0019); «Аналитика» — ADR-0028. */
+enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История"), ANALYTICS("Аналитика") }
 
 /** Действия пользователя на главном экране. */
 internal class DiaryActions(
