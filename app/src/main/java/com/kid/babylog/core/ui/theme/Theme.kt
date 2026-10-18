@@ -13,7 +13,7 @@ private val DefaultSpacing = Spacing()
 /**
  * Тема BabyLog (ADR-0010): цвета, шрифты и формы Material 3, отступы [Spacing] и тени [Shadows].
  * Экраны берут цвета из `MaterialTheme.colorScheme`, стили текста — из `MaterialTheme.typography`,
- * отступы и тени — из [BabyLogTheme.spacing] и [BabyLogTheme.shadows].
+ * отступы и тени — из [BabyLogTheme.spacing] и [BabyLogTheme.shadows], цвета графиков — из [BabyLogTheme.chartColors].
  *
  * Динамический цвет (Material You) не используется: цвета одинаковы на всех устройствах.
  *
@@ -31,6 +31,7 @@ fun BabyLogTheme(
         LocalClock provides clock,
         LocalSpacing provides DefaultSpacing,
         LocalShadows provides if (darkTheme) DarkShadows else LightShadows,
+        LocalChartColors provides if (darkTheme) DarkChartColors else LightChartColors,
     ) {
         MaterialTheme(
             colorScheme = if (darkTheme) DarkColors else LightColors,
@@ -52,4 +53,9 @@ object BabyLogTheme {
     val shadows: Shadows
         @Composable @ReadOnlyComposable
         get() = LocalShadows.current
+
+    /** Цвета рядов графиков (ADR-0028). */
+    val chartColors: ChartColors
+        @Composable @ReadOnlyComposable
+        get() = LocalChartColors.current
 }
