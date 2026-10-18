@@ -9,6 +9,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -81,6 +82,7 @@ class DiaryScreenshotTest {
         listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z"), Sex.GIRL), Child(2, "Петя", null, Sex.BOY)),
     ).apply {
         events.value = listOf<BabyEvent>(
+            Height(id = 9, childId = 1, start = at("2026-10-01T09:00:00Z"), millimeters = 625),
             Weight(id = 1, childId = 1, start = at("2026-10-15T06:10:00Z"), grams = 6350),
             Feeding(id = 2, childId = 1, start = at("2026-10-15T06:30:00Z"), end = at("2026-10-15T06:45:00Z"), breast = Breast.LEFT),
             Diaper(id = 3, childId = 1, start = at("2026-10-15T07:05:00Z"), kind = DiaperKind.MIXED),

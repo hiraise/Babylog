@@ -18,6 +18,7 @@ data class EventRecord(
         const val SLEEP = "SLEEP"
         const val MEDICINE = "MEDICINE"
         const val WEIGHT = "WEIGHT"
+        const val HEIGHT = "HEIGHT"
     }
 }
 
@@ -28,11 +29,12 @@ fun BabyEvent.toRecord(): EventRecord = when (this) {
     is Sleep -> EventRecord(EventRecord.SLEEP, start, end, "", note)
     is Medicine -> EventRecord(EventRecord.MEDICINE, start, null, name, note)
     is Weight -> EventRecord(EventRecord.WEIGHT, start, null, grams.toString(), note)
+    is Height -> EventRecord(EventRecord.HEIGHT, start, null, millimeters.toString(), note)
 }
 
 /**
  * Проверяет запись и превращает её в [BabyEvent]; null — запись некорректна: неизвестный тип,
- * неверная деталь, вес вне [Weight.RANGE], лекарство без названия. Регистр кодов не важен.
+ * неверная деталь, вес вне [Weight.RANGE], рост вне [Height.RANGE], лекарство без названия. Регистр кодов не важен.
  * `end` учитывается только у сна и кормления.
  */
 fun EventRecord.toEvent(id: Long = 0, childId: Long): BabyEvent? = when (type.trim().uppercase()) {
@@ -43,6 +45,8 @@ fun EventRecord.toEvent(id: Long = 0, childId: Long): BabyEvent? = when (type.tr
     EventRecord.MEDICINE -> detail.takeIf { it.isNotBlank() }?.let { Medicine(id, childId, start, it, note) }
     EventRecord.WEIGHT -> detail.trim().toIntOrNull()?.takeIf { it in Weight.RANGE }
         ?.let { Weight(id, childId, start, it, note) }
+    EventRecord.HEIGHT -> detail.trim().toIntOrNull()?.takeIf { it in Height.RANGE }
+        ?.let { Height(id, childId, start, it, note) }
     else -> null
 }
 

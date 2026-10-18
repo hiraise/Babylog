@@ -113,7 +113,8 @@ private fun ActionTilePreview() = LightDarkPreview {
                 highlight = highlight,
             )
             ActionTile(R.drawable.ic_medicine, "Лекарство", onClick = {}, modifier = tile)
-            ActionTile(R.drawable.ic_weight, "Вес", onClick = {}, modifier = tile)
+            ActionTile(R.drawable.ic_weight, "Вес", onClick = {}, modifier = tile, caption = "вчера")
+            ActionTile(R.drawable.ic_height, "Рост", onClick = {}, modifier = tile, caption = "15 окт.")
         }
     }
 }

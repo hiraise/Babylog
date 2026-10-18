@@ -6,17 +6,21 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.formatClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Подписи плиток: у сна и кормления, пока таймер не идёт, — сколько прошло с конца прошлого;
- * у подгузника — с последней смены, а через 3 часа без сна подпись выделяется.
+ * у подгузника — с последней смены, а через 3 часа без сна подпись выделяется; у веса и роста — дата замера.
  */
 class TileCaptionsTest {
 
@@ -98,5 +102,29 @@ class TileCaptionsTest {
         )
         val state = DiaryUiState.of(listOf(Child(1, "Маша", null)), Child(1, "Маша", null), events)
         assertEquals(now - 20 * minute, state.lastDiaper)
+    }
+
+    @Test
+    fun `measurement caption is the date of the last one`() {
+        val today = LocalDate.of(2026, 10, 15).atTime(10, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val day = 24 * 60 * minute
+        assertEquals("сегодня", measuredCaption(today - 9 * 60 * minute, today))
+        assertEquals("вчера", measuredCaption(today - day, today))
+        assertEquals("1 окт.", measuredCaption(today - 14 * day, today))
+        assertEquals("15 окт. 2025", measuredCaption(today - 365 * day, today))
+        assertNull(measuredCaption(null, today))
+    }
+
+    @Test
+    fun `last weight and height are the latest of their kind`() {
+        val events = listOf(
+            Height(id = 4, childId = 1, start = now - 10 * minute, millimeters = 630),
+            Weight(id = 3, childId = 1, start = now - 20 * minute, grams = 6400),
+            Height(id = 2, childId = 1, start = now - 30 * 24 * 60 * minute, millimeters = 600),
+            Weight(id = 1, childId = 1, start = now - 31 * 24 * 60 * minute, grams = 5900),
+        )
+        val state = DiaryUiState.of(listOf(Child(1, "Маша", null)), Child(1, "Маша", null), events)
+        assertEquals(630, state.lastHeight?.millimeters)
+        assertEquals(6400, state.lastWeight?.grams)
     }
 }

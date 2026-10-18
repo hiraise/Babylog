@@ -86,6 +86,20 @@ data class Weight(
     }
 }
 
+/** Рост (ADR-0027) в миллиметрах: врачи меряют с точностью до 0,5 см, а вводят его в сантиметрах — «62,5». */
+data class Height(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val millimeters: Int,
+    override val note: String = "",
+) : BabyEvent {
+    companion object {
+        /** Допустимый рост в миллиметрах, 20–150 см (защита от опечаток). */
+        val RANGE = 200..1500
+    }
+}
+
 enum class Breast {
     LEFT,
     RIGHT;

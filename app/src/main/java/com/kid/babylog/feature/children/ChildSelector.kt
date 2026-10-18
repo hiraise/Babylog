@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.AppSheet
@@ -30,19 +31,20 @@ import com.kid.babylog.core.ui.components.Avatar
 import com.kid.babylog.core.ui.components.SheetMenuItem
 import com.kid.babylog.core.ui.diaryTitle
 import com.kid.babylog.core.ui.formatAge
+import com.kid.babylog.core.ui.formatHeight
 import com.kid.babylog.core.ui.formatWeight
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
 
 /**
- * Выбор ребёнка в шапке (ADR-0019): аватар, «Дневник Маши» и под ним возраст и последний вес.
- * Касание открывает [ChildrenSheet]; стрелка подсказывает, что это выбор.
+ * Выбор ребёнка в шапке (ADR-0019, ADR-0027): аватар, «Дневник Маши» и под ним возраст, последние
+ * вес и рост. Касание открывает [ChildrenSheet]; стрелка подсказывает, что это выбор.
  */
 @Composable
-fun ChildSelector(child: Child, lastWeight: Weight?, now: Long, onClick: () -> Unit) {
+fun ChildSelector(child: Child, lastWeight: Weight?, lastHeight: Height?, now: Long, onClick: () -> Unit) {
     val spacing = BabyLogTheme.spacing
-    val info = childInfo(child, lastWeight, now.toLocalDate())
+    val info = childInfo(child, lastWeight, lastHeight, now.toLocalDate())
     Row(
         modifier = Modifier
             .clip(MaterialTheme.shapes.small)
@@ -130,9 +132,10 @@ fun ChildrenSheet(
     }
 }
 
-/** «4 мес 12 дн. · 6,4 кг»: возраст и последний вес; ничего не известно — null. */
-internal fun childInfo(child: Child, lastWeight: Weight?, today: LocalDate): String? =
+/** «4 мес 12 дн. · 6,4 кг · 62,5 см»: возраст, последние вес и рост; ничего не известно — null. */
+internal fun childInfo(child: Child, lastWeight: Weight?, lastHeight: Height?, today: LocalDate): String? =
     listOfNotNull(
         child.birthDate?.let { formatAge(it.toLocalDate(), today, child.sex) },
         lastWeight?.let { formatWeight(it.grams) },
+        lastHeight?.let { formatHeight(it.millimeters) },
     ).joinToString(" · ").ifEmpty { null }
