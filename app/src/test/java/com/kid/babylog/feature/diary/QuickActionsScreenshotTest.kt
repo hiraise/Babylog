@@ -24,8 +24,9 @@ import java.time.ZoneOffset
 
 /**
  * Плитки быстрых записей на ширине телефона 360 dp: подгузник меняли 25 мин назад; 3 ч 20 мин назад —
- * подпись выделена; столько же, но малыш спит — не выделена; не меняли — без подписи. Светлая и
- * тёмная тема. Плитки ряда одной высоты при любой подписи.
+ * подпись выделена; столько же, но малыш спит — не выделена; не меняли — без подписи. Под весом и
+ * ростом — дата замера: вчера и две недели назад, сегодня и в прошлом году (в две строки), не мерили.
+ * Светлая и тёмная тема. Плитки ряда одной высоты при любой подписи.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -35,9 +36,10 @@ class QuickActionsScreenshotTest {
     private val clock = Clock.fixed(Instant.parse("2026-10-15T10:00:00Z"), ZoneOffset.UTC)
     private val now = clock.millis()
     private val minute = 60_000L
+    private val day = 24 * 60 * minute
 
     @Test
-    fun `diaper caption, overdue and asleep`() = captureRoboImage(
+    fun `diaper caption, overdue and asleep, measurement dates`() = captureRoboImage(
         "src/test/screenshots/quick_actions.png",
         roborazziOptions = SCREENSHOT_OPTIONS,
     ) {
@@ -50,10 +52,10 @@ class QuickActionsScreenshotTest {
                             Modifier.width(360.dp).padding(spacing.l),
                             verticalArrangement = Arrangement.spacedBy(spacing.m),
                         ) {
-                            QuickActions(lastDiaper = now - 25 * minute, sleeping = false, now = now, onAdd = {})
-                            QuickActions(lastDiaper = now - 200 * minute, sleeping = false, now = now, onAdd = {})
-                            QuickActions(lastDiaper = now - 200 * minute, sleeping = true, now = now, onAdd = {})
-                            QuickActions(lastDiaper = null, sleeping = false, now = now, onAdd = {})
+                            QuickActions(now - 25 * minute, lastWeight = now - day, lastHeight = now - 14 * day, sleeping = false, now = now, onAdd = {})
+                            QuickActions(now - 200 * minute, lastWeight = now, lastHeight = now - 400 * day, sleeping = false, now = now, onAdd = {})
+                            QuickActions(now - 200 * minute, lastWeight = null, lastHeight = null, sleeping = true, now = now, onAdd = {})
+                            QuickActions(lastDiaper = null, lastWeight = null, lastHeight = null, sleeping = false, now = now, onAdd = {})
                         }
                     }
                 }

@@ -35,8 +35,8 @@ import com.kid.babylog.feature.editor.NewEventKind
 import com.kid.babylog.feature.summary.DaySummaryCard
 import java.time.LocalDate
 
-/** Вкладки главного экрана (ADR-0019). */
-enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История") }
+/** Вкладки главного экрана (ADR-0019); «Аналитика» — ADR-0028. */
+enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История"), ANALYTICS("Аналитика") }
 
 /** Действия пользователя на главном экране. */
 internal class DiaryActions(
@@ -94,7 +94,14 @@ internal fun TodayContent(
             }
         }
         item(key = "quick") {
-            QuickActions(state.lastDiaper, sleeping = state.activeSleep != null, now = now, onAdd = actions.onAdd)
+            QuickActions(
+                lastDiaper = state.lastDiaper,
+                lastWeight = state.lastWeight?.start,
+                lastHeight = state.lastHeight?.start,
+                sleeping = state.activeSleep != null,
+                now = now,
+                onAdd = actions.onAdd,
+            )
         }
         item(key = "summary") {
             DaySummaryCard(events = state.events, date = now.toLocalDate(), now = now, sex = child.sex)

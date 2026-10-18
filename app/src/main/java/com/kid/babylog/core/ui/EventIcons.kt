@@ -12,6 +12,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -37,6 +38,7 @@ fun eventIcon(event: BabyEvent): Int = when (event) {
     is Sleep -> R.drawable.ic_sleep
     is Medicine -> R.drawable.ic_medicine
     is Weight -> R.drawable.ic_weight
+    is Height -> R.drawable.ic_height
 }
 
 /**
@@ -63,6 +65,7 @@ private fun EventIconsPreview() = LightDarkPreview {
         Sleep(childId = 1, start = start, end = start + 85 * 60_000L),
         Medicine(childId = 1, start = start, name = "Витамин D", note = "3 капли"),
         Weight(childId = 1, start = start, grams = 4350),
+        Height(childId = 1, start = start, millimeters = 625),
     ).forEach { event ->
         AppCard(Modifier.fillMaxWidth()) {
             ItemRow(

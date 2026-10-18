@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
@@ -22,6 +23,8 @@ val RU: Locale = Locale.forLanguageTag("ru")
 private val TIME = DateTimeFormatter.ofPattern("HH:mm")
 private val DATE = DateTimeFormatter.ofPattern("d MMMM, EEEE", RU)
 private val FULL_DATE = DateTimeFormatter.ofPattern("d MMMM yyyy", RU)
+private val SHORT_DATE = DateTimeFormatter.ofPattern("d MMM", RU)
+private val SHORT_DATE_YEAR = DateTimeFormatter.ofPattern("d MMM yyyy", RU)
 
 fun Long.toLocalDate(zone: ZoneId = ZoneId.systemDefault()): LocalDate =
     Instant.ofEpochMilli(this).atZone(zone).toLocalDate()
@@ -37,6 +40,14 @@ fun formatDayHeader(date: LocalDate, today: LocalDate): String = when (date) {
 
 /** «20 мая 2026» */
 fun formatDate(millis: Long): String = millis.toLocalDate().format(FULL_DATE)
+
+/** «сегодня», «вчера», «15 окт.», в другом году — «15 окт. 2025» */
+fun formatShortDay(date: LocalDate, today: LocalDate): String = when {
+    date == today -> "сегодня"
+    date == today.minusDays(1) -> "вчера"
+    date.year == today.year -> date.format(SHORT_DATE)
+    else -> date.format(SHORT_DATE_YEAR)
+}
 
 /** «2 ч 15 мин», «45 мин», «меньше минуты» */
 fun formatDuration(millis: Long): String {
@@ -137,13 +148,14 @@ fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
     is Sleep -> if (event.isActive) "Сон · идёт" else "Сон"
     is Medicine -> "Лекарство · ${event.name}"
     is Weight -> "Вес · ${formatWeight(event.grams)}"
+    is Height -> "Рост · ${formatHeight(event.millimeters)}"
 }
 
 fun eventTimeLine(event: BabyEvent): String = when (event) {
     is Sleep -> timeRange(event.start, event.end)
     // Кормления до ADR-0015 — без длительности: конец равен началу
     is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
-    is Bottle, is Diaper, is Medicine, is Weight -> formatClock(event.start)
+    is Bottle, is Diaper, is Medicine, is Weight, is Height -> formatClock(event.start)
 }
 
 /**
@@ -169,6 +181,15 @@ fun formatWeight(grams: Int): String {
     val number = "%.2f".format(RU, grams / 1000.0)
         .removeSuffix("0").removeSuffix("0").removeSuffix(",")
     return "$number кг"
+}
+
+/** «62 см», «62,5 см» */
+fun formatHeight(millimeters: Int): String = "${heightCentimeters(millimeters)} см"
+
+/** Рост в сантиметрах без единиц — «62», «62,5»: так его вводят в листе роста. */
+fun heightCentimeters(millimeters: Int): String {
+    val tenths = millimeters % 10
+    return if (tenths == 0) "${millimeters / 10}" else "${millimeters / 10},$tenths"
 }
 
 /** Возраст по-русски: «12 дн.», «2 мес 10 дн.», «1 г 3 мес» */

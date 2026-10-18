@@ -38,6 +38,7 @@ import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.toLocalDate
+import com.kid.babylog.feature.analytics.AnalyticsContent
 import com.kid.babylog.feature.children.ChildSelector
 import com.kid.babylog.feature.children.ChildSheet
 import com.kid.babylog.feature.children.ChildrenSheet
@@ -121,11 +122,11 @@ fun DiaryScreen(
         topBar = {
             Column {
                 // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
-                // как логотип в макете, под ним возраст и вес (ADR-0019)
+                // как логотип в макете, под ним возраст, вес и рост (ADR-0019, ADR-0027)
                 TopAppBar(
                     title = {
                         if (child != null) {
-                            ChildSelector(child, state.lastWeight, now, onClick = { showChildren = true })
+                            ChildSelector(child, state.lastWeight, state.lastHeight, now, onClick = { showChildren = true })
                         } else {
                             Text(
                                 "Дневник малыша",
@@ -165,6 +166,17 @@ fun DiaryScreen(
             when (tab) {
                 DiaryTab.TODAY -> TodayContent(state, child, now, actions, Modifier.padding(padding))
                 DiaryTab.HISTORY -> HistoryContent(state, child, now, selectedDate, actions, Modifier.padding(padding))
+                DiaryTab.ANALYTICS -> AnalyticsContent(
+                    events = state.events,
+                    child = child,
+                    now = now,
+                    // «В историю» и строка ритма открывают день на вкладке «История»
+                    onOpenDay = { day ->
+                        selectDay(day)
+                        tab = DiaryTab.HISTORY
+                    },
+                    modifier = Modifier.padding(padding),
+                )
             }
         }
     }
