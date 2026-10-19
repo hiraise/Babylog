@@ -43,6 +43,12 @@
             "problemMatcher": []
         },
         {
+            "label": "BabyLog: тестовый дневник на устройство",
+            "type": "shell",
+            "command": "./scripts/dev.sh seed",
+            "problemMatcher": []
+        },
+        {
             "label": "BabyLog: скриншот",
             "type": "shell",
             "command": "./scripts/dev.sh screenshot",
