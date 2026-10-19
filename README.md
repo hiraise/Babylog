@@ -279,6 +279,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 | `scripts/dev.sh db`                | скачать базу в `build/debug-db/babylog.db` (в VS Code — SQLite Viewer)  |
 | `scripts/dev.sh screenshot`        | скриншот в `build/screenshots/`                                         |
 | `scripts/dev.sh emulator` / `stop` | включить / выключить эмулятор                                           |
+| `scripts/dev.sh cleanup`           | убрать папки `git worktree` веток, чей PR уже слит в `main`             |
 
 На телефон по USB: `ANDROID_SERIAL=<серийник из adb devices> scripts/dev.sh run`.
 
