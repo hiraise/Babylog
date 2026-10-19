@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.kid.babylog.core.data.DarkPalette
 import java.time.Clock
 
 // Витрина темы для Android Studio: в каждом превью светлая и тёмная тема рядом.
@@ -48,6 +49,28 @@ private fun ShapesPreview() = LightAndDark {
     ShapeScale()
     SpacingScale()
     Components()
+}
+
+/** Роли цвета во всех палитрах тёмной темы рядом (ADR-0032). */
+@Preview(name = "Палитры тёмной темы", widthDp = 1800)
+@Composable
+private fun DarkPalettesPreview() {
+    Row {
+        DarkPalette.entries.forEach { palette ->
+            BabyLogTheme(clock = Clock.systemDefaultZone(), darkTheme = true, darkPalette = palette) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(BabyLogTheme.spacing.l),
+                    verticalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.m),
+                ) {
+                    Text(palette.name, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onBackground)
+                    ColorRoles()
+                }
+            }
+        }
+    }
 }
 
 /** Две колонки с одним содержимым: слева светлая тема, справа тёмная. */

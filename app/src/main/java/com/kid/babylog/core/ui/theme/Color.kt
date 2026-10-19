@@ -4,25 +4,25 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 
-// Fixed-роли по смыслу Material 3 не зависят от темы: одни и те же цвета в светлой и тёмной схеме
-private val PrimaryFixed = Color(0xFFC9EDC5)
-private val PrimaryFixedDim = Color(0xFF9BD896)
-private val OnPrimaryFixed = Color(0xFF002204)
-private val OnPrimaryFixedVariant = Color(0xFF1D5A1C)
-private val SecondaryFixed = Color(0xFFD8E8D3)
-private val SecondaryFixedDim = Color(0xFFBCCCB7)
-private val OnSecondaryFixed = Color(0xFF121F10)
-private val OnSecondaryFixedVariant = Color(0xFF3B4B38)
-private val TertiaryFixed = Color(0xFFFFDEA6)
-private val TertiaryFixedDim = Color(0xFFF0C06A)
-private val OnTertiaryFixed = Color(0xFF261900)
-private val OnTertiaryFixedVariant = Color(0xFF5D4200)
+// Fixed-роли по смыслу Material 3 не зависят от темы: одни и те же цвета во всех схемах, светлой и тёмных
+internal val PrimaryFixed = Color(0xFFC9EDC5)
+internal val PrimaryFixedDim = Color(0xFF9BD896)
+internal val OnPrimaryFixed = Color(0xFF002204)
+internal val OnPrimaryFixedVariant = Color(0xFF1D5A1C)
+internal val SecondaryFixed = Color(0xFFD8E8D3)
+internal val SecondaryFixedDim = Color(0xFFBCCCB7)
+internal val OnSecondaryFixed = Color(0xFF121F10)
+internal val OnSecondaryFixedVariant = Color(0xFF3B4B38)
+internal val TertiaryFixed = Color(0xFFFFDEA6)
+internal val TertiaryFixedDim = Color(0xFFF0C06A)
+internal val OnTertiaryFixed = Color(0xFF261900)
+internal val OnTertiaryFixedVariant = Color(0xFF5D4200)
 
 /**
  * Светлая палитра по макету HiMom: светлый фон, белые карточки, зелёный акцент.
  *
  * Заданы все роли `ColorScheme`: роль, оставленная по умолчанию, взяла бы фиолетовый цвет
- * базовой схемы Material 3. Где какая роль (в тёмной палитре — так же):
+ * базовой схемы Material 3. Где какая роль (в тёмных палитрах — так же):
  * - `background`, `surface` — фон экрана и верхняя панель;
  * - `surfaceContainerLow` — карточки; глубину им даёт тень [Shadows.card], а не тон, поэтому
  *   `surfaceTint` равен `surface`;
@@ -88,11 +88,12 @@ internal val LightColors = lightColorScheme(
 )
 
 /**
- * Тёмная палитра по вариантам «Black var» макета: тёмно-серый фон, карточки `#29323C`,
- * акцент — макетный `#49B848`. Роли используются так же, как в [LightColors]; теней нет
- * (`Shadows.card == null`), карточку от фона отделяет цвет.
+ * Тёмная палитра «Классика» (`DarkPalette.CLASSIC`) — прежняя, по вариантам «Black var» макета:
+ * тёмно-серый фон, карточки `#29323C`, акцент — макетный `#49B848`. Остальные тёмные палитры —
+ * спокойные, их строит `calmDarkScheme` (DarkPalettes.kt, ADR-0032). Роли используются так же,
+ * как в [LightColors]; теней нет (`Shadows.card == null`), карточку от фона отделяет цвет.
  */
-internal val DarkColors = darkColorScheme(
+internal val ClassicDarkColors = darkColorScheme(
     primary = Color(0xFF49B848),
     onPrimary = Color(0xFF0C1F0C),
     primaryContainer = Color(0xFF1F4A1E),

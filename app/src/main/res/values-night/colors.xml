@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Совпадает с background тёмной темы (core/ui/theme/Color.kt), проверяет ThemeWindowTest; зачем — в values/colors.xml -->
-    <color name="window_background">#22272C</color>
+    <!--
+        Совпадает с background тёмной палитры по умолчанию («Сумерки», DarkPalette.DEFAULT,
+        core/ui/theme/DarkPalettes.kt), проверяет ThemeWindowTest; зачем — в values/colors.xml.
+        У других палитр заставка холодного запуска мелькнёт этим цветом (ADR-0032).
+    -->
+    <color name="window_background">#1B1B25</color>
 </resources>

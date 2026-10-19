@@ -28,7 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kid.babylog.R
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
@@ -71,8 +71,8 @@ private const val NONE = -1L
 @Composable
 fun DiaryScreen(
     viewModel: DiaryViewModel,
-    themeMode: ThemeMode,
-    onThemeModeChange: (ThemeMode) -> Unit,
+    theme: ThemeChoice,
+    onThemeChange: (ThemeChoice) -> Unit,
     initialTab: DiaryTab = DiaryTab.TODAY,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -252,7 +252,7 @@ fun DiaryScreen(
     }
 
     if (showThemeSheet) {
-        ThemeSheet(mode = themeMode, onSelect = onThemeModeChange, onDismiss = { showThemeSheet = false })
+        ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
     }
 
     if (child == null) return

@@ -2,7 +2,8 @@ package com.kid.babylog.feature.diary
 
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.DarkPalette
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
@@ -60,6 +61,12 @@ class DiaryScreenshotTest {
     @Test
     fun `day with records, dark`() = capture("diary_day_dark", sampleDiary(), dark = true)
 
+    /** Остальные палитры тёмной темы (ADR-0032); палитра по умолчанию — `diary_day_dark`. */
+    @Test
+    fun `day with records, other dark palettes`() = DarkPalette.entries.filter { it != DarkPalette.DEFAULT }.forEach { palette ->
+        capture("diary_day_dark_${palette.name.lowercase()}", sampleDiary(), dark = true, palette = palette)
+    }
+
     @Test
     fun `feeding in progress`() = capture("diary_feeding", sampleDiary(feedingNow = true), dark = false)
 
@@ -72,11 +79,17 @@ class DiaryScreenshotTest {
     @Test
     fun `first launch`() = capture("diary_first_launch", FakeDiaryRepository(), dark = false)
 
-    private fun capture(name: String, repository: FakeDiaryRepository, dark: Boolean, tab: DiaryTab = DiaryTab.TODAY) {
+    private fun capture(
+        name: String,
+        repository: FakeDiaryRepository,
+        dark: Boolean,
+        tab: DiaryTab = DiaryTab.TODAY,
+        palette: DarkPalette = DarkPalette.DEFAULT,
+    ) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
-            BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = tab)
+            BabyLogTheme(clock = clock, darkTheme = dark, darkPalette = palette) {
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = tab)
             }
         }
     }
