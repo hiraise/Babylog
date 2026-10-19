@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `app/build.gradle.kts` (`signingConfigs`, `versionCode`, `versionName`, `dependenciesInfo`), `.github/workflows/release.yml`, `scripts/dev.sh release`, README «Установка на телефон» и «Сборка»
+- **Затрагивает:** `app/build.gradle.kts` (`signingConfigs`, `versionCode`, `versionName`, `dependenciesInfo`), `.github/workflows/release.yml`, `scripts/dev.sh release`, скилл выпуска `.claude/skills/release/`, README «Установка на телефон» и «Сборка»
 
 ## Контекст
 

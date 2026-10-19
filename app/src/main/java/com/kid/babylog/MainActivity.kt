@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.data.isDark
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -30,26 +31,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        syncSystemNightMode(container.themeMode.mode.value)
+        syncSystemNightMode(container.themeMode.choice.value.mode)
         setContent {
-            val themeMode by container.themeMode.mode.collectAsStateWithLifecycle()
+            val theme by container.themeMode.choice.collectAsStateWithLifecycle()
             // На API 31+ конфигурация уже несёт выбранную тему (setApplicationNightMode), до 31 — системную
-            val dark = themeMode.isDark(systemDark = isSystemInDarkTheme())
-            BabyLogTheme(clock = container.clock, darkTheme = dark) {
+            val dark = theme.mode.isDark(systemDark = isSystemInDarkTheme())
+            BabyLogTheme(clock = container.clock, darkTheme = dark, darkPalette = theme.darkPalette) {
                 val background = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect { paintWindow(background, dark) }
                 DiaryScreen(
                     viewModel = viewModel(factory = container.diaryViewModelFactory),
-                    themeMode = themeMode,
-                    onThemeModeChange = ::changeThemeMode,
+                    theme = theme,
+                    onThemeChange = ::changeTheme,
                 )
             }
         }
     }
 
-    private fun changeThemeMode(mode: ThemeMode) {
-        container.themeMode.select(mode)
-        syncSystemNightMode(mode)
+    private fun changeTheme(choice: ThemeChoice) {
+        container.themeMode.select(choice)
+        syncSystemNightMode(choice.mode)
     }
 
     /**

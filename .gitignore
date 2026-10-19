@@ -30,3 +30,7 @@ keystore.properties
 # VS Code: общие задачи (Run Task) — в репозитории, личные настройки — нет
 .vscode/*
 !.vscode/tasks.json
+
+# Claude Code: скиллы проекта — в репозитории, личные настройки и worktree — нет
+.claude/*
+!.claude/skills/

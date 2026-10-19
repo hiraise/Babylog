@@ -1,7 +1,7 @@
 package com.kid.babylog.feature.analytics
 
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.theme.BabyLogTheme
@@ -62,7 +62,7 @@ class AnalyticsScreenshotTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
             }
         }
     }

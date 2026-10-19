@@ -1,5 +1,6 @@
 package com.kid.babylog.core.ui.theme
 
+import com.kid.babylog.core.data.DarkPalette
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
@@ -22,9 +23,11 @@ class ThemeWindowTest {
             LightColors.background.hex(),
             resColor("values", "window_background"),
         )
+        // Тёмных палитр несколько, а ресурс один: заставку до нашего кода система рисует фоном палитры
+        // по умолчанию (ADR-0032)
         assertEquals(
-            "res/values-night/colors.xml: window_background должен равняться background тёмной темы (Color.kt)",
-            DarkColors.background.hex(),
+            "res/values-night/colors.xml: window_background должен равняться background тёмной палитры по умолчанию",
+            darkColors(DarkPalette.DEFAULT).background.hex(),
             resColor("values-night", "window_background"),
         )
     }

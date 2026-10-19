@@ -11,7 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Crying
@@ -29,6 +29,7 @@ import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -42,6 +43,7 @@ import java.util.TimeZone
 
 /**
  * Вкладка «Заметки» (ADR-0031): «Заметка» открывает лист, заметка с меткой появляется в ленте;
+ * плитка «Заметка» на «Сегодня» открывает тот же лист;
  * метка в ряду фильтров показывает сводку, системная «Назад» снимает фильтр; карточка плача
  * за неделю открывает раздел «Плач» в «Аналитике».
  */
@@ -68,22 +70,26 @@ class NotesFlowTest {
     }
 
     @Before
-    fun showNotes() {
+    fun fixTimeZone() {
         systemZone = TimeZone.getDefault()
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
-        val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
-        compose.setContent {
-            BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = DiaryTab.NOTES)
-            }
-        }
     }
 
     @After
     fun restoreTimeZone() = TimeZone.setDefault(systemZone)
 
+    private fun show(tab: DiaryTab) {
+        val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
+        compose.setContent {
+            BabyLogTheme(clock = clock, darkTheme = false) {
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = tab)
+            }
+        }
+    }
+
     @Test
     fun `new note with a tag appears in the feed and the tag shows its summary`() {
+        show(DiaryTab.NOTES)
         compose.onNode(hasText("Заметка") and hasClickAction()).performClick()
         compose.onNode(hasSetTextAction() and hasText("Что заметили")).performTextInput("Тёрла ушко")
         compose.onNodeWithText("зубки").performClick()
@@ -106,7 +112,20 @@ class NotesFlowTest {
     }
 
     @Test
+    fun `note tile on Today opens the same note sheet`() {
+        show(DiaryTab.TODAY)
+        compose.onNode(hasText("Заметка") and hasClickAction()).performClick()
+        compose.onNode(hasSetTextAction() and hasText("Что заметили")).performTextInput("Первый зуб")
+        compose.onNodeWithText("Сохранить").performClick()
+        compose.waitForIdle()
+
+        assertTrue(repository.events.value.any { it is Note && it.note == "Первый зуб" })
+        compose.onNodeWithText("Что заметили").assertDoesNotExist()
+    }
+
+    @Test
     fun `crying of the week leads to the crying section of analytics`() {
+        show(DiaryTab.NOTES)
         compose.onNode(hasText("в сутки за неделю", substring = true)).performClick()
         compose.onNodeWithText("Перед плачем").assertIsDisplayed()
     }

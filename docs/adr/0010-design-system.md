@@ -14,7 +14,8 @@
 
 ## Решение
 
-- Источник истины — код в `core/ui/theme/`: `Color.kt` (светлая и тёмная `ColorScheme`), `Type.kt`
+- Источник истины — код в `core/ui/theme/`: `Color.kt` (светлая и тёмная `ColorScheme`; остальные тёмные
+  палитры — `DarkPalettes.kt`, [ADR-0032](0032-dark-palettes.md)), `Type.kt`
   (`Typography`), `Shape.kt` (`Shapes`), `Spacing.kt` (`LocalSpacing`), `Shadows.kt` (`LocalShadows`:
   мягкая тень карточек и чипов, в тёмной теме её нет), `Theme.kt` (`BabyLogTheme`). Расходится с макетом —
   верен код.

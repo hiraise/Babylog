@@ -6,6 +6,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import com.kid.babylog.core.data.DarkPalette
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -95,10 +96,9 @@ private val PAIRS: List<ContrastPair> = listOf(
 /** Палитра темы и базовая схема Material 3, от которой она должна отличаться. */
 private class Palette(val name: String, val colors: ColorScheme, val base: ColorScheme)
 
-private val PALETTES = listOf(
-    Palette("светлая", LightColors, lightColorScheme()),
-    Palette("тёмная", DarkColors, darkColorScheme()),
-)
+/** Светлая палитра и все тёмные (ADR-0032). */
+private val PALETTES = listOf(Palette("светлая", LightColors, lightColorScheme())) +
+    DarkPalette.entries.map { Palette("тёмная ${it.name}", darkColors(it), darkColorScheme()) }
 
 /**
  * Белый и чёрный (тона 100 и 0) одинаковы в любой палитре, поэтому их совпадение с базовой схемой
@@ -133,7 +133,8 @@ class ThemeContrastTest {
     @Test
     fun `chart colors stand out on the card`() {
         // Ряды графиков «Аналитики» — нетекстовые элементы на карточке: не меньше 3:1 (ADR-0028)
-        val charts = listOf(Triple("светлая", LightColors, LightChartColors), Triple("тёмная", DarkColors, DarkChartColors))
+        val charts = listOf(Triple("светлая", LightColors, LightChartColors)) +
+            DarkPalette.entries.map { Triple("тёмная ${it.name}", darkColors(it), darkChartColors(it)) }
         val failures = charts.flatMap { (name, scheme, chart) ->
             listOf(
                 "sleep" to chart.sleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,

@@ -50,7 +50,8 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  * Пока таймер не идёт ([runningSince] = null) — фон карточки, касание — [onStart], под подписью —
  * [idleCaption]: сколько прошло с конца прошлого («не спит 1 ч 20 мин»), чтобы не идти за этим
  * в «Историю», — до трёх строк: в плитку они помещаются в высоту идущего таймера. Идёт — фон
- * `primary`, иконка поднимается, под ней время с [runningSince], подпись —
+ * [BabyLogTheme.timerColors] (в светлой теме `primary`, в тёмной — тон акцента, ADR-0032), иконка
+ * поднимается, под ней время с [runningSince], подпись —
  * [runningLabel] (например «левая грудь»); касание — [onStop]. [corner] — необязательная кнопка
  * в правом верхнем углу идущего таймера (сменить грудь).
  *
@@ -73,10 +74,11 @@ fun TimerTile(
 ) {
     val spacing = BabyLogTheme.spacing
     val colors = MaterialTheme.colorScheme
+    val timer = BabyLogTheme.timerColors
     val running = runningSince != null
-    val container by animateColorAsState(if (running) colors.primary else colors.surfaceContainerLow, TileColorMotion, label = "фон")
-    val content by animateColorAsState(if (running) colors.onPrimary else colors.onSurface, TileColorMotion, label = "текст")
-    val iconTint by animateColorAsState(if (running) colors.onPrimary else colors.primary, TileColorMotion, label = "иконка")
+    val container by animateColorAsState(if (running) timer.container else colors.surfaceContainerLow, TileColorMotion, label = "фон")
+    val content by animateColorAsState(if (running) timer.content else colors.onSurface, TileColorMotion, label = "текст")
+    val iconTint by animateColorAsState(if (running) timer.content else colors.primary, TileColorMotion, label = "иконка")
     val elapsed = runningSince?.let { (now - it).coerceAtLeast(0) }
     // Пока время уезжает при остановке, на плитке последнее значение, а не «00:00»
     val lastElapsed = remember { mutableLongStateOf(0L) }
@@ -167,12 +169,16 @@ fun TimerCornerButton(@DrawableRes icon: Int, description: String, onClick: () -
 }
 
 /**
- * Плитка таймера во всю ширину ряда — плач (ADR-0030). Ведёт себя как [TimerTile]: касание
- * начинает ([onStart]) и заканчивает ([onStop]), идущий таймер — фон `primary`. Но иконка слева,
+ * Широкая плитка таймера — плач (ADR-0030). Ведёт себя как [TimerTile]: касание начинает
+ * ([onStart]) и заканчивает ([onStop]), фон идущего — [BabyLogTheme.timerColors]. Но иконка слева,
  * а время и подписи — в строку: третья плитка в ряду сна и кормления не помещается (у «40:00»
  * и подписи кормления в две строки нет места). Высота одна у идущего и стоящего таймера — ряды
  * ниже не прыгают. Пока таймер стоит — [label] и под ним [idleCaption]; идёт — время, [label]
  * и «с 18:32».
+ *
+ * Уже трёх четвертей ряда не делай: рядом встаёт одна плитка [ActionTile] («Заметка»), а на 360 dp
+ * в три четверти «1:23:45» с подписью «с 18:32» влезает впритык — при шрифте крупнее обычного
+ * время уменьшается.
  */
 @Composable
 fun WideTimerTile(
@@ -189,10 +195,11 @@ fun WideTimerTile(
 ) {
     val spacing = BabyLogTheme.spacing
     val colors = MaterialTheme.colorScheme
+    val timer = BabyLogTheme.timerColors
     val running = runningSince != null
-    val container by animateColorAsState(if (running) colors.primary else colors.surfaceContainerLow, TileColorMotion, label = "фон")
-    val content by animateColorAsState(if (running) colors.onPrimary else colors.onSurface, TileColorMotion, label = "текст")
-    val iconTint by animateColorAsState(if (running) colors.onPrimary else colors.primary, TileColorMotion, label = "иконка")
+    val container by animateColorAsState(if (running) timer.container else colors.surfaceContainerLow, TileColorMotion, label = "фон")
+    val content by animateColorAsState(if (running) timer.content else colors.onSurface, TileColorMotion, label = "текст")
+    val iconTint by animateColorAsState(if (running) timer.content else colors.primary, TileColorMotion, label = "иконка")
     AppCard(
         modifier = modifier.fillMaxWidth(),
         onClick = if (running) onStop else onStart,
@@ -208,7 +215,16 @@ fun WideTimerTile(
         ) {
             AppIcon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = iconTint)
             if (runningSince != null) {
-                Text(formatTimer((now - runningSince).coerceAtLeast(0)), style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+                // Время уступает место подписи: вес — чтобы его мерили последним; при крупном шрифте
+                // «1:23:45» уменьшается, а «с 18:32» не обрезается
+                val style = MaterialTheme.typography.headlineMedium
+                Text(
+                    formatTimer((now - runningSince).coerceAtLeast(0)),
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = style,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * 0.6f, maxFontSize = style.fontSize),
+                )
                 Column {
                     Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                     Text("с ${formatClock(runningSince)}", style = MaterialTheme.typography.bodySmall, maxLines = 1)
