@@ -4,12 +4,17 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
+import com.kid.babylog.feature.editor.CryingChoices
 import com.kid.babylog.feature.editor.PastMedicine
+import com.kid.babylog.feature.editor.TagChoices
+import com.kid.babylog.feature.editor.cryingChoices
+import com.kid.babylog.feature.editor.noteTagChoices
 import com.kid.babylog.feature.editor.pastMedicines
 import com.kid.babylog.feature.summary.feedingSessions
 
@@ -22,6 +27,14 @@ data class DiaryUiState(
     val events: List<BabyEvent> = emptyList(),
     val activeSleep: Sleep? = null,
     val activeFeeding: Feeding? = null,
+    /** Идущий плач (ADR-0030): широкая плитка под сном и кормлением идёт таймером. */
+    val activeCrying: Crying? = null,
+    /** Последний законченный плач: «2 ч назад · 24 мин» на плитке плача. */
+    val lastCrying: Crying? = null,
+    /** Метки и «что помогло» для листа плача: встречавшиеся первыми, потом стандартные. */
+    val cryingChoices: CryingChoices = cryingChoices(emptyList()),
+    /** Метки для листа заметки (ADR-0031): тот же словарь, что у плача. */
+    val noteTags: TagChoices = noteTagChoices(emptyList()),
     /** Конец последнего законченного сна: «не спит 1 ч 20 мин» на плитке сна. */
     val lastSleepEnd: Long? = null,
     /** Последнее законченное кормление: «левая в 12:00, закончилось 40 мин назад» на плитке кормления (ADR-0026). */
@@ -39,8 +52,8 @@ data class DiaryUiState(
     val photoCounts: Map<Long, Int> = emptyMap(),
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
-    /** У сообщения есть «Отменить»: таймер остановили касанием карточки (ADR-0021). */
-    val canUndo: Boolean = false,
+    /** Кнопка сообщения: «Отменить» или «Отметить» ([MessageAction]); null — сообщение без кнопки. */
+    val messageAction: MessageAction? = null,
 ) {
     companion object {
         fun of(children: List<Child>, child: Child?, events: List<BabyEvent>, photoCounts: Map<Long, Int> = emptyMap()) = DiaryUiState(
@@ -49,6 +62,10 @@ data class DiaryUiState(
             events = events,
             activeSleep = events.firstNotNullOfOrNull { (it as? Sleep)?.takeIf(Sleep::isActive) },
             activeFeeding = events.firstNotNullOfOrNull { (it as? Feeding)?.takeIf(Feeding::isActive) },
+            activeCrying = events.firstNotNullOfOrNull { (it as? Crying)?.takeIf(Crying::isActive) },
+            lastCrying = events.filterIsInstance<Crying>().filter { !it.isActive }.maxByOrNull { it.end ?: it.start },
+            cryingChoices = cryingChoices(events),
+            noteTags = noteTagChoices(events),
             lastSleepEnd = events.filterIsInstance<Sleep>().mapNotNull { it.end }.maxOrNull(),
             lastFeeding = lastFeeding(events),
             lastBottle = events.firstNotNullOfOrNull { it as? Bottle },
@@ -59,6 +76,18 @@ data class DiaryUiState(
             photoCounts = photoCounts,
         )
     }
+}
+
+/** Что делает кнопка снекбара. «Отменить» выполняет ViewModel, «Отметить» — экран: открывает лист. */
+sealed interface MessageAction {
+    /** «Отменить» остановку касанием (ADR-0021): таймер [timer] идёт дальше. */
+    data class ResumeTimer(val timer: BabyEvent) : MessageAction
+
+    /** «Отменить» начало плача (ADR-0030): плач [cryingId] удаляется, прерванный им сон [sleep] идёт дальше. */
+    data class CancelCrying(val cryingId: Long, val sleep: Sleep?) : MessageAction
+
+    /** «Отметить»: плач [cryingId] закончился засыпанием — лист «Плач закончился» спросит, почему и что помогло. */
+    data class CryingDetails(val cryingId: Long) : MessageAction
 }
 
 /**

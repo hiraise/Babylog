@@ -336,6 +336,32 @@ cmd_stop() {
     "$ADB" -s "$serial" emu kill
 }
 
+# Убирает worktree веток, чей PR уже слит в main (CLAUDE.md, «Ветки и PR»): исходники остаются
+# в истории git, сборку Gradle пересоздаст. Главную папку, текущий worktree и папки
+# с незакоммиченными правками не трогает.
+cmd_cleanup() {
+    local main_tree wt br pr
+    command -v gh >/dev/null || { echo "Нужен GitHub CLI (gh): по нему видно, что PR ветки слит" >&2; return 1; }
+    git -C "$ROOT" fetch -q --prune origin
+    main_tree="$(git -C "$ROOT" worktree list --porcelain | sed -n '1s/^worktree //p')"
+    while IFS=$'\t' read -r wt br; do
+        [[ "$wt" == "$main_tree" || "$wt" == "$ROOT" ]] && continue
+        git -C "$ROOT" merge-base --is-ancestor "$br" origin/main || continue
+        # Только что созданная ветка без коммитов тоже «в main» — поэтому нужен ещё и слитый PR
+        pr="$(gh pr list --state merged --head "$br" --json number -q '.[0].number')"
+        [[ -n "$pr" ]] || continue
+        if [[ -n "$(git -C "$wt" status --porcelain)" ]]; then
+            echo "Оставлен $wt: в нём незакоммиченные правки" >&2
+            continue
+        fi
+        git -C "$ROOT" worktree remove "$wt" || { echo "Не удалось убрать $wt" >&2; continue; }
+        git -C "$ROOT" branch -d "$br" >/dev/null || echo "Ветка $br оставлена: git не считает её слитой" >&2
+        echo "Убран $wt ($br, PR #$pr)"
+    done < <(git -C "$ROOT" worktree list --porcelain |
+        awk '/^worktree /{p=substr($0, 10)} /^branch refs\/heads\//{print p "\t" substr($0, 19)}')
+    git -C "$ROOT" worktree prune
+}
+
 usage() {
     cat <<EOF
 Использование: scripts/dev.sh <команда>
@@ -352,10 +378,11 @@ usage() {
   db          скачать базу в build/debug-db/$DB_NAME
   screenshot  снимок экрана в build/screenshots/
   stop        выключить эмулятор
+  cleanup     убрать worktree веток, чей PR уже слит в main
 EOF
 }
 
 case "${1:-}" in
-    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | screenshot | stop) "cmd_$1" "${@:2}" ;;
+    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
     *) usage ;;
 esac

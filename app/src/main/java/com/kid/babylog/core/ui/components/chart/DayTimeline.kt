@@ -38,7 +38,8 @@ data class TimelineTick(val at: Float, val color: Color)
 
 /**
  * Строка шкалы: сутки слева направо. [end] — докуда сутки прошли (у сегодня — до текущего момента),
- * дальше шкала пуста; [dots] — точки под шкалой (подгузники); [description] — для TalkBack.
+ * дальше шкала пуста; [dots] — точки под шкалой (подгузники); [pins] — булавки над шкалой (заметки):
+ * черта через полосу с головкой сверху, цвета `onSurface`; [description] — для TalkBack.
  */
 @Immutable
 data class TimelineRow(
@@ -48,6 +49,7 @@ data class TimelineRow(
     val dots: List<Float>,
     val end: Float,
     val description: String,
+    val pins: List<Float> = emptyList(),
 )
 
 private val LabelWidth = 56.dp
@@ -62,18 +64,21 @@ private val Ring = 1.5.dp
 private val DotRadius = 2.dp
 private val DotOffset = 6.dp
 private val GridWidth = 1.dp
+private val PinWidth = 2.dp
+private val PinHeadRadius = 3.dp
 
 /**
  * «Ритм дня» (ADR-0028): по строке на сутки, шкала от 0 до 24 часов с делениями через 6 часов.
  * Полосы рисуются по порядку [TimelineRow.bands], отметки — поверх них. Касание строки — [onRowClick]
- * с её номером; строка для TalkBack — одна кнопка с описанием.
+ * с её номером; строка для TalkBack — одна кнопка с описанием. [onRowClick] null — строки не нажимаются:
+ * на обзоре «Аналитики» (ADR-0029) нажимается вся карточка.
  */
 @Composable
 fun DayTimeline(
     rows: List<TimelineRow>,
     dotColor: Color,
-    onRowClick: (Int) -> Unit,
-    onClickLabel: String,
+    onRowClick: ((Int) -> Unit)?,
+    onClickLabel: String?,
     modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -101,7 +106,7 @@ fun DayTimeline(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(RowHeight)
-                    .clickable(onClickLabel = onClickLabel) { onRowClick(index) }
+                    .then(if (onRowClick != null) Modifier.clickable(onClickLabel = onClickLabel) { onRowClick(index) } else Modifier)
                     .semantics(mergeDescendants = true) { contentDescription = row.description },
                 horizontalArrangement = Arrangement.spacedBy(spacing.s),
                 verticalAlignment = Alignment.CenterVertically,
@@ -114,14 +119,14 @@ fun DayTimeline(
                     modifier = Modifier.width(LabelWidth),
                 )
                 Canvas(Modifier.weight(1f).fillMaxHeight()) {
-                    drawRow(row, track = colors.surfaceVariant, background = colors.surfaceContainerLow, dotColor = dotColor)
+                    drawRow(row, track = colors.surfaceVariant, background = colors.surfaceContainerLow, dotColor = dotColor, pinColor = colors.onSurface)
                 }
             }
         }
     }
 }
 
-private fun DrawScope.drawRow(row: TimelineRow, track: Color, background: Color, dotColor: Color) {
+private fun DrawScope.drawRow(row: TimelineRow, track: Color, background: Color, dotColor: Color, pinColor: Color) {
     val strip = StripHeight.toPx()
     val top = (size.height - strip - DotOffset.toPx()) / 2
     val width = size.width
@@ -145,5 +150,14 @@ private fun DrawScope.drawRow(row: TimelineRow, track: Color, background: Color,
     }
     row.dots.forEach { at ->
         drawCircle(dotColor, DotRadius.toPx(), Offset(at * width, top + strip + DotOffset.toPx() - DotRadius.toPx()))
+    }
+    // Булавка — поверх всего: черта с обводкой цвета фона, чтобы её было видно и на полосе сна
+    row.pins.forEach { at ->
+        val x = at * width
+        val head = Offset(x, top - PinHeadRadius.toPx())
+        drawLine(background, head, Offset(x, top + strip), PinWidth.toPx() + 2 * ring)
+        drawCircle(background, PinHeadRadius.toPx() + ring, head)
+        drawLine(pinColor, head, Offset(x, top + strip), PinWidth.toPx())
+        drawCircle(pinColor, PinHeadRadius.toPx(), head)
     }
 }

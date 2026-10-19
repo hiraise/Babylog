@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -26,6 +27,7 @@ import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.ItemRow
 import com.kid.babylog.core.ui.components.TimerCornerButton
 import com.kid.babylog.core.ui.components.TimerTile
+import com.kid.babylog.core.ui.components.WideTimerTile
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
@@ -98,6 +100,40 @@ internal fun FeedingCard(
         idleCaption = afterFeedingCaption(lastFeeding, now),
         corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
     )
+}
+
+/**
+ * Плач (ADR-0030) — широкая плитка под сном и кормлением: касание сразу запускает таймер, ещё
+ * касание останавливает и открывает лист «Плач закончился». Пока не плачет — когда был последний
+ * плач и сколько длился ([cryingCaption]).
+ */
+@Composable
+internal fun CryingCard(
+    activeCrying: Crying?,
+    lastCrying: Crying?,
+    now: Long,
+    onStart: () -> Unit,
+    onEnd: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    WideTimerTile(
+        icon = R.drawable.ic_crying,
+        label = "Плач",
+        runningSince = activeCrying?.start,
+        now = now,
+        startLabel = "начать плач",
+        stopLabel = "закончить плач",
+        onStart = onStart,
+        onStop = onEnd,
+        modifier = modifier,
+        idleCaption = cryingCaption(lastCrying, now),
+    )
+}
+
+/** «2 ч назад · 24 мин» — последний законченный плач; не было или давно ([sinceLast]) — null. */
+internal fun cryingCaption(lastCrying: Crying?, now: Long): String? {
+    val end = lastCrying?.end ?: return null
+    return sinceLast(end, now)?.let { "${formatAgo(it)} · ${formatDuration(end - lastCrying.start)}" }
 }
 
 /** «не спит 1 ч 20 мин» — с конца последнего сна; сна не было или он давно ([sinceLast]) — null. */

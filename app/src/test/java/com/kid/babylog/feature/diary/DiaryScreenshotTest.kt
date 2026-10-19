@@ -6,6 +6,7 @@ import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -63,6 +64,9 @@ class DiaryScreenshotTest {
     fun `feeding in progress`() = capture("diary_feeding", sampleDiary(feedingNow = true), dark = false)
 
     @Test
+    fun `crying in progress`() = capture("diary_crying", sampleDiary(cryingNow = true), dark = false)
+
+    @Test
     fun `history tab`() = capture("diary_history", sampleDiary(), dark = false, tab = DiaryTab.HISTORY)
 
     @Test
@@ -77,8 +81,11 @@ class DiaryScreenshotTest {
         }
     }
 
-    /** Двое детей; у Маши за сегодня записи всех типов и идёт сон, а при [feedingNow] — кормление. */
-    private fun sampleDiary(feedingNow: Boolean = false) = FakeDiaryRepository(
+    /**
+     * Двое детей; у Маши за сегодня записи всех типов и идёт сон, а при [feedingNow] — кормление,
+     * при [cryingNow] — плач (он будит: сна нет).
+     */
+    private fun sampleDiary(feedingNow: Boolean = false, cryingNow: Boolean = false) = FakeDiaryRepository(
         listOf(Child(1, "Маша", at("2026-05-20T00:00:00Z"), Sex.GIRL), Child(2, "Петя", null, Sex.BOY)),
     ).apply {
         events.value = listOf<BabyEvent>(
@@ -93,8 +100,9 @@ class DiaryScreenshotTest {
                 breast = Breast.RIGHT, note = "долго",
             ),
         ) + listOfNotNull(
-            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")).takeIf { !feedingNow },
+            Sleep(id = 7, childId = 1, start = at("2026-10-15T09:20:00Z")).takeIf { !feedingNow && !cryingNow },
             Feeding(id = 8, childId = 1, start = at("2026-10-15T09:48:00Z"), breast = Breast.LEFT).takeIf { feedingNow },
+            Crying(id = 10, childId = 1, start = at("2026-10-15T09:52:00Z")).takeIf { cryingNow },
         )
     }
 

@@ -3,6 +3,7 @@ package com.kid.babylog.feature.summary
 import com.kid.babylog.R
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -32,6 +33,21 @@ class DaySummaryTest {
     /** Законченное кормление длиной [minutes] минут. */
     private fun fed(id: Long, start: Long, breast: Breast, minutes: Int = 15) =
         Feeding(id, 1, start, end = start + minutes * minute, breast = breast)
+
+    @Test
+    fun `crying line appears only on days with crying`() {
+        assertEquals(4, summarizeDay(listOf(fed(1, at(today, 8), Breast.LEFT)), today, now, zone).lines(null).size)
+        val events = listOf(
+            Crying(2, 1, at(today, 9), end = at(today, 9, 24)),
+            // Идущий плач считается до now, как сон
+            Crying(3, 1, at(today, 11, 50)),
+            Crying(4, 1, at(yesterday, 20), end = at(yesterday, 20, 30)),
+        )
+        val summary = summarizeDay(events, today, now, zone)
+        assertEquals(2, summary.cryings)
+        assertEquals(34 * minute, summary.cryingMillis)
+        assertEquals("Плач: 2 раза, 34 мин", summary.lines(null).last().shown())
+    }
 
     @Test
     fun `counts only records of the chosen day`() {

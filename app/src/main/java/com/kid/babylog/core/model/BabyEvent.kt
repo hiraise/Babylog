@@ -65,6 +65,35 @@ data class Sleep(
     val isActive: Boolean get() = end == null
 }
 
+/**
+ * Плач (ADR-0030) — таймер, как сон: [end] = null — плачет сейчас (у ребёнка не больше одного).
+ * [reasons] — почему, как думают родители: метки, общие с заметками ([normalizeTag]); [helped] —
+ * что успокоило, свой короткий список. Оба — без повторов, в порядке выбора.
+ */
+data class Crying(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val end: Long? = null,
+    val reasons: List<String> = emptyList(),
+    val helped: List<String> = emptyList(),
+    override val note: String = "",
+) : BabyEvent {
+    val isActive: Boolean get() = end == null
+}
+
+/**
+ * Заметка (ADR-0031): что заметили родители — текст в [note] — и метки [tags], общие с причинами
+ * плача ([normalizeTag]): по ним видно, что повторяется. Разовая, без конца; фото — как у подгузника.
+ */
+data class Note(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val tags: List<String> = emptyList(),
+    override val note: String = "",
+) : BabyEvent
+
 data class Medicine(
     override val id: Long = 0,
     override val childId: Long,

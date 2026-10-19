@@ -2,6 +2,7 @@ package com.kid.babylog.feature.diary
 
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
@@ -35,8 +37,8 @@ import com.kid.babylog.feature.editor.NewEventKind
 import com.kid.babylog.feature.summary.DaySummaryCard
 import java.time.LocalDate
 
-/** Вкладки главного экрана (ADR-0019); «Аналитика» — ADR-0028. */
-enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История"), ANALYTICS("Аналитика") }
+/** Вкладки главного экрана (ADR-0019); «Заметки» — ADR-0031, «Аналитика» — ADR-0028. */
+enum class DiaryTab(val title: String) { TODAY("Сегодня"), HISTORY("История"), NOTES("Заметки"), ANALYTICS("Аналитика") }
 
 /** Действия пользователя на главном экране. */
 internal class DiaryActions(
@@ -45,6 +47,8 @@ internal class DiaryActions(
     val onStartFeeding: () -> Unit,
     val onEndFeeding: () -> Unit,
     val onSwitchBreast: () -> Unit,
+    val onStartCrying: () -> Unit,
+    val onEndCrying: () -> Unit,
     val onAdd: (NewEventKind) -> Unit,
     val onEditEvent: (BabyEvent) -> Unit,
     val onDeleteEvent: (BabyEvent) -> Unit,
@@ -52,22 +56,46 @@ internal class DiaryActions(
     val onPickDate: () -> Unit,
 )
 
-/** Вкладки под шапкой; переключаются тапом — свайп на «Истории» листает дни. */
+/**
+ * Вкладки под шапкой; переключаются тапом — свайп на «Истории» листает дни. Четыре подписи на 360 dp
+ * не влезают со стандартными полями Material по 16 dp: поля — `spacing.xs`, подпись в одну строку,
+ * а на совсем узком экране или с крупным шрифтом она уменьшается, но не переносится («Аналитик / а»).
+ */
 @Composable
 internal fun DiaryTabs(selected: DiaryTab, onSelect: (DiaryTab) -> Unit) {
+    val style = MaterialTheme.typography.titleSmall
     PrimaryTabRow(selectedTabIndex = selected.ordinal, containerColor = MaterialTheme.colorScheme.background) {
         DiaryTab.entries.forEach { tab ->
             Tab(
                 selected = tab == selected,
                 onClick = { onSelect(tab) },
-                text = { Text(tab.title) },
+                modifier = Modifier.height(TabHeight),
                 unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            ) {
+                Text(
+                    tab.title,
+                    style = style,
+                    maxLines = 1,
+                    softWrap = false,
+                    textAlign = TextAlign.Center,
+                    autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * MIN_TAB_TEXT_SCALE, maxFontSize = style.fontSize),
+                    modifier = Modifier.padding(horizontal = BabyLogTheme.spacing.xs),
+                )
+            }
         }
     }
 }
 
-/** Вкладка «Сегодня»: плитки сна и кормления в ряд, плитки быстрых записей, сводка за сегодня. Ребёнок — в шапке. */
+/** Высота вкладки — как у стандартной вкладки с текстом в Material 3. */
+private val TabHeight = 48.dp
+
+/** Насколько подпись вкладки может уменьшиться, чтобы влезть: «Аналитика» на 320 dp. */
+private const val MIN_TAB_TEXT_SCALE = 0.8f
+
+/**
+ * Вкладка «Сегодня»: плитки сна и кормления в ряд, под ними широкая плитка плача (ADR-0030), плитки
+ * быстрых записей, сводка за сегодня. Ребёнок — в шапке.
+ */
 @Composable
 internal fun TodayContent(
     state: DiaryUiState,
@@ -76,21 +104,26 @@ internal fun TodayContent(
     actions: DiaryActions,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = BabyLogTheme.spacing
     DiaryList(modifier) {
         item(key = "timers") {
-            // IntrinsicSize.Min: плитки одной высоты, даже когда идёт только один таймер
-            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
-                val tile = Modifier.weight(1f).fillMaxHeight()
-                SleepCard(child, state.activeSleep, state.lastSleepEnd, now, actions.onStartSleep, actions.onEndSleep, tile)
-                FeedingCard(
-                    activeFeeding = state.activeFeeding,
-                    lastFeeding = state.lastFeeding,
-                    now = now,
-                    onStart = actions.onStartFeeding,
-                    onEnd = actions.onEndFeeding,
-                    onSwitchBreast = actions.onSwitchBreast,
-                    modifier = tile,
-                )
+            // Таймеры — одна группа: плач под сном и кормлением на шаге внутри ряда, а не между карточками
+            Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
+                // IntrinsicSize.Min: плитки одной высоты, даже когда идёт только один таймер
+                Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(spacing.s)) {
+                    val tile = Modifier.weight(1f).fillMaxHeight()
+                    SleepCard(child, state.activeSleep, state.lastSleepEnd, now, actions.onStartSleep, actions.onEndSleep, tile)
+                    FeedingCard(
+                        activeFeeding = state.activeFeeding,
+                        lastFeeding = state.lastFeeding,
+                        now = now,
+                        onStart = actions.onStartFeeding,
+                        onEnd = actions.onEndFeeding,
+                        onSwitchBreast = actions.onSwitchBreast,
+                        modifier = tile,
+                    )
+                }
+                CryingCard(state.activeCrying, state.lastCrying, now, actions.onStartCrying, actions.onEndCrying)
             }
         }
         item(key = "quick") {

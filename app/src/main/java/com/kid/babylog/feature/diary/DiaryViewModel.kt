@@ -9,10 +9,12 @@ import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
+import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.ui.formatDuration
@@ -44,8 +46,8 @@ class DiaryViewModel(
 
     private val message = MutableStateFlow<String?>(null)
 
-    /** Таймер до остановки касанием карточки: его возвращает «Отменить» в снекбаре (ADR-0021). */
-    private val stopped = MutableStateFlow<BabyEvent?>(null)
+    /** Кнопка сообщения: что вернёт «Отменить» или какой плач откроет «Отметить». */
+    private val action = MutableStateFlow<MessageAction?>(null)
 
     val state: StateFlow<DiaryUiState> =
         combine(repository.observeChildren(), selection.selectedChildId) { children, selectedId ->
@@ -58,7 +60,7 @@ class DiaryViewModel(
                 combine(events, photos) { list, counts -> DiaryUiState.of(children, child, list, counts) }
             }
             .combine(message) { state, text -> state.copy(message = text) }
-            .combine(stopped) { state, timer -> state.copy(canUndo = timer != null) }
+            .combine(action) { state, button -> state.copy(messageAction = button) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryUiState())
 
     fun selectChild(childId: Long) = selection.select(childId)
@@ -96,16 +98,59 @@ class DiaryViewModel(
         repository.deleteEvent(event)
     }
 
+    /** Сон начат; идущий плач при этом закончился — «Отметить» в сообщении спросит его подробности (ADR-0030). */
     fun startSleep(start: Long) = viewModelScope.launch {
         val child = state.value.child ?: return@launch
-        repository.startSleep(child.id, start)
+        val crying = state.value.activeCrying
+        if (repository.startSleep(child.id, start) && crying != null) {
+            show("Плач: ${formatDuration(maxOf(start, crying.start) - crying.start)}", MessageAction.CryingDetails(crying.id))
+        }
     }
 
     fun endSleep() = viewModelScope.launch {
         val sleep = state.value.activeSleep ?: return@launch
         val end = maxOf(clock.millis(), sleep.start)
         repository.updateEvent(sleep.copy(end = end))
-        show("Сон: ${formatDuration(end - sleep.start)}", undo = sleep)
+        show("Сон: ${formatDuration(end - sleep.start)}", MessageAction.ResumeTimer(sleep))
+    }
+
+    /**
+     * Плач (ADR-0030): таймер идёт сразу, без листа старта — плачущему ребёнку не до настроек.
+     * Идущий сон заканчивается: плачет — значит, не спит. Плитка широкая и стоит под сном, поэтому
+     * «Отменить» в сообщении убирает случайный плач и возвращает сон.
+     */
+    fun startCrying() = viewModelScope.launch {
+        val child = state.value.child ?: return@launch
+        val sleep = state.value.activeSleep
+        val id = repository.startCrying(child.id, clock.millis()) ?: return@launch
+        show(if (sleep != null) "Плач начат, сон закончен" else "Плач начат", MessageAction.CancelCrying(id, sleep))
+    }
+
+    /**
+     * Плач закончился. Лист «Плач закончился» экран откроет сам — по id записи, когда у неё появится конец;
+     * «Отменить» начала плача после этого не нужен — его заменяет «Ещё плачет» в листе.
+     */
+    fun endCrying() = viewModelScope.launch {
+        val crying = state.value.activeCrying ?: return@launch
+        if ((action.value as? MessageAction.CancelCrying)?.cryingId == crying.id) consumeMessage()
+        repository.updateEvent(crying.copy(end = maxOf(clock.millis(), crying.start)))
+    }
+
+    /**
+     * Подробности плача из листа «Плач закончился». Начало сдвинули раньше — сон, который плач закончил
+     * своим началом, заканчивается тогда же: проснулся, когда заплакал.
+     */
+    fun saveCryingDetails(crying: Crying, start: Long, reasons: List<String>, helped: List<String>, note: String) = viewModelScope.launch {
+        val woke = state.value.events.filterIsInstance<Sleep>().filter { it.end == crying.start && it.start < crying.start }
+        repository.inTransaction {
+            if (start < crying.start) woke.forEach { repository.updateEvent(it.copy(end = maxOf(it.start, start))) }
+            repository.updateEvent(crying.copy(start = start, reasons = reasons, helped = helped, note = note))
+        }
+    }
+
+    /** «Ещё плачет»: остановленный по ошибке плач идёт дальше, если за это время не начался другой. */
+    fun resumeCrying(crying: Crying) = viewModelScope.launch {
+        if (state.value.activeCrying == null) repository.updateEvent(crying.copy(end = null))
     }
 
     fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
@@ -133,7 +178,7 @@ class DiaryViewModel(
         val feeding = state.value.activeFeeding ?: return@launch
         val end = maxOf(clock.millis(), feeding.start)
         repository.updateEvent(feeding.copy(end = end))
-        show("Кормление: ${formatDuration(end - feeding.start)}", undo = feeding)
+        show("Кормление: ${formatDuration(end - feeding.start)}", MessageAction.ResumeTimer(feeding))
     }
 
     fun exportTo(uri: String) = viewModelScope.launch {
@@ -158,22 +203,32 @@ class DiaryViewModel(
     }
 
     /**
-     * Снекбар закрыт. [undo] — нажали «Отменить»: остановленный таймер идёт дальше, если за это время
-     * не начался другой (сон и кормление не идут одновременно, ADR-0020).
+     * Снекбар закрыт. [performed] — нажали его кнопку. «Отменить» остановку: таймер идёт дальше, если
+     * за это время не начался другой (сон и кормление не идут одновременно, ADR-0020). «Отменить» начало
+     * плача: плач удаляется, сон идёт дальше на тех же условиях. «Отметить» открывает лист сам экран.
      */
-    fun consumeMessage(undo: Boolean = false) {
-        val timer = stopped.value
-        stopped.value = null
+    fun consumeMessage(performed: Boolean = false) {
+        val button = action.value
+        action.value = null
         message.value = null
-        if (undo && timer != null) viewModelScope.launch {
-            val current = state.value
-            if (current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(timer)
+        if (!performed) return
+        when (button) {
+            is MessageAction.ResumeTimer -> viewModelScope.launch {
+                val current = state.value
+                if (current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.timer)
+            }
+            is MessageAction.CancelCrying -> viewModelScope.launch {
+                state.value.events.find { it.id == button.cryingId }?.let { repository.deleteEvent(it) }
+                val current = state.value
+                if (button.sleep != null && current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.sleep)
+            }
+            is MessageAction.CryingDetails, null -> Unit
         }
     }
 
-    /** Сообщение для снекбара; [undo] — таймер, который вернёт «Отменить». */
-    private fun show(text: String, undo: BabyEvent? = null) {
-        stopped.value = undo
+    /** Сообщение для снекбара; [button] — что сделает его кнопка. */
+    private fun show(text: String, button: MessageAction? = null) {
+        action.value = button
         message.value = text
     }
 }
