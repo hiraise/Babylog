@@ -309,6 +309,10 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 Зависимости раз в неделю обновляет Dependabot. Почему так —
 [ADR-0011](docs/adr/0011-ci-github-actions.md).
 
+Новую версию собирает агент по команде `/release` — порядок в
+[.claude/skills/release/SKILL.md](.claude/skills/release/SKILL.md): готовые PR вливаются в
+один релизный PR, а сливает его и ставит тег владелец — скриптом оттуда же.
+
 ## Лицензия
 
 BabyLog — свободное программное обеспечение: его можно распространять и изменять
