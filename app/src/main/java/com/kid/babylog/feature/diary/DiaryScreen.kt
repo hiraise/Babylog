@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kid.babylog.R
 import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.AppSheet
@@ -39,16 +40,24 @@ import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.analytics.AnalyticsContent
+import com.kid.babylog.feature.analytics.AnalyticsSection
+import com.kid.babylog.feature.analytics.cryingWeekSummary
 import com.kid.babylog.feature.children.ChildSelector
 import com.kid.babylog.feature.children.ChildSheet
 import com.kid.babylog.feature.children.ChildrenSheet
+import com.kid.babylog.feature.editor.CryingDoneSheet
 import com.kid.babylog.feature.editor.EditEventSheet
 import com.kid.babylog.feature.editor.FeedingStartSheet
 import com.kid.babylog.feature.editor.NewEventSheet
 import com.kid.babylog.feature.editor.NewEventKind
 import com.kid.babylog.feature.editor.SleepStartSheet
+import com.kid.babylog.feature.notes.CryingWeek
+import com.kid.babylog.feature.notes.NotesContent
+import com.kid.babylog.feature.notes.NotesFilter
+import com.kid.babylog.feature.notes.NotesFilterSaver
 import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.ZoneId
 
 private enum class ChildSheetMode { NONE, ADD, EDIT }
 
@@ -75,17 +84,26 @@ fun DiaryScreen(
             delay(1_000)
         }
     }
+    // Плач, остановленный касанием плитки или засыпанием («Отметить»): лист «Плач закончился»
+    // спрашивает подробности (ADR-0030)
+    var finishedCryingId by rememberSaveable { mutableLongStateOf(NONE) }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let { text ->
-            // Остановленный касанием таймер можно вернуть — сообщение висит дольше
-            val undo = state.canUndo
+            // С кнопкой сообщение висит дольше: остановку или случайный плач можно вернуть, плач — отметить
+            val button = state.messageAction
             val result = snackbarHostState.showSnackbar(
                 message = text,
-                actionLabel = if (undo) "Отменить" else null,
-                duration = if (undo) SnackbarDuration.Long else SnackbarDuration.Short,
+                actionLabel = when (button) {
+                    is MessageAction.ResumeTimer, is MessageAction.CancelCrying -> "Отменить"
+                    is MessageAction.CryingDetails -> "Отметить"
+                    null -> null
+                },
+                duration = if (button != null) SnackbarDuration.Long else SnackbarDuration.Short,
             )
-            viewModel.consumeMessage(undo = result == SnackbarResult.ActionPerformed)
+            val performed = result == SnackbarResult.ActionPerformed
+            if (performed && button is MessageAction.CryingDetails) finishedCryingId = button.cryingId
+            viewModel.consumeMessage(performed)
         }
     }
 
@@ -107,6 +125,10 @@ fun DiaryScreen(
     // NONE — «сегодня»: после полуночи история сама переходит на новый день. Запоминается только
     // день, выбранный вручную; при смене ребёнка — снова сегодня
     var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
+    // Фильтр «Заметок» (ADR-0031) — здесь, а не во вкладке: метку открывает и «Аналитика»
+    var notesFilter by rememberSaveable(child?.id, stateSaver = NotesFilterSaver) { mutableStateOf<NotesFilter>(NotesFilter.All) }
+    // Раздел, с которого откроется «Аналитика»: карточка плача на «Заметках» ведёт сразу в «Плач»
+    var analyticsStart by rememberSaveable { mutableStateOf<AnalyticsSection?>(null) }
     val today = now.toLocalDate()
     val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
     val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
@@ -145,7 +167,10 @@ fun DiaryScreen(
                         }
                     },
                 )
-                DiaryTabs(tab) { tab = it }
+                DiaryTabs(tab) {
+                    tab = it
+                    analyticsStart = null
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -157,6 +182,11 @@ fun DiaryScreen(
                 onStartFeeding = { startingFeeding = true },
                 onEndFeeding = { viewModel.endFeeding() },
                 onSwitchBreast = { viewModel.switchBreast() },
+                onStartCrying = { viewModel.startCrying() },
+                onEndCrying = {
+                    state.activeCrying?.let { finishedCryingId = it.id }
+                    viewModel.endCrying()
+                },
                 onAdd = { newEvent = it },
                 onEditEvent = { editingId = it.id },
                 onDeleteEvent = { deletingId = it.id },
@@ -166,6 +196,29 @@ fun DiaryScreen(
             when (tab) {
                 DiaryTab.TODAY -> TodayContent(state, child, now, actions, Modifier.padding(padding))
                 DiaryTab.HISTORY -> HistoryContent(state, child, now, selectedDate, actions, Modifier.padding(padding))
+                DiaryTab.NOTES -> {
+                    val minuteNow = now / 60_000
+                    val cryingWeek = remember(state.events, minuteNow) {
+                        cryingWeekSummary(state.events, now, ZoneId.systemDefault())?.let { CryingWeek(it.perDay, it.note) }
+                    }
+                    NotesContent(
+                        events = state.events,
+                        sex = child.sex,
+                        now = now,
+                        photoCounts = state.photoCounts,
+                        filter = notesFilter,
+                        onFilter = { notesFilter = it },
+                        cryingWeek = cryingWeek,
+                        onOpenAnalytics = {
+                            analyticsStart = AnalyticsSection.CRYING
+                            tab = DiaryTab.ANALYTICS
+                        },
+                        onAddNote = { newEvent = NewEventKind.NOTE },
+                        onEdit = { editingId = it.id },
+                        onDelete = { deletingId = it.id },
+                        modifier = Modifier.padding(padding),
+                    )
+                }
                 DiaryTab.ANALYTICS -> AnalyticsContent(
                     events = state.events,
                     child = child,
@@ -176,6 +229,11 @@ fun DiaryScreen(
                         tab = DiaryTab.HISTORY
                     },
                     modifier = Modifier.padding(padding),
+                    initialSection = analyticsStart,
+                    onOpenTag = { tag ->
+                        notesFilter = NotesFilter.Tag(tag)
+                        tab = DiaryTab.NOTES
+                    },
                 )
             }
         }
@@ -204,6 +262,7 @@ fun DiaryScreen(
             kind = kind,
             child = child,
             pastMedicines = state.pastMedicines,
+            noteTags = state.noteTags,
             onDismiss = { newEvent = null },
             onSave = { event, photos ->
                 viewModel.saveEvent(event, photos)
@@ -215,6 +274,7 @@ fun DiaryScreen(
     if (startingSleep) {
         SleepStartSheet(
             activeFeeding = state.activeFeeding,
+            activeCrying = state.activeCrying,
             onDismiss = { startingSleep = false },
             onSave = {
                 viewModel.startSleep(it)
@@ -249,6 +309,8 @@ fun DiaryScreen(
                     child = child,
                     photos = it,
                     pastMedicines = state.pastMedicines,
+                    cryingChoices = state.cryingChoices,
+                    noteTags = state.noteTags,
                     onDismiss = { editingId = NONE },
                     onSave = { edited, edit ->
                         viewModel.saveEvent(edited, edit)
@@ -256,6 +318,27 @@ fun DiaryScreen(
                     },
                 )
             }
+        }
+    }
+
+    // Лист открывается, когда у плача уже есть конец: остановка записывается в базу асинхронно
+    (state.events.find { it.id == finishedCryingId } as? Crying)?.takeIf { !it.isActive }?.let { crying ->
+        key(crying.id) {
+            CryingDoneSheet(
+                crying = crying,
+                context = remember(crying.id) { cryingContext(state.events, crying) },
+                choices = state.cryingChoices,
+                sex = child.sex,
+                onResume = {
+                    viewModel.resumeCrying(crying)
+                    finishedCryingId = NONE
+                },
+                onDismiss = { finishedCryingId = NONE },
+                onSave = { start, reasons, helped, note ->
+                    viewModel.saveCryingDetails(crying, start, reasons, helped, note)
+                    finishedCryingId = NONE
+                },
+            )
         }
     }
 

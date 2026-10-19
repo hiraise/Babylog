@@ -26,10 +26,13 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.TimeZone
 
-/** Высокий экран Pixel 5: вкладка видна целиком, от выбора периода до лекарств. */
+/** Высокий экран Pixel 5: экран раздела виден целиком, а в тестах касаний всё на экране. */
 internal const val TALL_PIXEL_5 = "w393dp-h2300dp-normal-long-notround-any-440dpi-keyshidden-nonav"
 
-/** Вкладка «Аналитика» на эталонных скриншотах (ADR-0013, ADR-0028); обновить — `scripts/dev.sh goldens`. */
+/** Pixel 5 чуть выше обычного: обзор «Аналитики» помещается целиком, вместе с последним рядом плиток. */
+internal const val OVERVIEW_PIXEL_5 = "w393dp-h1000dp-normal-long-notround-any-440dpi-keyshidden-nonav"
+
+/** Обзор «Аналитики» на эталонных скриншотах (ADR-0013, ADR-0029); обновить — `scripts/dev.sh goldens`. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class AnalyticsScreenshotTest {
@@ -48,7 +51,7 @@ class AnalyticsScreenshotTest {
     fun restoreTimeZone() = TimeZone.setDefault(systemZone)
 
     @Test
-    @Config(qualifiers = TALL_PIXEL_5)
+    @Config(qualifiers = OVERVIEW_PIXEL_5)
     fun `two months of records, light`() = capture("analytics_week", dark = false)
 
     @Test

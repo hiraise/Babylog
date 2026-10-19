@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.RU
 import com.kid.babylog.core.ui.diaperLabel
 import com.kid.babylog.core.ui.formatDuration
+import com.kid.babylog.core.ui.plural
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -26,10 +27,12 @@ enum class Metric(val title: String) {
     BOTTLES("Бутылочка"),
     SLEEP("Сон"),
     DIAPERS("Подгузники"),
+    /** Плач (ADR-0030): минуты в сутки; карточка есть, только если плач записывали. */
+    CRYING("Плач"),
 }
 
 /** Ряд графика; цвет ряда UI берёт из темы (`ChartColors`), а не из модели. */
-enum class Series { FEEDING, SLEEP, DIAPER_WET, DIAPER_MIXED, DIAPER_DIRTY }
+enum class Series { FEEDING, SLEEP, DIAPER_WET, DIAPER_MIXED, DIAPER_DIRTY, CRYING }
 
 /**
  * Столбик графика: части снизу вверх. [partial] — сутки или неделя ещё идут; [date] — день,
@@ -62,6 +65,7 @@ data class MetricModel(
 )
 
 private const val HOUR = 3_600_000f
+private const val MINUTE = 60_000f
 
 /** Сравнение с прошлым периодом — только если в нём не меньше стольких полных суток с записями. */
 private const val MIN_DAYS_TO_COMPARE = 3
@@ -130,6 +134,7 @@ private fun parts(metric: Metric, days: List<DayStats>): List<Pair<Series, Float
         Metric.BOTTLES -> listOf(Series.FEEDING to avg { it.bottleMl })
         Metric.SLEEP -> listOf(Series.SLEEP to avg { it.sleepMillis } / HOUR)
         Metric.DIAPERS -> DIAPER_SERIES.map { (kind, series) -> series to avg { it.diapers[kind] ?: 0 } }
+        Metric.CRYING -> listOf(Series.CRYING to avg { it.cryingMillis } / MINUTE)
     }
 }
 
@@ -141,6 +146,8 @@ internal fun formatValue(metric: Metric, value: Float): String = when (metric) {
     Metric.FEEDINGS, Metric.DIAPERS -> "%.1f".format(RU, value)
     Metric.BOTTLES -> "${(value / 5).roundToInt() * 5} мл"
     Metric.SLEEP -> formatDuration((value * HOUR).roundToLong())
+    // Ноль — «0 мин», а не «меньше минуты»: плача в эти сутки не было
+    Metric.CRYING -> if (value <= 0f) "0 мин" else formatDuration((value * MINUTE).roundToLong())
 }
 
 /** «+0,4», «−15 мин», «+20 мл»; меньше шага — «без изменений». */
@@ -153,6 +160,8 @@ private fun formatChange(metric: Metric, change: Float): String {
             if (abs(change) < 5f) "без изменений" else "$sign${(abs(change) / 5).roundToInt() * 5} мл"
         Metric.SLEEP ->
             if (abs(change) * HOUR < 60_000) "без изменений" else sign + formatDuration((abs(change) * HOUR).roundToLong())
+        Metric.CRYING ->
+            if (abs(change) < 1f) "без изменений" else sign + formatDuration((abs(change) * MINUTE).roundToLong())
     }
 }
 
@@ -161,9 +170,15 @@ private fun scaleTop(metric: Metric, max: Float): Int = when (metric) {
     Metric.FEEDINGS, Metric.DIAPERS -> maxOf(2, ceil(max / 2).toInt() * 2)
     Metric.BOTTLES -> maxOf(100, ceil(max / 100).toInt() * 100)
     Metric.SLEEP -> maxOf(4, ceil(max / 4).toInt() * 4)
+    // Плач — в минутах: верх шкалы кратен получасу
+    Metric.CRYING -> maxOf(30, ceil(max / 30).toInt() * 30)
 }
 
-private fun axisLabel(metric: Metric, value: Int): String = if (metric == Metric.SLEEP) "$value ч" else value.toString()
+private fun axisLabel(metric: Metric, value: Int): String = when (metric) {
+    Metric.SLEEP -> "$value ч"
+    Metric.CRYING -> formatDuration(value * MINUTE.toLong())
+    Metric.FEEDINGS, Metric.BOTTLES, Metric.DIAPERS -> value.toString()
+}
 
 /**
  * Карточка [metric] за период: [days] — сутки периода, [previous] — столько же суток перед ним
@@ -227,17 +242,28 @@ internal fun metricModel(metric: Metric, period: AnalyticsPeriod, days: List<Day
 
 /** Пояснение под главным числом: по [countable] — полным суткам с записями, [all] — всем суткам периода. */
 private fun periodNote(metric: Metric, countable: List<DayStats>, all: List<DayStats>): String? = when (metric) {
-    Metric.FEEDINGS -> listOfNotNull(feedingInterval(countable), breastTime(countable)).joinToString(" · ").ifEmpty { null }
+    Metric.FEEDINGS -> listOfNotNull(typicalInterval(countable.flatMap { it.feedingStarts }), breastTime(countable)).joinToString(" · ").ifEmpty { null }
     Metric.BOTTLES -> countable.takeIf { it.isNotEmpty() }
         ?.let { "%.1f".format(RU, it.map { day -> day.bottles }.average()) + " бутылочки в сутки" }
-    Metric.SLEEP -> all.maxOfOrNull { it.longestSleepMillis }?.takeIf { it > 0 }?.let { "самый долгий сон — ${formatDuration(it)}" }
+    // Как часто спит — как у кормлений: сколько раз в сутки и «обычно раз в …» по началам снов
+    Metric.SLEEP -> listOfNotNull(
+        countable.takeIf { it.isNotEmpty() }?.let { "%.1f".format(RU, it.map { day -> day.sleeps }.average()) + " раза в сутки" },
+        typicalInterval(countable.flatMap { it.sleepStarts }),
+        all.maxOfOrNull { it.longestSleepMillis }?.takeIf { it > 0 }?.let { "самый долгий сон — ${formatDuration(it)}" },
+    ).joinToString(" · ").ifEmpty { null }
     Metric.DIAPERS -> null
+    Metric.CRYING -> listOfNotNull(
+        countable.takeIf { it.isNotEmpty() }?.let { "%.1f".format(RU, it.map { day -> day.cryings }.average()) + " раза в сутки" },
+        cryingPeak(countable.flatMap { it.cryingStartMinutes }),
+    ).joinToString(" · ").ifEmpty { null }
 }
 
-/** «обычно раз в 2 ч 50 мин» — медиана промежутков между началами кормлений: пропущенная запись её не сдвинет. */
-private fun feedingInterval(days: List<DayStats>): String? {
-    val starts = days.flatMap { it.feedingStarts }.sorted()
-    val gaps = starts.zipWithNext { a, b -> b - a }.sorted()
+/**
+ * «обычно раз в 2 ч 50 мин» — медиана промежутков между началами кормлений или снов ([starts]):
+ * пропущенная запись её не сдвинет.
+ */
+private fun typicalInterval(starts: List<Long>): String? {
+    val gaps = starts.sorted().zipWithNext { a, b -> b - a }.sorted()
     if (gaps.size < 2) return null
     val median = if (gaps.size % 2 == 1) gaps[gaps.size / 2] else (gaps[gaps.size / 2 - 1] + gaps[gaps.size / 2]) / 2
     return "обычно раз в ${formatDuration(median)}"
@@ -281,23 +307,18 @@ private fun caption(metric: Metric, bucket: Bucket, byWeeks: Boolean, sex: Sex?)
         }
         Metric.BOTTLES -> "${day.bottles} ${plural(day.bottles, "бутылочка", "бутылочки", "бутылочек")}, ${day.bottleMl} мл"
         Metric.SLEEP -> "сон ${formatDuration(day.sleepMillis)}" +
+            (day.sleeps.takeIf { it > 0 }?.let { ", $it ${plural(it, "раз", "раза", "раз")}" } ?: "") +
             (day.longestSleepMillis.takeIf { it > 0 }?.let { ", самый долгий ${formatDuration(it)}" } ?: "")
+        // Плач через полночь: минуты есть в обоих сутках, а раз — только в тех, где он начался
+        Metric.CRYING -> when {
+            day.cryings == 0 && day.cryingMillis == 0L -> "плача нет"
+            day.cryings == 0 -> "плач ${formatDuration(day.cryingMillis)}"
+            else -> "плач ${formatDuration(day.cryingMillis)}, ${day.cryings} ${plural(day.cryings, "раз", "раза", "раз")}"
+        }
         Metric.DIAPERS -> "${day.diaperCount} ${plural(day.diaperCount, "подгузник", "подгузника", "подгузников")}" +
             DIAPER_SERIES.mapNotNull { (kind, _) -> day.diapers[kind]?.let { "${diaperLabel(kind, sex)} $it" } }
                 .joinToString(", ", prefix = " (", postfix = ")")
                 .takeIf { day.diaperCount > 0 }.orEmpty()
     }
     return "${bucket.name}: $text$suffix"
-}
-
-/** Русское число: 1 кормление, 2 кормления, 5 кормлений. */
-internal fun plural(n: Int, one: String, few: String, many: String): String {
-    val lastTwo = n % 100
-    val last = n % 10
-    return when {
-        lastTwo in 11..14 -> many
-        last == 1 -> one
-        last in 2..4 -> few
-        else -> many
-    }
 }

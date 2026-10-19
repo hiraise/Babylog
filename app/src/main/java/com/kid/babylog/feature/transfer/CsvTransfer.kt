@@ -3,6 +3,7 @@ package com.kid.babylog.feature.transfer
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
@@ -19,6 +20,8 @@ data class ImportResult(
     val duplicates: Int = 0,
     val errors: Int = 0,
     val skippedActiveSleep: Int = 0,
+    /** Незавершённый плач (ADR-0030) не импортируется: он стал бы «фантомным» таймером, как сон. */
+    val skippedActiveCrying: Int = 0,
     val childrenAdded: Int = 0,
     val birthDatesSet: Int = 0,
     val birthDateConflicts: Int = 0,
@@ -120,6 +123,10 @@ private class CsvImporter(
             result = result.copy(skippedActiveSleep = result.skippedActiveSleep + 1)
             return
         }
+        if (probe is Crying && probe.isActive) {
+            result = result.copy(skippedActiveCrying = result.skippedActiveCrying + 1)
+            return
+        }
         val child = findChild(name) ?: createChild(name, birthDate = null, sex = null)
         val parsed = record.toEvent(childId = child.id) ?: return
         val event = parsed.withLegacyFeedingEnd()
@@ -159,6 +166,7 @@ fun ImportResult.describe(): String = buildString {
     if (duplicates > 0) append(", дубликатов $duplicates")
     if (errors > 0) append(", ошибок $errors")
     if (skippedActiveSleep > 0) append(", пропущено незавершённых снов $skippedActiveSleep")
+    if (skippedActiveCrying > 0) append(", пропущено незавершённого плача $skippedActiveCrying")
     if (childrenAdded > 0) append(", новых детей $childrenAdded")
     if (birthDatesSet > 0) append(", дат рождения импортировано $birthDatesSet")
     if (birthDateConflicts > 0) append(", дата рождения в файле отличается — оставлена текущая")

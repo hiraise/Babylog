@@ -3,6 +3,7 @@ package com.kid.babylog.feature.summary
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -27,6 +28,9 @@ data class DaySummary(
     val sleepMillis: Long,
     /** Лекарства: название из последней записи и число приёмов; названия сравниваются без регистра. */
     val medicines: List<Pair<String, Int>>,
+    /** Плач (ADR-0030), начатый в этот день, и его время внутри суток; идущий — до `now`, как сон. */
+    val cryings: Int = 0,
+    val cryingMillis: Long = 0,
 ) {
     /** Все кормления дня: грудью и бутылочкой. */
     val feedings: Int get() = breastFeedings + bottles
@@ -72,6 +76,11 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
         (end - start).coerceAtLeast(0)
     }
 
+    val cryings = events.filterIsInstance<Crying>()
+    val cryingMillis = cryings.sumOf { crying ->
+        (minOf(crying.end ?: now, dayEnd) - maxOf(crying.start, dayStart)).coerceAtLeast(0)
+    }
+
     val medicines = dayEvents.filterIsInstance<Medicine>()
         .groupBy { it.name.trim().lowercase() }
         .values
@@ -84,5 +93,7 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
         diapers = dayEvents.filterIsInstance<Diaper>().groupingBy { it.kind }.eachCount(),
         sleepMillis = sleepMillis,
         medicines = medicines,
+        cryings = cryings.count { it.start in dayStart until dayEnd },
+        cryingMillis = cryingMillis,
     )
 }

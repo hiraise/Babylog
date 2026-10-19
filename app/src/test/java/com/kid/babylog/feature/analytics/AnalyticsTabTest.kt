@@ -6,8 +6,10 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
 import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
@@ -28,7 +30,11 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.TimeZone
 
-/** Касания на «Аналитике»: столбик показывает итоги дня, «В историю» и строка ритма открывают день (ADR-0022). */
+/**
+ * Касания на «Аналитике» (ADR-0022, ADR-0029): плитка открывает раздел, «Назад» — стрелка и системная —
+ * возвращает к обзору; на экране раздела столбик показывает итоги дня, «В историю» и строка ритма
+ * открывают день в «Истории».
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = TALL_PIXEL_5)
 class AnalyticsTabTest {
@@ -58,8 +64,31 @@ class AnalyticsTabTest {
     fun restoreTimeZone() = TimeZone.setDefault(systemZone)
 
     @Test
+    fun `tile opens its section and the arrow returns to the overview`() {
+        compose.onNodeWithText("Вес").performClick()
+        compose.onNodeWithText("Взвешивания").assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("Назад к обзору").performClick()
+        compose.onNodeWithText("Подгузники").assertIsDisplayed()
+        compose.onNodeWithText("Взвешивания").assertDoesNotExist()
+    }
+
+    @Test
+    fun `system back closes the section, bottles live inside feedings`() {
+        // У бутылочки нет своей плитки: её график — на экране кормлений
+        compose.onNodeWithText("Бутылочка").assertDoesNotExist()
+        compose.onNodeWithText("Кормления").performClick()
+        compose.onNodeWithText("Бутылочка").assertIsDisplayed()
+
+        Espresso.pressBack()
+        compose.onNodeWithText("Бутылочка").assertDoesNotExist()
+        compose.onNodeWithText("Сон").assertIsDisplayed()
+    }
+
+    @Test
     fun `bar shows the day and opens it in history`() {
-        // Первый столбик четверга — на карточке «Кормления»: она первая из графиков
+        compose.onNodeWithText("Кормления").performClick()
+        // Первый столбик четверга — на карточке «Кормления»: она первая на экране раздела
         compose.onAllNodes(isSelectable() and hasContentDescription("чт, 15 окт.:", substring = true)).onFirst().performClick()
         compose.onNodeWithText("чт, 15 окт.: ", substring = true).assertIsDisplayed()
 
@@ -69,6 +98,7 @@ class AnalyticsTabTest {
 
     @Test
     fun `rhythm row opens the day in history`() {
+        compose.onNodeWithText("Ритм дня").performClick()
         compose.onAllNodes(hasClickAction() and hasContentDescription("пт, 16 окт.: сон", substring = true)).onFirst().performClick()
         compose.onNodeWithText("16 октября, пятница").assertIsDisplayed()
     }

@@ -68,6 +68,8 @@ class SheetCloser internal constructor(private val scope: CoroutineScope, privat
  * @param edgeToEdge без боковых отступов и шага: строки во всю ширину листа ([SheetMenuItem],
  *   списки выбора) сами отступают от краёв, а подсветка нажатия доходит до краёв листа.
  * @param onDismiss лист закрыт без действия: свайп, тап мимо, «Назад», «Отмена».
+ * @param secondary вместо «Отмена» — своё второе действие рядом с [confirm]: «Ещё плачет» у листа
+ *   после плача (ADR-0030). Свайп, тап мимо и «Назад» по-прежнему вызывают [onDismiss].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,6 +80,7 @@ fun AppSheet(
     confirm: SheetAction? = null,
     scrollable: Boolean = true,
     edgeToEdge: Boolean = false,
+    secondary: SheetAction? = null,
     content: @Composable ColumnScope.(SheetCloser) -> Unit,
 ) {
     val spacing = BabyLogTheme.spacing
@@ -118,7 +121,11 @@ fun AppSheet(
                     .padding(start = spacing.l, end = spacing.l, top = spacing.m),
                 horizontalArrangement = Arrangement.spacedBy(spacing.s, Alignment.End),
             ) {
-                TextButton(onClick = { closer.close(onDismiss) }) { Text("Отмена") }
+                if (secondary != null) {
+                    TextButton(onClick = { closer.close(secondary.onClick) }, enabled = secondary.enabled) { Text(secondary.label) }
+                } else {
+                    TextButton(onClick = { closer.close(onDismiss) }) { Text("Отмена") }
+                }
                 val colors = MaterialTheme.colorScheme
                 Button(
                     onClick = { closer.close(confirm.onClick) },

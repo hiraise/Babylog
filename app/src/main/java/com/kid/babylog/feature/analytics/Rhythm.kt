@@ -2,14 +2,17 @@ package com.kid.babylog.feature.analytics
 
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.RU
 import com.kid.babylog.core.ui.formatDuration
+import com.kid.babylog.core.ui.plural
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -21,16 +24,19 @@ import kotlin.math.roundToInt
 data class DaySpan(val from: Float, val to: Float)
 
 /**
- * Строка «Ритма дня»: сон и кормления грудью — полосами, бутылочки и кормления без длительности
- * (до ADR-0015) — рисками, подгузники — точками; [end] — докуда сутки уже прошли (у сегодня — до `now`).
+ * Строка «Ритма дня»: сон, кормления грудью и плач (ADR-0030) — полосами, бутылочки и кормления без
+ * длительности (до ADR-0015) — рисками, подгузники — точками, заметки (ADR-0031) — булавками над строкой;
+ * [end] — докуда сутки уже прошли (у сегодня — до `now`).
  */
 data class RhythmDay(
     val date: LocalDate,
     val label: String,
     val sleeps: List<DaySpan>,
     val feedings: List<DaySpan>,
+    val cryings: List<DaySpan>,
     val instantFeedings: List<Float>,
     val diapers: List<Float>,
+    val notes: List<Float> = emptyList(),
     val end: Float,
     val description: String,
 )
@@ -70,8 +76,10 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
 
     val sleeps = mutableListOf<DaySpan>()
     val feedings = mutableListOf<DaySpan>()
+    val cryings = mutableListOf<DaySpan>()
     val instants = mutableListOf<Float>()
     val diapers = mutableListOf<Float>()
+    val notes = mutableListOf<Float>()
     events.forEach { event ->
         when (event) {
             is Sleep -> span(event.start, event.end ?: now)?.let(sleeps::add)
@@ -85,6 +93,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
             }
             is Bottle -> instant(event.start)?.let(instants::add)
             is Diaper -> instant(event.start)?.let(diapers::add)
+            is Crying -> span(event.start, event.end ?: now)?.let(cryings::add)
+            is Note -> instant(event.start)?.let(notes::add)
             is Medicine, is Weight, is Height -> Unit
         }
     }
@@ -94,15 +104,19 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
         label = if (day.complete) day.date.format(ROW_LABEL) else "сегодня",
         sleeps = sleeps,
         feedings = feedings,
+        cryings = cryings,
         instantFeedings = instants,
         diapers = diapers,
+        notes = notes,
         end = fraction(visibleEnd),
         description = if (!day.tracked) {
             "$name: записей нет"
         } else {
             "$name: сон ${formatDuration(day.sleepMillis)}, " +
                 "${day.feedings} ${plural(day.feedings, "кормление", "кормления", "кормлений")}, " +
-                "${day.diaperCount} ${plural(day.diaperCount, "подгузник", "подгузника", "подгузников")}"
+                "${day.diaperCount} ${plural(day.diaperCount, "подгузник", "подгузника", "подгузников")}" +
+                (day.cryingMillis.takeIf { it > 0 }?.let { ", плач ${formatDuration(it)}" } ?: "") +
+                (notes.size.takeIf { it > 0 }?.let { ", $it ${plural(it, "заметка", "заметки", "заметок")}" } ?: "")
         },
     )
 }

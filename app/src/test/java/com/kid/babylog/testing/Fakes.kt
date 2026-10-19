@@ -8,6 +8,7 @@ import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.PhotoEdit
@@ -98,8 +99,17 @@ class FakeDiaryRepository(
         if (events.value.any { it.childId == childId && it is Sleep && it.isActive }) return false
         events.value.filterIsInstance<Feeding>().filter { it.childId == childId && it.isActive }
             .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
+        events.value.filterIsInstance<Crying>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         addEvent(Sleep(childId = childId, start = start))
         return true
+    }
+
+    override suspend fun startCrying(childId: Long, start: Long): Long? {
+        if (events.value.any { it.childId == childId && it is Crying && it.isActive }) return null
+        events.value.filterIsInstance<Sleep>().filter { it.childId == childId && it.isActive }
+            .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
+        return addEvent(Crying(childId = childId, start = start))
     }
 
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {

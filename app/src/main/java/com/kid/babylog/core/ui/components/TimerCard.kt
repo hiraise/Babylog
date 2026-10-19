@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
+import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatTimer
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
@@ -162,6 +163,65 @@ private val TileColorMotion = tween<Color>(TILE_MOTION_MS, easing = FastOutSlowI
 fun TimerCornerButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit) {
     IconButton(onClick = onClick) {
         AppIcon(icon, contentDescription = description)
+    }
+}
+
+/**
+ * Плитка таймера во всю ширину ряда — плач (ADR-0030). Ведёт себя как [TimerTile]: касание
+ * начинает ([onStart]) и заканчивает ([onStop]), идущий таймер — фон `primary`. Но иконка слева,
+ * а время и подписи — в строку: третья плитка в ряду сна и кормления не помещается (у «40:00»
+ * и подписи кормления в две строки нет места). Высота одна у идущего и стоящего таймера — ряды
+ * ниже не прыгают. Пока таймер стоит — [label] и под ним [idleCaption]; идёт — время, [label]
+ * и «с 18:32».
+ */
+@Composable
+fun WideTimerTile(
+    @DrawableRes icon: Int,
+    label: String,
+    runningSince: Long?,
+    now: Long,
+    startLabel: String,
+    stopLabel: String,
+    onStart: () -> Unit,
+    onStop: () -> Unit,
+    modifier: Modifier = Modifier,
+    idleCaption: String? = null,
+) {
+    val spacing = BabyLogTheme.spacing
+    val colors = MaterialTheme.colorScheme
+    val running = runningSince != null
+    val container by animateColorAsState(if (running) colors.primary else colors.surfaceContainerLow, TileColorMotion, label = "фон")
+    val content by animateColorAsState(if (running) colors.onPrimary else colors.onSurface, TileColorMotion, label = "текст")
+    val iconTint by animateColorAsState(if (running) colors.onPrimary else colors.primary, TileColorMotion, label = "иконка")
+    AppCard(
+        modifier = modifier.fillMaxWidth(),
+        onClick = if (running) onStop else onStart,
+        onClickLabel = if (running) stopLabel else startLabel,
+        contentPadding = PaddingValues(horizontal = spacing.l, vertical = spacing.m),
+        containerColor = container,
+        contentColor = content,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.l),
+        ) {
+            AppIcon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = iconTint)
+            if (runningSince != null) {
+                Text(formatTimer((now - runningSince).coerceAtLeast(0)), style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+                Column {
+                    Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    Text("с ${formatClock(runningSince)}", style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                }
+            } else {
+                Column(Modifier.weight(1f)) {
+                    Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    idleCaption?.let {
+                        Text(it, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+            }
+        }
     }
 }
 

@@ -3,11 +3,13 @@ package com.kid.babylog.testing
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
@@ -19,7 +21,7 @@ import kotlin.random.Random
  * Дневник 4-месячной девочки за [days] суток по [now] включительно — для скриншотов «Аналитики».
  * Режим как в жизни: ночь с 1–2 пробуждениями на кормление, 3–4 дневных сна, кормления после сна,
  * иногда бутылочка смеси на ночь, подгузники, витамин D по утрам, вес с рождения раз в две недели,
- * рост — раз в месяц.
+ * рост — раз в месяц, через вечер — плач с причинами (ADR-0030).
  * Сон и кормление не пересекаются (ADR-0020). Записи детерминированы [seed]: эталоны не плывут.
  */
 fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days: Int = 60, seed: Int = 20261018): List<BabyEvent> {
@@ -97,6 +99,29 @@ fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days:
     val nurofen = today.minusDays(4).atStartOfDay(zone).plusHours(22).toInstant().toEpochMilli()
     events += Medicine(id++, childId, nurofen, "Нурофен", note = "2,5 мл")
     events += Medicine(id++, childId, nurofen + 86_400_000L, "Нурофен", note = "2,5 мл")
+    // Плач по вечерам, между вечерним сном и ночью (ADR-0030). Свой генератор: остальные записи от него не сдвигаются
+    val crying = Random(seed + 7)
+    val reasons = listOf(listOf("колики"), listOf("усталость"), listOf("колики", "живот"), listOf("перевозбуждение"), emptyList())
+    val helped = listOf(listOf("укачивание"), listOf("грудь"), listOf("тёплое на живот"), listOf("на руках", "укачивание"))
+    for (dayIndex in days - 1 downTo 0) {
+        if (crying.nextFloat() < 0.5f) continue
+        val midnight = today.minusDays(dayIndex.toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
+        val start = midnight + (1175 + crying.nextInt(-10, 11)) * MINUTE
+        val length = 12 + crying.nextInt(0, 30)
+        events += Crying(
+            id++, childId, start, end = start + length * MINUTE,
+            reasons = reasons[crying.nextInt(reasons.size)], helped = helped[crying.nextInt(helped.size)],
+        )
+    }
+    // Заметки (ADR-0031): питание мамы раз в 4 дня, зубки — последние дни, «новое» — трижды, одна без меток
+    fun noteAt(daysAgo: Int, hour: Int, text: String, vararg tags: String) {
+        val time = today.minusDays(daysAgo.toLong()).atStartOfDay(zone).plusHours(hour.toLong()).toInstant().toEpochMilli()
+        events += Note(id++, childId, time, tags = tags.toList(), note = text)
+    }
+    (2 until days step 4).forEach { noteAt(it, 13, "Ела капусту на обед", "питание мамы") }
+    (0..3).forEach { noteAt(it, 16, "Тянет всё в рот, тёрла дёсны", "зубки") }
+    listOf(3, 17, 31).forEach { noteAt(it, 11, "Новое: держит голову лёжа на животе", "новое") }
+    noteAt(1, 9, "Гуляли в парке два часа")
     // Будущее отрезаем; сон, который ещё не закончился к now, — идущий
     return events.filter { it.start < now }.map { event ->
         when {

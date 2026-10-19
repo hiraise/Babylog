@@ -129,6 +129,17 @@ class AnalyticsModelTest {
     }
 
     @Test
+    fun `sleep tells how often it happens, like feedings`() {
+        // Сны в 1, 9, 12 и 15 ч: четыре раза, промежутки 8, 3 и 3 ч — обычно раз в 3 ч
+        val events = listOf(1 to 6, 9 to 10, 12 to 13, 15 to 16).mapIndexed { i, (from, to) ->
+            Sleep(i + 1L, 1, at(day(1), from), end = at(day(1), to))
+        }
+        val sleep = model(events).metric(Metric.SLEEP)
+        assertEquals("4,0 раза в сутки · обычно раз в 3 ч · самый долгий сон — 5 ч", sleep.note)
+        assertEquals("сб, 17 окт.: сон 8 ч, 4 раза, самый долгий 5 ч", sleep.columns[5].caption)
+    }
+
+    @Test
     fun `sleep scale is rounded to whole four hours`() {
         val sleep = model(listOf(Sleep(1, 1, at(day(1), 0), end = at(day(1), 13)))).metric(Metric.SLEEP)
         assertEquals("16 ч", sleep.maxLabel)
@@ -157,7 +168,7 @@ class AnalyticsModelTest {
             Diaper(4, 1, at(day(1), 8), DiaperKind.WET),
         )
         assertEquals(
-            listOf(MedicineLine("Витамин D", "2 приёма · последний сегодня в 07:20")),
+            listOf(MedicineLine("Витамин D", "2 приёма · последний сегодня в 07:20", count = 2, last = "последний сегодня в 07:20")),
             model(events).medicines,
         )
         assertEquals("3 приёма · последний сегодня в 07:20", model(events, AnalyticsPeriod.ALL).medicines.single().info)
@@ -175,6 +186,28 @@ class AnalyticsModelTest {
         assertEquals("14 окт.", weight.date)
         // Взвешивание 4 октября ближе двух недель — прибавка от 12 сентября: 500 г за 32 дня
         assertEquals("+110 г в неделю с 12 сент.", weight.note)
+        // Плитке обзора — та же прибавка без даты (ADR-0029)
+        assertEquals("+110 г в неделю", weight.rate)
+    }
+
+    @Test
+    fun `measurements are listed newest first with the change to the previous one`() {
+        val events = listOf(
+            Weight(1, 1, at(day(36), 10), 5850),
+            Weight(2, 1, at(day(14), 10), 6080),
+            Weight(3, 1, at(day(4), 10), 6350),
+            Height(4, 1, at(day(30), 11), 600),
+            Height(5, 1, at(day(10), 11), 600),
+        )
+        assertEquals(
+            listOf(
+                GrowthEntry("14 окт.", "6,35 кг", "+270 г"),
+                GrowthEntry("4 окт.", "6,08 кг", "+230 г"),
+                GrowthEntry("12 сент.", "5,85 кг", null),
+            ),
+            model(events).weight!!.history,
+        )
+        assertEquals("±0", model(events).height!!.history.first().change)
     }
 
     @Test

@@ -1,12 +1,12 @@
 package com.kid.babylog.feature.analytics
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,7 +18,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
-import com.kid.babylog.R
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.ui.components.AppCard
@@ -28,12 +27,15 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 /**
- * Вкладка «Аналитика» (ADR-0028): период, «Ритм дня», графики кормлений, бутылочки, сна и подгузников,
- * вес, рост и лекарства. Всё считается из [events] выбранного ребёнка при показе ([analyticsModel]).
+ * Вкладка «Аналитика» (ADR-0028, ADR-0029): обзор плиток ([AnalyticsOverview]) и подробный экран
+ * раздела ([AnalyticsDetail]). Всё считается из [events] выбранного ребёнка при показе ([analyticsModel]).
  *
- * Касание столбика показывает итоги под графиком, «В историю» и касание строки ритма открывают день
- * в «Истории» ([onOpenDay]). Период и выбранный столбик переживают поворот; при смене ребёнка выбор
- * сбрасывается.
+ * Касание плитки открывает раздел, «Назад» — стрелка или системная — возвращает к обзору на то же
+ * место прокрутки. На экране раздела касание столбика показывает итоги под графиком, «В историю»
+ * и строка ритма открывают день в «Истории» ([onOpenDay]). Период, раздел и выбранный столбик
+ * переживают поворот; при смене ребёнка выбор столбика сбрасывается, раздел остаётся открытым.
+ * [initialSection] — раздел, который открыт сразу: карточка плача на «Заметках» ведёт в «Плач»;
+ * метка в разделе «Метки» открывает её на «Заметках» ([onOpenTag], ADR-0031).
  */
 @Composable
 fun AnalyticsContent(
@@ -42,8 +44,11 @@ fun AnalyticsContent(
     now: Long,
     onOpenDay: (LocalDate) -> Unit,
     modifier: Modifier = Modifier,
+    initialSection: AnalyticsSection? = null,
+    onOpenTag: (String) -> Unit = {},
 ) {
     var period by rememberSaveable { mutableStateOf(AnalyticsPeriod.WEEK) }
+    var section by rememberSaveable { mutableStateOf(initialSection) }
     // Выбранный столбик — «метрика:номер»: строка сохраняется в Bundle как есть
     var selection by rememberSaveable(period, child.id) { mutableStateOf<String?>(null) }
     // Пересчитываем раз в минуту, а не на каждый тик секундного таймера экрана
@@ -51,48 +56,46 @@ fun AnalyticsContent(
     val model = remember(events, period, minuteNow, child.sex) {
         analyticsModel(events, period, now, ZoneId.systemDefault(), child.sex)
     }
-    val spacing = BabyLogTheme.spacing
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        // Сверху отступ не меньше размытия тени карточек, как на других вкладках
-        contentPadding = PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = spacing.xl),
-        verticalArrangement = Arrangement.spacedBy(spacing.m),
-    ) {
-        item(key = "period") {
-            PeriodPicker(period, onSelect = { period = it })
-        }
-        if (!model.hasRecords) {
-            item(key = "empty") { EmptyHint() }
-        }
-        model.rhythm?.let { rhythm ->
-            item(key = "rhythm") { RhythmCard(rhythm, onOpenDay) }
-        }
-        model.metrics.forEach { metric ->
-            item(key = metric.metric.name) {
-                val prefix = "${metric.metric.name}:"
-                MetricCard(
-                    model = metric,
-                    selected = selection?.takeIf { it.startsWith(prefix) }?.removePrefix(prefix)?.toIntOrNull(),
-                    onSelect = { index -> selection = index?.let { prefix + it } },
-                    onOpenDay = onOpenDay,
-                )
-            }
-        }
-        model.weight?.let { weight ->
-            item(key = "weight") { GrowthCard(weight, R.drawable.ic_weight, "Вес", BabyLogTheme.chartColors.weight) }
-        }
-        model.height?.let { height ->
-            item(key = "height") { GrowthCard(height, R.drawable.ic_height, "Рост", BabyLogTheme.chartColors.height) }
-        }
-        if (model.medicines.isNotEmpty()) {
-            item(key = "medicines") { MedicinesCard(model.medicines) }
-        }
+    // Прокрутка обзора живёт, пока открыт раздел: «Назад» возвращает к той же плитке
+    val overviewList = rememberLazyListState()
+    BackHandler(enabled = section != null) { section = null }
+
+    val open = section
+    if (open == null) {
+        AnalyticsOverview(
+            model = model,
+            period = period,
+            onPeriod = { period = it },
+            onOpen = { section = it },
+            listState = overviewList,
+            modifier = modifier,
+        )
+    } else {
+        AnalyticsDetail(
+            section = open,
+            model = model,
+            period = period,
+            onPeriod = { period = it },
+            selection = selection,
+            onSelection = { selection = it },
+            onOpenDay = onOpenDay,
+            onBack = { section = null },
+            modifier = modifier,
+            onOpenTag = onOpenTag,
+        )
     }
+}
+
+/** Отступы списка вкладки: сверху не меньше размытия тени карточек, как на других вкладках. */
+@Composable
+internal fun analyticsListPadding(): PaddingValues {
+    val spacing = BabyLogTheme.spacing
+    return PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = spacing.xl)
 }
 
 /** Чипы периода и пояснение к штриховке. */
 @Composable
-private fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) -> Unit) {
+internal fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) -> Unit) {
     val spacing = BabyLogTheme.spacing
     Column {
         Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(spacing.s)) {
@@ -112,11 +115,12 @@ private fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) ->
     }
 }
 
+/** Карточка-подсказка вместо графиков: [text] посередине. */
 @Composable
-private fun EmptyHint() {
+internal fun HintCard(text: String) {
     AppCard(Modifier.fillMaxWidth()) {
         Text(
-            "Графики появятся, когда в дневнике будут записи.\nОтмечайте сон, кормления и подгузники на вкладке «Сегодня».",
+            text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

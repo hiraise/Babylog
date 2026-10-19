@@ -10,6 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -18,10 +19,14 @@ import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.components.SheetAction
 
-/** Начало сна: запускает таймер. Идущее кормление ([activeFeeding]) при этом закончится (ADR-0020). */
+/**
+ * Начало сна: запускает таймер. Идущие кормление ([activeFeeding], ADR-0020) и плач ([activeCrying],
+ * ADR-0030) при этом закончатся — лист пишет, во сколько.
+ */
 @Composable
 fun SleepStartSheet(
     activeFeeding: Feeding?,
+    activeCrying: Crying?,
     onDismiss: () -> Unit,
     onSave: (time: Long) -> Unit,
 ) {
@@ -33,7 +38,11 @@ fun SleepStartSheet(
         icon = R.drawable.ic_sleep,
         confirm = SheetAction("Запустить таймер") { onSave(resolveTime(false, minutesAgo, 0L)) },
     ) {
-        TimeAgoPicker(minutesAgo, { minutesAgo = it }, activeFeeding?.let { FinishingTimer("Кормление", it.start) })
+        TimeAgoPicker(
+            minutesAgo,
+            { minutesAgo = it },
+            listOfNotNull(activeFeeding?.let { FinishingTimer("Кормление", it.start) }, activeCrying?.let { FinishingTimer("Плач", it.start) }),
+        )
     }
 }
 

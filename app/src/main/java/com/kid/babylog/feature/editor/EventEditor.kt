@@ -4,27 +4,34 @@ import androidx.compose.runtime.Composable
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 
-/** Кнопки быстрого добавления. Сон и кормление начинаются отдельно — через [SleepStartSheet] и [FeedingStartSheet]. */
-enum class NewEventKind { DIAPER, MEDICINE, WEIGHT, HEIGHT }
+/**
+ * Кнопки добавления: плитки «Сегодня» и «Заметка» на вкладке «Заметки» (ADR-0031). Сон, кормление
+ * и плач начинаются отдельно — через [SleepStartSheet], [FeedingStartSheet] и плитку плача.
+ */
+enum class NewEventKind { DIAPER, MEDICINE, WEIGHT, HEIGHT, NOTE }
 
 /**
- * Лист новой записи для ребёнка [child]. [pastMedicines] — подсказки в листе лекарства. [onSave]
- * получает запись и её фото (ADR-0024); null — у этого типа записей фото нет.
+ * Лист новой записи для ребёнка [child]. [pastMedicines] — подсказки в листе лекарства, [noteTags] —
+ * метки в листе заметки ([noteTagChoices]). [onSave] получает запись и её фото (ADR-0024); null —
+ * у этого типа записей фото нет.
  */
 @Composable
 fun NewEventSheet(
     kind: NewEventKind,
     child: Child,
     pastMedicines: List<PastMedicine>,
+    noteTags: TagChoices,
     onDismiss: () -> Unit,
     onSave: (BabyEvent, PhotoEdit?) -> Unit,
 ) {
@@ -42,13 +49,16 @@ fun NewEventSheet(
         NewEventKind.HEIGHT -> HeightSheet(null, onDismiss) { millimeters, time, note ->
             onSave(Height(childId = childId, start = time, millimeters = millimeters, note = note), null)
         }
+        NewEventKind.NOTE -> NoteSheet(null, noteTags, emptyList(), onDismiss) { text, tags, time, photos ->
+            onSave(Note(childId = childId, start = time, tags = tags, note = text), photos)
+        }
     }
 }
 
 /**
  * Лист правки существующей записи ребёнка [child]; id и ребёнок сохраняются. [photos] — фото записи
  * из базы; [onSave] получает их после формы, null — у этого типа записей фото не меняются.
- * [pastMedicines] — подсказки в листе лекарства.
+ * [pastMedicines] — подсказки в листе лекарства, [cryingChoices] — метки в листе плача, [noteTags] — в листе заметки.
  */
 @Composable
 fun EditEventSheet(
@@ -56,6 +66,8 @@ fun EditEventSheet(
     child: Child,
     photos: List<EventPhoto>,
     pastMedicines: List<PastMedicine>,
+    cryingChoices: CryingChoices,
+    noteTags: TagChoices,
     onDismiss: () -> Unit,
     onSave: (BabyEvent, PhotoEdit?) -> Unit,
 ) {
@@ -82,6 +94,12 @@ fun EditEventSheet(
         }
         is Sleep -> SleepEditSheet(event, sex, onDismiss) { start, end, note ->
             save(event.copy(start = start, end = end, note = note))
+        }
+        is Crying -> CryingEditSheet(event, cryingChoices, onDismiss) { start, end, reasons, helped, note ->
+            save(event.copy(start = start, end = end, reasons = reasons, helped = helped, note = note))
+        }
+        is Note -> NoteSheet(event, noteTags, photos, onDismiss) { text, tags, time, edit ->
+            onSave(event.copy(note = text, tags = tags, start = time), edit)
         }
     }
 }

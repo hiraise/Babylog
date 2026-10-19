@@ -3,11 +3,13 @@ package com.kid.babylog.core.ui
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -88,6 +90,18 @@ fun breastLabel(breast: Breast): String = when (breast) {
  */
 fun bySex(sex: Sex?, masculine: String, feminine: String): String = if (sex == Sex.GIRL) feminine else masculine
 
+/** Русское число: 1 кормление, 2 кормления, 5 кормлений. */
+fun plural(n: Int, one: String, few: String, many: String): String {
+    val lastTwo = n % 100
+    val last = n % 10
+    return when {
+        lastTwo in 11..14 -> many
+        last == 1 -> one
+        last in 2..4 -> few
+        else -> many
+    }
+}
+
 fun diaperLabel(kind: DiaperKind, sex: Sex?): String = when (kind) {
     DiaperKind.WET -> bySex(sex, "пописал", "пописала")
     DiaperKind.DIRTY -> bySex(sex, "покакал", "покакала")
@@ -149,13 +163,20 @@ fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
     is Medicine -> "Лекарство · ${event.name}"
     is Weight -> "Вес · ${formatWeight(event.grams)}"
     is Height -> "Рост · ${formatHeight(event.millimeters)}"
+    // Причины — в заголовке: по ним плач ищут глазами в истории (ADR-0030)
+    is Crying -> listOf("Плач", event.reasons.joinToString(", ").ifEmpty { null }, "идёт".takeIf { event.isActive })
+        .filterNotNull().joinToString(" · ")
+    // Текст заметки — строкой комментария под заголовком, метки — в заголовке, как причины плача
+    is Note -> listOf("Заметка", event.tags.joinToString(", ").ifEmpty { null }).filterNotNull().joinToString(" · ")
 }
 
 fun eventTimeLine(event: BabyEvent): String = when (event) {
     is Sleep -> timeRange(event.start, event.end)
     // Кормления до ADR-0015 — без длительности: конец равен началу
     is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
-    is Bottle, is Diaper, is Medicine, is Weight, is Height -> formatClock(event.start)
+    is Crying -> timeRange(event.start, event.end) +
+        (event.helped.takeIf { it.isNotEmpty() }?.let { " · помогло: ${it.joinToString(", ")}" } ?: "")
+    is Bottle, is Diaper, is Medicine, is Weight, is Height, is Note -> formatClock(event.start)
 }
 
 /**
