@@ -93,8 +93,8 @@ private val TabHeight = 48.dp
 private const val MIN_TAB_TEXT_SCALE = 0.8f
 
 /**
- * Вкладка «Сегодня»: плитки сна и кормления в ряд, под ними широкая плитка плача (ADR-0030), плитки
- * быстрых записей, сводка за сегодня. Ребёнок — в шапке.
+ * Вкладка «Сегодня»: плитки сна и кормления в ряд, под ними широкая плитка плача (ADR-0030) с «Заметкой»
+ * рядом, плитки быстрых записей, сводка за сегодня. Ребёнок — в шапке.
  */
 @Composable
 internal fun TodayContent(
@@ -123,7 +123,14 @@ internal fun TodayContent(
                         modifier = tile,
                     )
                 }
-                CryingCard(state.activeCrying, state.lastCrying, now, actions.onStartCrying, actions.onEndCrying)
+                CryingNoteRow(
+                    activeCrying = state.activeCrying,
+                    lastCrying = state.lastCrying,
+                    now = now,
+                    onStartCrying = actions.onStartCrying,
+                    onEndCrying = actions.onEndCrying,
+                    onAddNote = { actions.onAdd(NewEventKind.NOTE) },
+                )
             }
         }
         item(key = "quick") {

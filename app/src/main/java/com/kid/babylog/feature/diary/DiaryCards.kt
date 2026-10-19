@@ -1,12 +1,14 @@
 package com.kid.babylog.feature.diary
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -103,9 +105,9 @@ internal fun FeedingCard(
 }
 
 /**
- * Плач (ADR-0030) — широкая плитка под сном и кормлением: касание сразу запускает таймер, ещё
- * касание останавливает и открывает лист «Плач закончился». Пока не плачет — когда был последний
- * плач и сколько длился ([cryingCaption]).
+ * Плач (ADR-0030) — широкая плитка под сном и кормлением, рядом с «Заметкой» ([CryingNoteRow]):
+ * касание сразу запускает таймер, ещё касание останавливает и открывает лист «Плач закончился».
+ * Пока не плачет — когда был последний плач и сколько длился ([cryingCaption]).
  */
 @Composable
 internal fun CryingCard(
@@ -128,6 +130,35 @@ internal fun CryingCard(
         modifier = modifier,
         idleCaption = cryingCaption(lastCrying, now),
     )
+}
+
+/**
+ * Ряд под сном и кормлением: плач ([CryingCard]) и «Заметка» — пятая плитка быстрой записи
+ * ([ActionTile], без пояснения). Заметка — рядом с плачем, а не в ряду [QuickActions]: там на 360 dp
+ * «Подгузник» и «Лекарство» уже впритык, а метки у плача и заметок общие (ADR-0031).
+ *
+ * «Заметка» шириной в плитку ряда [QuickActions] под ней, плач — в остальные три: края плиток двух
+ * рядов на одной линии. Поэтому ширина считается от ширины ряда, а не весами: с одним промежутком
+ * вместо трёх плитка вышла бы на 4 dp шире «Роста».
+ */
+@Composable
+internal fun CryingNoteRow(
+    activeCrying: Crying?,
+    lastCrying: Crying?,
+    now: Long,
+    onStartCrying: () -> Unit,
+    onEndCrying: () -> Unit,
+    onAddNote: () -> Unit,
+) {
+    val gap = BabyLogTheme.spacing.s
+    BoxWithConstraints {
+        val noteWidth = (maxWidth - gap * (QUICK_ACTION_COUNT - 1)) / QUICK_ACTION_COUNT
+        // IntrinsicSize.Min: плитки одной высоты — у плача она постоянна (WideTimerTile)
+        Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
+            CryingCard(activeCrying, lastCrying, now, onStartCrying, onEndCrying, Modifier.weight(1f).fillMaxHeight())
+            ActionTile(R.drawable.ic_note, "Заметка", onAddNote, Modifier.width(noteWidth).fillMaxHeight())
+        }
+    }
 }
 
 /** «2 ч назад · 24 мин» — последний законченный плач; не было или давно ([sinceLast]) — null. */
@@ -160,7 +191,8 @@ private fun sinceLast(end: Long?, now: Long): Long? =
 private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
 
 /**
- * Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard].
+ * Плитки быстрого добавления записей. Сон и кормление начинаются отдельно — в [SleepCard] и [FeedingCard],
+ * «Заметка» — рядом с плачем ([CryingNoteRow]), шириной в плитку этого ряда ([QUICK_ACTION_COUNT]).
  *
  * Под «Подгузник» — сколько прошло с последней смены ([diaperCaption]); давно ([diaperOverdue]) —
  * пояснение выделено. Под «Вес» и «Рост» — дата последнего замера ([measuredCaption]); сам вес и рост —
@@ -192,6 +224,9 @@ internal fun QuickActions(
         ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile, caption = measuredCaption(lastHeight, now))
     }
 }
+
+/** Сколько плиток в ряду [QuickActions]: по ней «Заметка» в [CryingNoteRow] встаёт над последней. */
+private const val QUICK_ACTION_COUNT = 4
 
 /**
  * Когда взвешивали или мерили рост в последний раз: «сегодня», «вчера», «15 окт.» ([formatShortDay]).

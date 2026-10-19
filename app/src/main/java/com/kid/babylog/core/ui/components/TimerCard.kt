@@ -167,12 +167,16 @@ fun TimerCornerButton(@DrawableRes icon: Int, description: String, onClick: () -
 }
 
 /**
- * Плитка таймера во всю ширину ряда — плач (ADR-0030). Ведёт себя как [TimerTile]: касание
- * начинает ([onStart]) и заканчивает ([onStop]), идущий таймер — фон `primary`. Но иконка слева,
- * а время и подписи — в строку: третья плитка в ряду сна и кормления не помещается (у «40:00»
- * и подписи кормления в две строки нет места). Высота одна у идущего и стоящего таймера — ряды
- * ниже не прыгают. Пока таймер стоит — [label] и под ним [idleCaption]; идёт — время, [label]
+ * Широкая плитка таймера — плач (ADR-0030). Ведёт себя как [TimerTile]: касание начинает
+ * ([onStart]) и заканчивает ([onStop]), идущий таймер — фон `primary`. Но иконка слева, а время
+ * и подписи — в строку: третья плитка в ряду сна и кормления не помещается (у «40:00» и подписи
+ * кормления в две строки нет места). Высота одна у идущего и стоящего таймера — ряды ниже
+ * не прыгают. Пока таймер стоит — [label] и под ним [idleCaption]; идёт — время, [label]
  * и «с 18:32».
+ *
+ * Уже трёх четвертей ряда не делай: рядом встаёт одна плитка [ActionTile] («Заметка»), а на 360 dp
+ * в три четверти «1:23:45» с подписью «с 18:32» влезает впритык — при шрифте крупнее обычного
+ * время уменьшается.
  */
 @Composable
 fun WideTimerTile(
@@ -208,7 +212,16 @@ fun WideTimerTile(
         ) {
             AppIcon(icon, contentDescription = null, modifier = Modifier.size(32.dp), tint = iconTint)
             if (runningSince != null) {
-                Text(formatTimer((now - runningSince).coerceAtLeast(0)), style = MaterialTheme.typography.headlineMedium, maxLines = 1)
+                // Время уступает место подписи: вес — чтобы его мерили последним; при крупном шрифте
+                // «1:23:45» уменьшается, а «с 18:32» не обрезается
+                val style = MaterialTheme.typography.headlineMedium
+                Text(
+                    formatTimer((now - runningSince).coerceAtLeast(0)),
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = style,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(minFontSize = style.fontSize * 0.6f, maxFontSize = style.fontSize),
+                )
                 Column {
                     Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
                     Text("с ${formatClock(runningSince)}", style = MaterialTheme.typography.bodySmall, maxLines = 1)
