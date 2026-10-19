@@ -5,6 +5,7 @@ import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.EventPhoto
@@ -17,6 +18,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,6 +71,21 @@ class RoomDiaryRepositoryTest {
         // …и наоборот; конец не раньше начала, даже если новое «было» раньше
         assertTrue(repo.startFeeding(childId = 1, start = T1, breast = Breast.RIGHT))
         assertEquals(Sleep(id = 2, childId = 1, start = T2, end = T2), repo.allEvents().last { it is Sleep })
+    }
+
+    @Test
+    fun `crying wakes the baby and falling asleep ends crying`() = withRepository { repo ->
+        assertTrue(repo.startSleep(childId = 1, start = T1))
+        // Плачет — значит, не спит (ADR-0030): начало плача заканчивает сон, второй плач не начинается
+        assertNotNull(repo.startCrying(childId = 1, start = T2))
+        assertNull(repo.startCrying(childId = 1, start = T2 + 60_000))
+        assertEquals(
+            listOf(Sleep(id = 1, childId = 1, start = T1, end = T2), Crying(id = 2, childId = 1, start = T2)),
+            repo.allEvents(),
+        )
+        // Уснул — значит, успокоился: начало сна заканчивает плач
+        assertTrue(repo.startSleep(childId = 1, start = T2 + 600_000))
+        assertEquals(Crying(id = 2, childId = 1, start = T2, end = T2 + 600_000), repo.allEvents().single { it is Crying })
     }
 
     @Test

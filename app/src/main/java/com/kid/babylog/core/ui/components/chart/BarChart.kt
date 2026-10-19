@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
@@ -129,12 +130,22 @@ fun BarChart(
     }
 }
 
-private fun DrawScope.drawBar(bar: ChartBar, maxValue: Float, topInset: Float) {
+/**
+ * Столбик [bar] в слоте шириной `size.width`: не толще [maxWidth], верх скруглён на [cornerRadius].
+ * Тот же рисунок у мини-графика плитки ([SparkBars]) — там столбик тоньше и скругление меньше.
+ */
+internal fun DrawScope.drawBar(
+    bar: ChartBar,
+    maxValue: Float,
+    topInset: Float,
+    maxWidth: Dp = MaxBarWidth,
+    cornerRadius: Dp = BarRadius,
+) {
     if (maxValue <= 0f) return
-    val width = minOf(MaxBarWidth.toPx(), size.width * BAR_SHARE)
+    val width = minOf(maxWidth.toPx(), size.width * BAR_SHARE)
     val left = (size.width - width) / 2
     val plot = size.height - topInset
-    val radius = CornerRadius(BarRadius.toPx())
+    val radius = CornerRadius(cornerRadius.toPx())
     val visible = bar.parts.filter { it.value > 0f }
     var bottom = size.height
     visible.forEachIndexed { index, part ->

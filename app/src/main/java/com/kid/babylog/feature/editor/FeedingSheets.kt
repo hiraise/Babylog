@@ -53,7 +53,7 @@ fun FeedingStartSheet(
             onSelect = { choice = it },
         )
         if (choice == FeedingChoice.BOTTLE) BottleFields(volume, { volume = it }, milk, { milk = it })
-        TimeAgoPicker(minutesAgo, { minutesAgo = it }, activeSleep?.let { FinishingTimer("Сон", it.start) })
+        TimeAgoPicker(minutesAgo, { minutesAgo = it }, listOfNotNull(activeSleep?.let { FinishingTimer("Сон", it.start) }))
     }
 }
 

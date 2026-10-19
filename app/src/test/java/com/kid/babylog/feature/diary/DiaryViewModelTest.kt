@@ -4,6 +4,7 @@ import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -26,6 +27,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -174,10 +176,91 @@ class DiaryViewModelTest {
         vm.startSleep(now.toEpochMilli() - 3_600_000)
         vm.endSleep()
         assertEquals("Сон: 1 ч", vm.state.value.message)
-        assertTrue(vm.state.value.canUndo)
-        vm.consumeMessage(undo = true)
+        assertTrue(vm.state.value.messageAction is MessageAction.ResumeTimer)
+        vm.consumeMessage(performed = true)
         assertNull(vm.state.value.events.filterIsInstance<Sleep>().single().end)
-        assertFalse(vm.state.value.canUndo)
+        assertNull(vm.state.value.messageAction)
+    }
+
+    @Test
+    fun `an accidental crying start is undone and the sleep goes on`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.startCrying()
+        assertEquals("Плач начат, сон закончен", vm.state.value.message)
+        vm.consumeMessage(performed = true)
+        assertTrue(vm.state.value.events.none { it is Crying })
+        assertNotNull(vm.state.value.activeSleep)
+    }
+
+    @Test
+    fun `stopping the crying drops its undo — the sheet has its own «Ещё плачет»`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        assertEquals("Плач начат", vm.state.value.message)
+        vm.endCrying()
+        assertNull(vm.state.value.message)
+        assertNull(vm.state.value.messageAction)
+    }
+
+    @Test
+    fun `falling asleep during crying asks for its details`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        val crying = vm.state.value.activeCrying!!
+        vm.consumeMessage()
+        vm.startSleep(now.toEpochMilli())
+        assertNull(vm.state.value.activeCrying)
+        assertEquals("Плач: меньше минуты", vm.state.value.message)
+        assertEquals(MessageAction.CryingDetails(crying.id), vm.state.value.messageAction)
+    }
+
+    @Test
+    fun `crying that started earlier moves the end of the sleep it interrupted`() = runTest {
+        val vm = viewModel()
+        val sleepStart = now.toEpochMilli() / 1000 * 1000 - 3_600_000
+        vm.startSleep(sleepStart)
+        vm.startCrying()
+        vm.endCrying()
+        val crying = vm.state.value.lastCrying!!
+        // Плакал за 10 минут до того, как нажали: и проснулся тогда же
+        vm.saveCryingDetails(crying, crying.start - 600_000, listOf("голод"), emptyList(), "")
+        val saved = vm.state.value.events.filterIsInstance<Crying>().single()
+        assertEquals(crying.start - 600_000, saved.start)
+        assertEquals(listOf("голод"), saved.reasons)
+        assertEquals(crying.start - 600_000, vm.state.value.events.filterIsInstance<Sleep>().single().end)
+    }
+
+    @Test
+    fun `crying starts at once, wakes the baby and can be resumed after a wrong stop`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        // Плачет — значит, не спит (ADR-0030): таймер плача идёт сразу, сон заканчивается
+        vm.startCrying()
+        val crying = vm.state.value.activeCrying!!
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(now.toEpochMilli() / 1000 * 1000, crying.start)
+
+        vm.endCrying()
+        assertNull(vm.state.value.activeCrying)
+        assertEquals(crying.id, vm.state.value.lastCrying?.id)
+        // «Ещё плачет» в листе: остановили по ошибке — таймер идёт дальше с того же начала
+        vm.resumeCrying(vm.state.value.lastCrying!!)
+        assertEquals(crying.start, vm.state.value.activeCrying?.start)
+    }
+
+    @Test
+    fun `details of a finished crying are saved into the same record`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        vm.endCrying()
+        val done = vm.state.value.lastCrying!!
+        vm.saveEvent(done.copy(reasons = listOf("колики"), helped = listOf("укачивание"), note = "вечер"))
+        val saved = vm.state.value.events.filterIsInstance<Crying>().single()
+        assertEquals(listOf("колики"), saved.reasons)
+        assertEquals(listOf("укачивание"), saved.helped)
+        // Своя метка из этой записи — теперь первая в подсказках листа
+        assertEquals("колики", vm.state.value.cryingChoices.reasons.shown.first())
     }
 
     @Test
@@ -186,7 +269,7 @@ class DiaryViewModelTest {
         vm.startSleep(now.toEpochMilli() - 3_600_000)
         vm.endSleep()
         vm.startFeeding(now.toEpochMilli(), Breast.LEFT)
-        vm.consumeMessage(undo = true)
+        vm.consumeMessage(performed = true)
         assertNull(vm.state.value.activeSleep)
         assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
     }

@@ -3,6 +3,7 @@ package com.kid.babylog.feature.diary
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
@@ -20,7 +21,8 @@ import java.time.ZoneId
 
 /**
  * Подписи плиток: у сна и кормления, пока таймер не идёт, — сколько прошло с конца прошлого;
- * у подгузника — с последней смены, а через 3 часа без сна подпись выделяется; у веса и роста — дата замера.
+ * у подгузника — с последней смены, а через 3 часа без сна подпись выделяется; у веса и роста — дата замера;
+ * у плача — когда закончился прошлый и сколько длился.
  */
 class TileCaptionsTest {
 
@@ -40,6 +42,14 @@ class TileCaptionsTest {
         assertEquals("бутылочка в ${formatClock(bottle)}\n2 ч назад", afterFeedingCaption(LastFeeding(bottle, bottle, breast = null), now))
         assertEquals("не спит меньше минуты", awakeCaption(now - 10_000, now))
         assertEquals("закончилось только что", afterFeedingCaption(LastFeeding(start, now - 10_000, Breast.RIGHT), now)?.substringAfter('\n'))
+    }
+
+    @Test
+    fun `crying caption tells when the last crying ended and how long it was`() {
+        assertEquals("2 ч назад · 24 мин", cryingCaption(Crying(1, 1, now - 144 * minute, end = now - 120 * minute), now))
+        assertNull(cryingCaption(Crying(1, 1, now - 10 * minute), now))
+        assertNull(cryingCaption(Crying(1, 1, now - 25 * 60 * minute, end = now - 24 * 60 * minute), now))
+        assertNull(cryingCaption(null, now))
     }
 
     @Test

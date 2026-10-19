@@ -2,11 +2,13 @@ package com.kid.babylog.feature.analytics
 
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.feature.summary.feedingSessions
@@ -42,8 +44,16 @@ data class DayStats(
     val diapers: Map<DiaperKind, Int>,
     /** Начала кормлений — сессий груди и бутылочек — по возрастанию. */
     val feedingStarts: List<Long>,
+    /** Начала снов, начатых в эти сутки, по возрастанию: сколько раз спал и как часто. */
+    val sleepStarts: List<Long> = emptyList(),
+    /** Плач (ADR-0030), начатый в эти сутки: сколько раз и во сколько — минуты от полуночи. */
+    val cryings: Int = 0,
+    val cryingStartMinutes: List<Int> = emptyList(),
+    /** Плач внутри суток, как сон: через полночь делится, идущий — до `now`. */
+    val cryingMillis: Long = 0,
 ) {
     val feedings: Int get() = breastFeedings + bottles
+    val sleeps: Int get() = sleepStarts.size
     val diaperCount: Int get() = diapers.values.sum()
 
     /** Сутки идут в средние, только если закончились и в них вели дневник. */
@@ -61,6 +71,10 @@ private class DayAccumulator {
     var longestSleepMillis = 0L
     val diapers = mutableMapOf<DiaperKind, Int>()
     val feedingStarts = mutableListOf<Long>()
+    val sleepStarts = mutableListOf<Long>()
+    var cryings = 0
+    val cryingStartMinutes = mutableListOf<Int>()
+    var cryingMillis = 0L
 }
 
 /**
@@ -73,6 +87,17 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
     val days = generateSequence(from) { it.plusDays(1) }.takeWhile { it <= to }.associateWith { DayAccumulator() }
     fun dateOf(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
     fun startOf(date: LocalDate): Long = date.atStartOfDay(zone).toInstant().toEpochMilli()
+
+    /** Часть отрезка [start, end) внутри каждых суток периода. */
+    fun spread(start: Long, end: Long, add: DayAccumulator.(Long) -> Unit) {
+        var date = maxOf(dateOf(start), from)
+        val last = minOf(dateOf(end), to)
+        while (date <= last) {
+            val overlap = minOf(end, startOf(date.plusDays(1))) - maxOf(start, startOf(date))
+            if (overlap > 0) days.getValue(date).add(overlap)
+            date = date.plusDays(1)
+        }
+    }
 
     feedingSessions(events).forEach { session ->
         days[dateOf(session.start)]?.apply {
@@ -98,21 +123,27 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
                 diapers.merge(event.kind, 1, Int::plus)
             }
             is Sleep -> {
-                days[dateOf(event.start)]?.tracked = true
-                val end = event.end ?: now
-                var date = maxOf(dateOf(event.start), from)
-                val last = minOf(dateOf(end), to)
-                while (date <= last) {
-                    val overlap = minOf(end, startOf(date.plusDays(1))) - maxOf(event.start, startOf(date))
-                    if (overlap > 0) days.getValue(date).sleepMillis += overlap
-                    date = date.plusDays(1)
+                days[dateOf(event.start)]?.apply {
+                    tracked = true
+                    sleepStarts += event.start
                 }
+                val end = event.end ?: now
+                spread(event.start, end) { sleepMillis += it }
                 if (event.end != null) {
                     days[dateOf(event.start)]?.apply { longestSleepMillis = maxOf(longestSleepMillis, end - event.start) }
                 }
             }
-            // Вес и лекарства в суточные итоги не входят: у них свои карточки
-            is Medicine, is Weight, is Height -> Unit
+            // Плач — не запись режима: сутки только с плачем дневником не считаются (tracked не ставим)
+            is Crying -> {
+                val local = Instant.ofEpochMilli(event.start).atZone(zone)
+                days[local.toLocalDate()]?.apply {
+                    cryings++
+                    cryingStartMinutes += local.hour * 60 + local.minute
+                }
+                spread(event.start, event.end ?: now) { cryingMillis += it }
+            }
+            // Вес, лекарства и заметки в суточные итоги не входят: у них свои карточки (у заметок — «Метки», ADR-0031)
+            is Medicine, is Weight, is Height, is Note -> Unit
         }
     }
     return days.map { (date, day) ->
@@ -128,6 +159,10 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
             longestSleepMillis = day.longestSleepMillis,
             diapers = day.diapers.toMap(),
             feedingStarts = day.feedingStarts.sorted(),
+            sleepStarts = day.sleepStarts.sorted(),
+            cryings = day.cryings,
+            cryingStartMinutes = day.cryingStartMinutes.sorted(),
+            cryingMillis = day.cryingMillis,
         )
     }
 }

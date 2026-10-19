@@ -37,6 +37,8 @@ import com.kid.babylog.core.ui.theme.BabyLogTheme
  * Используй вместо `FilterChip` везде, где выбирают одно значение из нескольких: для TalkBack чип —
  * радиокнопка, выбранный чип повторно не нажимается. Чипы клади в `Row` или `FlowRow` с шагом
  * `spacing.s` и помечай ряд `Modifier.selectableGroup()`: TalkBack объявит их одной группой.
+ * Если выбрать можно несколько (метки плача, ADR-0030), — [multiple]: чип для TalkBack флажок,
+ * повторное касание снимает выбор; у выбранного — галочка ([icon] `ic_check`).
  */
 @Composable
 fun ChoiceChip(
@@ -46,6 +48,7 @@ fun ChoiceChip(
     modifier: Modifier = Modifier,
     @DrawableRes icon: Int? = null,
     enabled: Boolean = true,
+    multiple: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.small
@@ -68,7 +71,7 @@ fun ChoiceChip(
                 // заданная здесь, снаружи, перекрывает внутреннюю
                 modifier = Modifier
                     .cardShadow(shape, if (enabled) BabyLogTheme.shadows.card else null)
-                    .semantics { role = Role.RadioButton },
+                    .semantics { role = if (multiple) Role.Checkbox else Role.RadioButton },
                 enabled = enabled,
                 shape = shape,
                 colors = FilterChipDefaults.filterChipColors(

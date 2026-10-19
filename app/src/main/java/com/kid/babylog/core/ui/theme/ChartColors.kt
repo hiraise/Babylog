@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
  * различимы и при дальтонизме: кормление рядом со сном, «пописал» — с «и то, и то», «и то, и то» —
  * с «покакал» (проверено по цветовой разнице в OKLab на моделях протанопии и дейтеранопии).
  * Поэтому у бутылочки своего цвета нет: оранжевый и красный рядом с зелёным для дальтоника сливаются.
+ * Плач (ADR-0030) в «Ритме дня» соседствует со сном и кормлением — поэтому пурпурный: красный
+ * и оранжевый рядом с зелёным не различить, а от фиолетового сна его отделяет и светлота.
  * Контраст проверяет `ThemeContrastTest`.
  *
  * Новый ряд — новое поле здесь и в обеих палитрах, а не литерал в экране (ADR-0010).
@@ -26,6 +28,7 @@ class ChartColors(
     val diaperDirty: Color,
     val weight: Color,
     val height: Color,
+    val crying: Color,
 )
 
 internal val LightChartColors = ChartColors(
@@ -36,6 +39,7 @@ internal val LightChartColors = ChartColors(
     diaperDirty = Color(0xFFB37A00),
     weight = Color(0xFFEB6834),
     height = Color(0xFF0F8A6A),
+    crying = Color(0xFFB5338A),
 )
 
 /** Тёмная палитра — те же оттенки, но светлее для тёмной карточки; зелёный темнее `primary`, чтобы не светился. */
@@ -47,6 +51,7 @@ internal val DarkChartColors = ChartColors(
     diaperDirty = Color(0xFFC98500),
     weight = Color(0xFFD95926),
     height = Color(0xFF199E70),
+    crying = Color(0xFFE05A9C),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }

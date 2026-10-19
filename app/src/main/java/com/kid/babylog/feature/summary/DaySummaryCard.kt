@@ -114,7 +114,7 @@ internal data class SummaryPart(@DrawableRes val icon: Int, val count: Int, val 
     val inlineId: String get() = "part_$icon"
 }
 
-/** Строки карточки: кормления, подгузники, сон, лекарства. */
+/** Строки карточки: кормления, подгузники, сон, лекарства и — в дни, когда он был, — плач (ADR-0030). */
 internal fun DaySummary.lines(sex: Sex?): List<SummaryLine> {
     // Разбивка кормлений — только когда были бутылочки: «5 (грудь×3 · бутылочка×2, 210 мл)»;
     // одной грудью разбивать нечего. Неразрывный пробел: число и «мл» не расходятся по строкам
@@ -145,5 +145,20 @@ internal fun DaySummary.lines(sex: Sex?): List<SummaryLine> {
         SummaryLine(R.drawable.ic_diaper, "Подгузников:", diaperCount.toString(), diaperParts),
         SummaryLine(R.drawable.ic_sleep, "Сон:", sleepValue),
         SummaryLine(R.drawable.ic_medicine, "Лекарств:", medsValue),
+    ) + listOfNotNull(
+        // Плач — только в дни, когда он был: тем, кто его не отмечает, «Плач: 0» каждый день ни к чему.
+        // Начался вчера и перешёл за полночь — сегодня только его минуты, без «0 раз»
+        SummaryLine(
+            R.drawable.ic_crying,
+            "Плач:",
+            if (cryings > 0) "$cryings ${timesWord(cryings)}, ${formatDuration(cryingMillis)}" else formatDuration(cryingMillis),
+        ).takeIf { cryings > 0 || cryingMillis > 0 },
     )
+}
+
+/** «1 раз», «2 раза», «5 раз». */
+private fun timesWord(n: Int): String = when {
+    n % 100 in 11..14 -> "раз"
+    n % 10 in 2..4 -> "раза"
+    else -> "раз"
 }

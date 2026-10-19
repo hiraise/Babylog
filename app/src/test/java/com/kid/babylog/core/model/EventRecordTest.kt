@@ -18,6 +18,11 @@ class EventRecordTest {
         Height(id = 10, childId = 7, start = 5_500, millimeters = 625, note = "у врача"),
         Bottle(id = 8, childId = 7, start = 6_000, volumeMl = 120, milk = Milk.FORMULA, note = "докорм"),
         Bottle(id = 9, childId = 7, start = 7_000, volumeMl = 90),
+        Crying(id = 11, childId = 7, start = 8_000, end = 8_900, reasons = listOf("колики", "голод"), helped = listOf("укачивание"), note = "вечер"),
+        Crying(id = 12, childId = 7, start = 12_000, end = null),
+        Crying(id = 13, childId = 7, start = 13_000, end = 13_500, helped = listOf("грудь")),
+        Note(id = 14, childId = 7, start = 14_000, tags = listOf("зубки", "питание мамы"), note = "Тёрла ушко, отказывалась от груди"),
+        Note(id = 15, childId = 7, start = 15_000, note = "Первый раз перевернулась"),
     )
 
     @Test
@@ -56,6 +61,38 @@ class EventRecordTest {
         assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "62.5", "").toEvent(childId = 1))
         assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "62", "").toEvent(childId = 1))
         assertNull(EventRecord(EventRecord.HEIGHT, 1, null, "1501", "").toEvent(childId = 1))
+    }
+
+    @Test
+    fun `crying detail keeps reasons and helped apart and normalizes tags`() {
+        val crying = Crying(childId = 1, start = 0, end = 60_000, reasons = listOf("колики", "усталость"), helped = listOf("на руках"))
+        assertEquals("колики;усталость|на руках", crying.toRecord().detail)
+        assertEquals("", Crying(childId = 1, start = 0).toRecord().detail)
+        // Регистр, пробелы и повторы — к одному виду; пустые метки пропадают
+        val parsed = EventRecord("crying", 0, 60_000, " Колики ;колики;; ЗУБКИ |  белый   шум ", "").toEvent(childId = 1) as Crying
+        assertEquals(listOf("колики", "зубки"), parsed.reasons)
+        assertEquals(listOf("белый шум"), parsed.helped)
+        assertEquals(60_000L, parsed.end)
+        // Больше одного «|» — непонятно, где что: запись некорректна
+        assertNull(EventRecord(EventRecord.CRYING, 0, 60_000, "а|б|в", "").toEvent(childId = 1))
+    }
+
+    @Test
+    fun `note detail is its tags, the text stays in the note`() {
+        val note = Note(childId = 1, start = 0, tags = listOf("зубки", "питание мамы"), note = "Тёрла ушко")
+        assertEquals(EventRecord("NOTE", 0, null, "зубки;питание мамы", "Тёрла ушко"), note.toRecord())
+        // Метки — к общему виду, как у плача; заметка без меток и конца — тоже заметка
+        val parsed = EventRecord("note", 0, 5_000, " Зубки ;; ЗУБКИ ; новое ", "").toEvent(childId = 1) as Note
+        assertEquals(listOf("зубки", "новое"), parsed.tags)
+        assertEquals(Note(childId = 1, start = 0), EventRecord("NOTE", 0, null, "", "").toEvent(childId = 1))
+    }
+
+    @Test
+    fun `tags are lower case without separators and not too long`() {
+        assertEquals("колики живот", normalizeTag("  Колики;Живот  "))
+        assertEquals("а б", normalizeTag("а|б"))
+        assertNull(normalizeTag(" ; | "))
+        assertEquals(MAX_TAG_LENGTH, normalizeTag("о".repeat(50))!!.length)
     }
 
     @Test

@@ -59,19 +59,19 @@ private val TIME_OPTIONS = listOf(
 internal const val MAX_MINUTES_AGO = 24 * 60 - 1
 
 /**
- * Таймер, который закончится, когда начнётся новый (ADR-0020): [what] — «Кормление» или «Сон»,
- * [start] — его начало. Конец не раньше начала.
+ * Таймер, который закончится, когда начнётся новый (ADR-0020, ADR-0030): [what] — «Кормление», «Сон»
+ * или «Плач», [start] — его начало. Конец не раньше начала.
  */
 class FinishingTimer(val what: String, val start: Long)
 
 /**
  * Выбор «когда это было»: сейчас, N минут назад по чипу или своё число минут в чипе «Другое»
- * ([CustomMinutesChip]). С [finishing] под временем — когда закончится идущий другой таймер:
- * сон и кормление не идут одновременно.
+ * ([CustomMinutesChip]). С [finishing] под временем — когда закончатся идущие другие таймеры:
+ * сон не идёт вместе с кормлением и плачем.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit, finishing: FinishingTimer? = null) {
+internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit, finishing: List<FinishingTimer> = emptyList()) {
     val clock = LocalClock.current
     val spacing = BabyLogTheme.spacing
     // Часы тикают, пока лист открыт, чтобы подпись не расходилась с реально сохраняемым временем
@@ -116,9 +116,9 @@ internal fun TimeAgoPicker(minutesAgo: Int, onMinutesAgo: (Int) -> Unit, finishi
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = spacing.xs),
         )
-        if (finishing != null) {
+        finishing.forEach { timer ->
             Text(
-                "${finishing.what} закончится в ${formatClock(maxOf(finishing.start, time))}",
+                "${timer.what} закончится в ${formatClock(maxOf(timer.start, time))}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

@@ -1,6 +1,7 @@
 package com.kid.babylog.feature.analytics
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -44,26 +46,31 @@ private val LegendIconSize = 18.dp
 private val SwatchSize = 10.dp
 private val LegendDotSize = 4.dp
 private val SwatchShape = RoundedCornerShape(2.dp)
+private val PinGlyphSize = 12.dp
+private val PinHead = 3.dp
+private val PinStroke = 2.dp
 
-private fun ChartColors.of(series: Series): Color = when (series) {
+internal fun ChartColors.of(series: Series): Color = when (series) {
     Series.FEEDING -> feeding
     Series.SLEEP -> sleep
     Series.DIAPER_WET -> diaperWet
     Series.DIAPER_MIXED -> diaperMixed
     Series.DIAPER_DIRTY -> diaperDirty
+    Series.CRYING -> crying
 }
 
 @DrawableRes
-private fun Metric.icon(): Int = when (this) {
+internal fun Metric.icon(): Int = when (this) {
     Metric.FEEDINGS -> R.drawable.ic_feeding
     Metric.BOTTLES -> R.drawable.ic_bottle
     Metric.SLEEP -> R.drawable.ic_sleep
     Metric.DIAPERS -> R.drawable.ic_diaper
+    Metric.CRYING -> R.drawable.ic_crying
 }
 
 /** Заголовок карточки: иконка, название и справа — пояснение мелко («к прошлой неделе», «за всё время»). */
 @Composable
-private fun CardHeader(@DrawableRes icon: Int, title: String, trailing: String?) {
+internal fun CardHeader(@DrawableRes icon: Int, title: String, trailing: String?) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
         AppIcon(icon, contentDescription = null, modifier = Modifier.size(HeaderIconSize), tint = MaterialTheme.colorScheme.primary)
         Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).semantics { heading() })
@@ -87,6 +94,17 @@ private fun Headline(value: String, unit: String, note: String?) {
             )
         }
         note?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    }
+}
+
+/** Булавка заметки для легенды — как на шкале «Ритма дня». */
+@Composable
+private fun PinGlyph() {
+    val ink = MaterialTheme.colorScheme.onSurface
+    Canvas(Modifier.size(PinGlyphSize)) {
+        val head = Offset(size.width / 2, PinHead.toPx())
+        drawLine(ink, head, Offset(size.width / 2, size.height), PinStroke.toPx())
+        drawCircle(ink, PinHead.toPx(), head)
     }
 }
 
@@ -152,6 +170,25 @@ internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> 
     }
 }
 
+/**
+ * Строки [DayTimeline] из суток ритма: сон, кормления грудью и плач — полосами, остальные кормления —
+ * рисками, заметки — булавками (ADR-0031). Плач — поверх сна, с обводкой: он стык в стык с пробуждением,
+ * и без обводки полосы слились бы.
+ */
+internal fun timelineRows(days: List<RhythmDay>, chart: ChartColors): List<TimelineRow> = days.map { day ->
+    TimelineRow(
+        label = day.label,
+        bands = day.sleeps.map { TimelineBand(it.from, it.to, chart.sleep) } +
+            day.feedings.map { TimelineBand(it.from, it.to, chart.feeding, ring = true) } +
+            day.cryings.map { TimelineBand(it.from, it.to, chart.crying, ring = true) },
+        ticks = day.instantFeedings.map { TimelineTick(it, chart.feeding) },
+        dots = day.diapers,
+        end = day.end,
+        description = day.description,
+        pins = day.notes,
+    )
+}
+
 /** «Ритм дня» за неделю: касание строки открывает сутки в «Истории». */
 @Composable
 internal fun RhythmCard(model: RhythmModel, onOpenDay: (LocalDate) -> Unit) {
@@ -162,23 +199,15 @@ internal fun RhythmCard(model: RhythmModel, onOpenDay: (LocalDate) -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
             CardHeader(R.drawable.ic_schedule, "Ритм дня", "последние $RHYTHM_DAYS дней")
             DayTimeline(
-                rows = model.days.map { day ->
-                    TimelineRow(
-                        label = day.label,
-                        bands = day.sleeps.map { TimelineBand(it.from, it.to, chart.sleep) } +
-                            day.feedings.map { TimelineBand(it.from, it.to, chart.feeding, ring = true) },
-                        ticks = day.instantFeedings.map { TimelineTick(it, chart.feeding) },
-                        dots = day.diapers,
-                        end = day.end,
-                        description = day.description,
-                    )
-                },
+                rows = timelineRows(model.days, chart),
                 dotColor = muted,
                 onRowClick = { onOpenDay(model.days[it].date) },
                 onClickLabel = "открыть в истории",
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
-                listOf(chart.sleep to "сон", chart.feeding to "кормление").forEach { (color, text) ->
+                // «плач» в легенде — только если он есть на шкале: тем, кто его не отмечает, пункт ни к чему
+                val crying = model.days.any { it.cryings.isNotEmpty() }
+                listOfNotNull(chart.sleep to "сон", chart.feeding to "кормление", (chart.crying to "плач").takeIf { crying }).forEach { (color, text) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                         Swatch(color)
                         Text(text, style = MaterialTheme.typography.bodySmall, color = muted)
@@ -187,6 +216,12 @@ internal fun RhythmCard(model: RhythmModel, onOpenDay: (LocalDate) -> Unit) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                     Box(Modifier.size(LegendDotSize).background(muted, CircleShape))
                     Text("подгузник", style = MaterialTheme.typography.bodySmall, color = muted)
+                }
+                if (model.days.any { it.notes.isNotEmpty() }) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                        PinGlyph()
+                        Text("заметка", style = MaterialTheme.typography.bodySmall, color = muted)
+                    }
                 }
             }
             model.summary?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

@@ -3,10 +3,12 @@ package com.kid.babylog.feature.transfer
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Milk
+import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
@@ -110,6 +112,34 @@ class CsvImportTest {
             listOf(120 to Milk.FORMULA, 90 to null),
             repo.events.value.filterIsInstance<Bottle>().map { it.volumeMl to it.milk },
         )
+    }
+
+    @Test
+    fun `crying rows keep reasons and helped, a running crying is skipped`() = runTest {
+        val repo = FakeDiaryRepository()
+        val csv = "type,start,end,detail,note,child\n" +
+            "CRYING,2026-08-15 18:30:00,2026-08-15 18:55:00,колики;голод|укачивание,вечер,Малыш\n" +
+            "CRYING,2026-08-15 21:00:00,,,,Малыш\n"
+        val result = importCsv(repo, csv, defaultChildId = 1)
+        assertEquals(1, result.added)
+        // Незавершённый плач стал бы «фантомным» таймером (ADR-0030), как сон
+        assertEquals(1, result.skippedActiveCrying)
+        val crying = repo.events.value.filterIsInstance<Crying>().single()
+        assertEquals(listOf("колики", "голод"), crying.reasons)
+        assertEquals(listOf("укачивание"), crying.helped)
+        assertEquals(ms("2026-08-15 18:55:00"), crying.end)
+    }
+
+    @Test
+    fun `note rows keep tags and text with commas`() = runTest {
+        val repo = FakeDiaryRepository()
+        val csv = "type,start,end,detail,note,child\n" +
+            "NOTE,2026-08-15 21:50:00,,питание мамы;колики,\"Днём ела капусту, проверить\",Малыш\n"
+        assertEquals(1, importCsv(repo, csv, defaultChildId = 1).added)
+        val note = repo.events.value.filterIsInstance<Note>().single()
+        assertEquals(listOf("питание мамы", "колики"), note.tags)
+        assertEquals("Днём ела капусту, проверить", note.note)
+        assertEquals(ms("2026-08-15 21:50:00"), note.start)
     }
 
     @Test
