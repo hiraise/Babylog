@@ -205,7 +205,28 @@ check_docs() {
         ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' \
         \( ! -path '*/.claude/*' -o -path "$ROOT/.claude/skills/*" \))
     report "Битые ссылки в документации" "${hits%$'\n'}" || failed=1
+    check_adr_numbers || failed=1
     return "$failed"
+}
+
+# Номер нового ADR могли занять параллельные сессии (docs/adr/template.md): сверяем ADR, которых нет
+# в origin/main, с ветками origin, ещё не влитыми в main. Ветки видны после git fetch; в CI их нет
+check_adr_numbers() {
+    local adr="$ROOT/docs/adr" hits="" current ref other f
+    git -C "$ROOT" rev-parse -q --verify origin/main >/dev/null || return 0
+    current="$(git -C "$ROOT" branch --show-current)"
+    while IFS= read -r ref; do
+        [[ "$ref" == origin/HEAD || "$ref" == "origin/$current" ]] && continue
+        git -C "$ROOT" merge-base --is-ancestor "$ref" origin/main && continue
+        while IFS= read -r other; do
+            for f in "$adr/${other:0:4}"-*.md; do
+                [[ -e "$f" && "$(basename "$f")" != "$other" ]] || continue
+                git -C "$ROOT" cat-file -e "origin/main:docs/adr/$(basename "$f")" 2>/dev/null && continue
+                hits+="docs/adr/$(basename "$f") ↔ $ref: docs/adr/$other"$'\n'
+            done
+        done < <(git -C "$ROOT" ls-tree --name-only "$ref" docs/adr/ | sed -n 's|^docs/adr/\([0-9]\{4\}-.*\.md\)$|\1|p')
+    done < <(git -C "$ROOT" for-each-ref --format='%(refname:lstrip=2)' refs/remotes/origin)
+    report "Номер ADR занят в другой ветке — кому он остаётся, в docs/adr/template.md" "${hits%$'\n'}"
 }
 
 # Gradle-часть проверки — общая для check и CI. verifyRoborazziDebug — это все unit-тесты
@@ -321,6 +342,16 @@ cmd_db() {
     echo "$out/$DB_NAME"
 }
 
+# Тестовый дневник (скилл /seed): CSV из SeedCsvTest — в Download устройства, импорт — в приложении
+cmd_seed() {
+    local csv="$ROOT/app/build/seed/babylog-seed.csv"
+    run_gradle testDebugUnitTest --tests '*.SeedCsvTest' --rerun -q
+    ensure_device
+    "$ADB" push "$csv" /sdcard/Download/ >/dev/null
+    echo "$(($(grep -c . "$csv") - 2)) записей «Сони» — в /sdcard/Download/$(basename "$csv")"
+    echo "Импорт: ⋮ → «Импорт из CSV» → файл в Download. Повторный импорт удвоит записи — сначала удалите «Соню»"
+}
+
 cmd_screenshot() {
     ensure_device
     local out="$ROOT/build/screenshots/$(date +%Y%m%d-%H%M%S).png"
@@ -378,6 +409,7 @@ usage() {
   emulator    запустить эмулятор и дождаться загрузки
   logcat      логи приложения (переживают перезапуски и падения)
   db          скачать базу в build/debug-db/$DB_NAME
+  seed        тестовый дневник «Сони» с рождения по сегодня — в Download устройства для импорта CSV
   screenshot  снимок экрана в build/screenshots/
   stop        выключить эмулятор
   cleanup     убрать worktree веток, чей PR уже слит в main
@@ -385,6 +417,6 @@ EOF
 }
 
 case "${1:-}" in
-    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
+    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | seed | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
     *) usage ;;
 esac

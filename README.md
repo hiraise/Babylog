@@ -277,6 +277,7 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 | `scripts/dev.sh goldens`           | перезаписать эталонные скриншоты экранов после намеренной правки UI     |
 | `scripts/dev.sh logcat`            | логи приложения (не теряются при перезапуске и падении)                 |
 | `scripts/dev.sh db`                | скачать базу в `build/debug-db/babylog.db` (в VS Code — SQLite Viewer)  |
+| `scripts/dev.sh seed`              | тестовый дневник «Сони» за все дни с рождения — в Download устройства; дальше ⋮ → «Импорт из CSV» |
 | `scripts/dev.sh screenshot`        | скриншот в `build/screenshots/`                                         |
 | `scripts/dev.sh emulator` / `stop` | включить / выключить эмулятор                                           |
 | `scripts/dev.sh cleanup`           | убрать папки `git worktree` веток, чей PR уже слит в `main`             |
@@ -309,9 +310,10 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 Зависимости раз в неделю обновляет Dependabot. Почему так —
 [ADR-0011](docs/adr/0011-ci-github-actions.md).
 
-Новую версию собирает агент по команде `/release` — порядок в
-[.claude/skills/release/SKILL.md](.claude/skills/release/SKILL.md): готовые PR вливаются в
-один релизный PR, а сливает его и ставит тег владелец — скриптом оттуда же.
+Повторяемые процедуры агента — скиллы в [.claude/skills/](.claude/skills/): сдача задачи
+`/pr`, тестовый дневник `/seed`, выпуск версии `/release`. Версию агент собирает по команде
+владельца: готовые PR вливаются в один релизный PR, а сливает его и ставит тег владелец —
+скриптом `finish.sh` из скилла.
 
 ## Лицензия
 
