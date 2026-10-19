@@ -180,6 +180,17 @@ check_adr_rules() {
     report "ADR-0024: записи меняются только UPDATE — REPLACE удалил бы их фото каскадом" "$hits" || failed=1
     hits="$(grep -nHiE 'patrykandpatrick|vico|MPAndroidChart|ycharts' "$ROOT"/*.gradle.kts "$ROOT"/app/*.gradle.kts || true)"
     report "ADR-0028: графики рисуют свои компоненты core/ui/components/chart/ — библиотеки графиков не подключаются" "$hits" || failed=1
+    grep -q 'SafeOpenHelperFactory(' "$code/core/data/room/AppDatabase.kt" ||
+        report "ADR-0033: база открывается через SafeOpenHelperFactory — иначе Android удалит повреждённую базу" "$code/core/data/room/AppDatabase.kt" || failed=1
+    hits="$(grep -rnH 'fallbackToDestructiveMigration' "$code" || true)"
+    report "ADR-0033: fallbackToDestructiveMigration не включается — неудачная миграция не должна стирать дневник" "$hits" || failed=1
+    local meta="$ROOT/gradle/verification-metadata.xml"
+    grep -q '<verify-metadata>true</verify-metadata>' "$meta" 2>/dev/null ||
+        report "ADR-0034: нужен gradle/verification-metadata.xml с проверкой метаданных — scripts/dev.sh deps" "$meta" || failed=1
+    hits="$(grep -nH '<trust ' "$meta" 2>/dev/null | grep -vE 'sources|javadoc' || true)"
+    report "ADR-0034: без суммы доверяют только -sources.jar и -javadoc.jar" "$hits" || failed=1
+    hits="$(grep -rnHE -- '--dependency-verification[= ]+(lenient|off)|dependency\.verification=(lenient|off)' "$ROOT/scripts" "$ROOT/.github" "$ROOT/gradle.properties" || true)"
+    report "ADR-0034: проверку зависимостей не ослабляют" "$hits" || failed=1
     return "$failed"
 }
 
@@ -232,6 +243,38 @@ check_adr_numbers() {
 # Gradle-часть проверки — общая для check и CI. verifyRoborazziDebug — это все unit-тесты
 # плюс сверка скриншотов с эталонами в app/src/test/screenshots/ (ADR-0013)
 CHECK_TASKS=(verifyRoborazziDebug lintDebug assembleDebug)
+
+# Контрольные суммы зависимостей (ADR-0034) — после новой зависимости или смены версии. Файл пишется заново
+# по задачам CI, а не дописывается: суммы прежних версий не копятся. Gradle записывает то, что скачал здесь;
+# aapt2 у каждой ОС свой — суммы для остальных ОС (Linux — это CI) берутся с Google Maven.
+cmd_deps() {
+    local meta="$ROOT/gradle/verification-metadata.xml" version os jar sum tmp
+    rm -f "$meta"
+    run_gradle --write-verification-metadata sha256 "${CHECK_TASKS[@]}" assembleRelease
+    # Исходники и javadoc скачивает IDE для показа, в сборку они не входят
+    awk '{ print } /<verify-signatures>/ {
+        print "      <trusted-artifacts>"
+        print "         <trust file=\".*-sources[.]jar\" regex=\"true\"/>"
+        print "         <trust file=\".*-javadoc[.]jar\" regex=\"true\"/>"
+        print "      </trusted-artifacts>"
+    }' "$meta" >"$meta.tmp" && mv "$meta.tmp" "$meta"
+    version="$(sed -n 's/.*<component group="com.android.tools.build" name="aapt2" version="\([^"]*\)".*/\1/p' "$meta")"
+    tmp="$(mktemp -d)"
+    for os in linux osx windows; do
+        jar="aapt2-$version-$os.jar"
+        grep -q "<artifact name=\"$jar\">" "$meta" && continue
+        curl -sfL -o "$tmp/$jar" "https://dl.google.com/android/maven2/com/android/tools/build/aapt2/$version/$jar"
+        sum="$(shasum -a 256 "$tmp/$jar" | cut -d' ' -f1)"
+        awk -v head="name=\"aapt2\" version=\"$version\"" -v jar="$jar" -v sum="$sum" '{ print }
+            index($0, head) {
+                print "         <artifact name=\"" jar "\">"
+                print "            <sha256 value=\"" sum "\" origin=\"Google Maven: scripts/dev.sh deps\"/>"
+                print "         </artifact>"
+            }' "$meta" >"$meta.tmp" && mv "$meta.tmp" "$meta"
+    done
+    rm -rf "$tmp"
+    (cd "$ROOT" && git status --short -- gradle/verification-metadata.xml)
+}
 
 # Перезаписывает эталонные скриншоты после намеренной правки UI. Изменившиеся PNG закоммить вместе с правкой
 cmd_goldens() {
@@ -404,6 +447,7 @@ usage() {
   rules       правила проекта без Gradle: дизайн-токены (ADR-0010), правила ADR, ссылки в документации
   goldens     перезаписать эталонные скриншоты (app/src/test/screenshots/) после намеренной правки UI
   build       шаг CI: unit-тесты со сверкой скриншотов, lint, debug- и release-сборка
+  deps        заново записать контрольные суммы зависимостей (после новой зависимости или версии, ADR-0034)
   schemas     шаг CI после сборки: схемы Room в app/schemas/ совпадают с закоммиченными
   release v<версия>  подписанный APK и .sha256 в build/release/ (нужен ключ релизов, ADR-0012)
   emulator    запустить эмулятор и дождаться загрузки
@@ -417,6 +461,6 @@ EOF
 }
 
 case "${1:-}" in
-    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | seed | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
+    run | check | rules | goldens | build | deps | schemas | release | emulator | logcat | db | seed | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
     *) usage ;;
 esac

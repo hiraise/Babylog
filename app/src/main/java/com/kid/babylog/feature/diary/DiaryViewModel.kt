@@ -22,7 +22,11 @@ import com.kid.babylog.feature.transfer.DocumentStore
 import com.kid.babylog.feature.transfer.describe
 import com.kid.babylog.feature.transfer.exportCsv
 import com.kid.babylog.feature.transfer.importCsv
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +35,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Clock
@@ -46,7 +52,7 @@ class DiaryViewModel(
 
     private val message = MutableStateFlow<String?>(null)
 
-    /** Кнопка сообщения: что вернёт «Отменить» или какой плач откроет «Отметить». */
+    /** Кнопка сообщения: что вернёт «Отменить». */
     private val action = MutableStateFlow<MessageAction?>(null)
 
     val state: StateFlow<DiaryUiState> =
@@ -59,6 +65,16 @@ class DiaryViewModel(
                 val photos = if (child == null) flowOf(emptyMap()) else repository.observePhotoCounts(child.id)
                 combine(events, photos) { list, counts -> DiaryUiState.of(children, child, list, counts) }
             }
+            // Ошибка чтения базы не закрывает приложение: сообщение и новые попытки — база могла восстановиться
+            // из копии (ADR-0033) или освободиться
+            .retryWhen { cause, attempt ->
+                if (cause is CancellationException) return@retryWhen false
+                if (attempt == 0L) show(READ_ERROR)
+                delay(READ_RETRY_MS * (attempt + 1).coerceAtMost(READ_RETRY_MAX_STEPS))
+                true
+            }
+            // Сообщение видно, даже если дневник не прочитался ни разу
+            .onStart { emit(DiaryUiState()) }
             .combine(message) { state, text -> state.copy(message = text) }
             .combine(action) { state, button -> state.copy(messageAction = button) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DiaryUiState())
@@ -66,25 +82,24 @@ class DiaryViewModel(
     fun selectChild(childId: Long) = selection.select(childId)
 
     /** Добавляет ребёнка и сразу выбирает его. Пустое или занятое имя игнорируется. */
-    fun addChild(name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?) = viewModelScope.launch {
-        if (!isValidChildName(name) || repository.allChildren().isNameTaken(name)) return@launch
+    fun addChild(name: String, birthDate: Long?, sex: Sex?, photo: ChildPhoto?) = write {
+        if (!isValidChildName(name) || repository.allChildren().isNameTaken(name)) return@write
         selection.select(repository.addChild(name.trim(), birthDate, sex, photo))
     }
 
-    fun updateChild(child: Child) = viewModelScope.launch {
+    fun updateChild(child: Child) = write {
         val children = repository.allChildren()
-        if (!isValidChildName(child.name) || children.isNameTaken(child.name, exceptId = child.id)) return@launch
+        if (!isValidChildName(child.name) || children.isNameTaken(child.name, exceptId = child.id)) return@write
         repository.updateChild(child)
     }
 
     /** Удаляет ребёнка с его записями; последнего ребёнка удалить нельзя. */
-    fun deleteChild(child: Child) = viewModelScope.launch {
+    fun deleteChild(child: Child) = write {
         if (repository.deleteChild(child.id)) show("Удалено: ${child.name}")
     }
 
-    /** Новая запись (id = 0) добавляется, существующая обновляется. */
     /** Новая запись (id = 0) или правка; [photos] — фото после формы, null — фото не трогали (ADR-0024). */
-    fun saveEvent(event: BabyEvent, photos: PhotoEdit? = null) = viewModelScope.launch {
+    fun saveEvent(event: BabyEvent, photos: PhotoEdit? = null) = write {
         repository.inTransaction {
             val id = if (event.id == 0L) repository.addEvent(event) else event.id.also { repository.updateEvent(event) }
             if (photos != null) repository.setEventPhotos(id, photos)
@@ -94,21 +109,18 @@ class DiaryViewModel(
     /** Фото записи — для формы правки и «Поделиться». */
     fun eventPhotos(eventId: Long): Flow<List<EventPhoto>> = repository.observeEventPhotos(eventId)
 
-    fun deleteEvent(event: BabyEvent) = viewModelScope.launch {
+    fun deleteEvent(event: BabyEvent) = write {
         repository.deleteEvent(event)
     }
 
-    /** Сон начат; идущий плач при этом закончился — «Отметить» в сообщении спросит его подробности (ADR-0030). */
-    fun startSleep(start: Long) = viewModelScope.launch {
-        val child = state.value.child ?: return@launch
-        val crying = state.value.activeCrying
-        if (repository.startSleep(child.id, start) && crying != null) {
-            show("Плач: ${formatDuration(maxOf(start, crying.start) - crying.start)}", MessageAction.CryingDetails(crying.id))
-        }
+    /** Сон начат; идущий плач при этом закончился — его подробности спросит лист, который откроет экран (ADR-0030). */
+    fun startSleep(start: Long) = write {
+        val child = state.value.child ?: return@write
+        repository.startSleep(child.id, start)
     }
 
-    fun endSleep() = viewModelScope.launch {
-        val sleep = state.value.activeSleep ?: return@launch
+    fun endSleep() = write {
+        val sleep = state.value.activeSleep ?: return@write
         val end = maxOf(clock.millis(), sleep.start)
         repository.updateEvent(sleep.copy(end = end))
         show("Сон: ${formatDuration(end - sleep.start)}", MessageAction.ResumeTimer(sleep))
@@ -119,10 +131,10 @@ class DiaryViewModel(
      * Идущий сон заканчивается: плачет — значит, не спит. Плитка широкая и стоит под сном, поэтому
      * «Отменить» в сообщении убирает случайный плач и возвращает сон.
      */
-    fun startCrying() = viewModelScope.launch {
-        val child = state.value.child ?: return@launch
+    fun startCrying() = write {
+        val child = state.value.child ?: return@write
         val sleep = state.value.activeSleep
-        val id = repository.startCrying(child.id, clock.millis()) ?: return@launch
+        val id = repository.startCrying(child.id, clock.millis()) ?: return@write
         show(if (sleep != null) "Плач начат, сон закончен" else "Плач начат", MessageAction.CancelCrying(id, sleep))
     }
 
@@ -130,8 +142,8 @@ class DiaryViewModel(
      * Плач закончился. Лист «Плач закончился» экран откроет сам — по id записи, когда у неё появится конец;
      * «Отменить» начала плача после этого не нужен — его заменяет «Ещё плачет» в листе.
      */
-    fun endCrying() = viewModelScope.launch {
-        val crying = state.value.activeCrying ?: return@launch
+    fun endCrying() = write {
+        val crying = state.value.activeCrying ?: return@write
         if ((action.value as? MessageAction.CancelCrying)?.cryingId == crying.id) consumeMessage()
         repository.updateEvent(crying.copy(end = maxOf(clock.millis(), crying.start)))
     }
@@ -140,7 +152,7 @@ class DiaryViewModel(
      * Подробности плача из листа «Плач закончился». Начало сдвинули раньше — сон, который плач закончил
      * своим началом, заканчивается тогда же: проснулся, когда заплакал.
      */
-    fun saveCryingDetails(crying: Crying, start: Long, reasons: List<String>, helped: List<String>, note: String) = viewModelScope.launch {
+    fun saveCryingDetails(crying: Crying, start: Long, reasons: List<String>, helped: List<String>, note: String) = write {
         val woke = state.value.events.filterIsInstance<Sleep>().filter { it.end == crying.start && it.start < crying.start }
         repository.inTransaction {
             if (start < crying.start) woke.forEach { repository.updateEvent(it.copy(end = maxOf(it.start, start))) }
@@ -149,24 +161,24 @@ class DiaryViewModel(
     }
 
     /** «Ещё плачет»: остановленный по ошибке плач идёт дальше, если за это время не начался другой. */
-    fun resumeCrying(crying: Crying) = viewModelScope.launch {
+    fun resumeCrying(crying: Crying) = write {
         if (state.value.activeCrying == null) repository.updateEvent(crying.copy(end = null))
     }
 
-    fun startFeeding(start: Long, breast: Breast) = viewModelScope.launch {
-        val child = state.value.child ?: return@launch
+    fun startFeeding(start: Long, breast: Breast) = write {
+        val child = state.value.child ?: return@write
         repository.startFeeding(child.id, start, breast)
     }
 
     /** Бутылочка выбранному ребёнку (ADR-0025): разовая запись, идущий сон заканчивается (ADR-0020). */
-    fun addBottle(volumeMl: Int, milk: Milk?, time: Long) = viewModelScope.launch {
-        val child = state.value.child ?: return@launch
+    fun addBottle(volumeMl: Int, milk: Milk?, time: Long) = write {
+        val child = state.value.child ?: return@write
         repository.addBottle(Bottle(childId = child.id, start = time, volumeMl = volumeMl, milk = milk))
     }
 
     /** Смена груди: идущее кормление заканчивается, с той же секунды начинается кормление другой грудью. */
-    fun switchBreast() = viewModelScope.launch {
-        val feeding = state.value.activeFeeding ?: return@launch
+    fun switchBreast() = write {
+        val feeding = state.value.activeFeeding ?: return@write
         val now = maxOf(clock.millis(), feeding.start)
         repository.inTransaction {
             repository.updateEvent(feeding.copy(end = now))
@@ -174,8 +186,8 @@ class DiaryViewModel(
         }
     }
 
-    fun endFeeding() = viewModelScope.launch {
-        val feeding = state.value.activeFeeding ?: return@launch
+    fun endFeeding() = write {
+        val feeding = state.value.activeFeeding ?: return@write
         val end = maxOf(clock.millis(), feeding.start)
         repository.updateEvent(feeding.copy(end = end))
         show("Кормление: ${formatDuration(end - feeding.start)}", MessageAction.ResumeTimer(feeding))
@@ -205,7 +217,7 @@ class DiaryViewModel(
     /**
      * Снекбар закрыт. [performed] — нажали его кнопку. «Отменить» остановку: таймер идёт дальше, если
      * за это время не начался другой (сон и кормление не идут одновременно, ADR-0020). «Отменить» начало
-     * плача: плач удаляется, сон идёт дальше на тех же условиях. «Отметить» открывает лист сам экран.
+     * плача: плач удаляется, сон идёт дальше на тех же условиях.
      */
     fun consumeMessage(performed: Boolean = false) {
         val button = action.value
@@ -213,16 +225,30 @@ class DiaryViewModel(
         message.value = null
         if (!performed) return
         when (button) {
-            is MessageAction.ResumeTimer -> viewModelScope.launch {
+            is MessageAction.ResumeTimer -> write {
                 val current = state.value
                 if (current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.timer)
             }
-            is MessageAction.CancelCrying -> viewModelScope.launch {
+            is MessageAction.CancelCrying -> write {
                 state.value.events.find { it.id == button.cryingId }?.let { repository.deleteEvent(it) }
                 val current = state.value
                 if (button.sleep != null && current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.sleep)
             }
-            is MessageAction.CryingDetails, null -> Unit
+            null -> Unit
+        }
+    }
+
+    /**
+     * Изменение дневника в фоне. Ошибка базы (чаще всего — заполнена память телефона) становится сообщением,
+     * а не закрывает приложение: вместе с ним пропало бы и то, что ввели в форму.
+     */
+    private fun write(block: suspend CoroutineScope.() -> Unit): Job = viewModelScope.launch {
+        try {
+            block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            show(WRITE_ERROR)
         }
     }
 
@@ -232,3 +258,8 @@ class DiaryViewModel(
         message.value = text
     }
 }
+
+private const val WRITE_ERROR = "Не удалось сохранить. Проверьте, есть ли свободное место в памяти телефона"
+private const val READ_ERROR = "Не удалось прочитать дневник. Пробую ещё раз…"
+private const val READ_RETRY_MS = 1_000L
+private const val READ_RETRY_MAX_STEPS = 10L

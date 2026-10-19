@@ -12,6 +12,7 @@ import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.testing.FakeRecoveryNotices
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -60,7 +61,7 @@ class MigrationTest {
             db.execSQL("INSERT INTO children (id, name, birthDate) VALUES (1, 'Маша', ?)", arrayOf<Any?>(BIRTH))
         }
         helper.runMigrationsAndValidate(DB_NAME, 5, true, MIGRATION_4_5).close()
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             assertEquals(listOf(Child(1, "Маша", BIRTH, sex = null)), RoomDiaryRepository(db).allChildren())
         } finally {
@@ -74,7 +75,7 @@ class MigrationTest {
             db.execSQL("INSERT INTO children (id, name, birthDate, sex) VALUES (1, 'Маша', ?, 'GIRL')", arrayOf<Any?>(BIRTH))
         }
         helper.runMigrationsAndValidate(DB_NAME, 6, true, MIGRATION_5_6).close()
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             val repo = RoomDiaryRepository(db)
             assertEquals(listOf(Child(1, "Маша", BIRTH, Sex.GIRL, photo = null)), repo.allChildren())
@@ -97,7 +98,7 @@ class MigrationTest {
             )
         }
         helper.runMigrationsAndValidate(DB_NAME, 7, true, MIGRATION_6_7).close()
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             val repo = RoomDiaryRepository(db)
             assertEquals(listOf(Diaper(id = 5, childId = 1, start = T1, kind = DiaperKind.DIRTY)), repo.allEvents())
@@ -124,7 +125,7 @@ class MigrationTest {
     @Test
     fun `update over version 3 closes old feedings and keeps the active sleep`() = runBlocking {
         createVersion3()
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             val expected = listOf(
                 Feeding(id = 1, childId = 1, start = T1, end = T1, breast = Breast.RIGHT, note = "ночью"),
@@ -140,7 +141,7 @@ class MigrationTest {
     @Test
     fun `update over version 2 keeps every record, active sleep and birth date`() = runBlocking {
         createVersion2(birthDate = BIRTH)
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             val repo = RoomDiaryRepository(db)
             assertEquals(listOf(Child(1, Child.DEFAULT_NAME, BIRTH)), repo.allChildren())
@@ -158,7 +159,7 @@ class MigrationTest {
     @Test
     fun `profile without birth date becomes a child without it`() = runBlocking {
         createVersion2(birthDate = null)
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             assertEquals(listOf(Child(1, Child.DEFAULT_NAME, null)), RoomDiaryRepository(db).allChildren())
         } finally {
@@ -167,8 +168,8 @@ class MigrationTest {
     }
 
     private companion object {
-        /** Имя файла из [AppDatabase.build]: тест открывает ту же базу, что приложение. */
-        const val DB_NAME = "babylog.db"
+        /** Тест открывает ту же базу, что приложение. */
+        const val DB_NAME = AppDatabase.NAME
         const val BIRTH = 1_779_235_200_000L // 2026-05-20
         const val T1 = 1_786_000_000_000L
         const val T2 = 1_786_003_600_000L

@@ -1,5 +1,7 @@
 package com.kid.babylog.feature.diary
 
+import com.kid.babylog.core.data.DiaryRepository
+import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
@@ -18,7 +20,10 @@ import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -32,6 +37,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.io.IOException
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDate
@@ -204,15 +210,14 @@ class DiaryViewModelTest {
     }
 
     @Test
-    fun `falling asleep during crying asks for its details`() = runTest {
+    fun `falling asleep ends the crying without a message — the screen opens its sheet`() = runTest {
         val vm = viewModel()
         vm.startCrying()
-        val crying = vm.state.value.activeCrying!!
         vm.consumeMessage()
         vm.startSleep(now.toEpochMilli())
         assertNull(vm.state.value.activeCrying)
-        assertEquals("Плач: меньше минуты", vm.state.value.message)
-        assertEquals(MessageAction.CryingDetails(crying.id), vm.state.value.messageAction)
+        assertNotNull(vm.state.value.activeSleep)
+        assertNull(vm.state.value.message)
     }
 
     @Test
@@ -303,5 +308,36 @@ class DiaryViewModelTest {
         assertEquals(Triple(1L, 120, Milk.FORMULA), Triple(bottle.childId, bottle.volumeMl, bottle.milk))
         assertEquals(bottle, vm.state.value.lastBottle)
         assertEquals(LastFeeding(5_000, 5_000, breast = null), vm.state.value.lastFeeding)
+    }
+
+    @Test
+    fun `a failed write is a message, not a crash`() = runTest {
+        // Так падает запись, когда память телефона заполнена (SQLiteFullException)
+        val full = object : DiaryRepository by repo {
+            override suspend fun addEvent(event: BabyEvent): Long = throw IOException("database or disk is full")
+        }
+        val vm = DiaryViewModel(full, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        assertTrue(vm.state.value.message!!.startsWith("Не удалось сохранить"))
+        assertTrue(repo.events.value.isEmpty())
+    }
+
+    @Test
+    fun `a failed read is retried instead of closing the app`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        repo.events.value = listOf(Feeding(id = 1, childId = 1, start = 1_000, end = 2_000, breast = Breast.LEFT))
+        var broken = true
+        val flaky = object : DiaryRepository by repo {
+            override fun observeEvents(childId: Long): Flow<List<BabyEvent>> =
+                if (broken) flow { throw IOException("database disk image is malformed") } else repo.observeEvents(childId)
+        }
+        val vm = DiaryViewModel(flaky, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        assertTrue(vm.state.value.message!!.startsWith("Не удалось прочитать дневник"))
+
+        broken = false
+        advanceTimeBy(1_500)
+        assertEquals(1, vm.state.value.events.size)
     }
 }

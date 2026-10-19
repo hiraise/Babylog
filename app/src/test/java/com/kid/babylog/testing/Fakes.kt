@@ -1,6 +1,8 @@
 package com.kid.babylog.testing
 
+import com.kid.babylog.core.data.DatabaseRecovery
 import com.kid.babylog.core.data.DiaryRepository
+import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.data.SelectedChildStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
@@ -150,5 +152,18 @@ class FakeDocumentStore(val files: MutableMap<String, String> = mutableMapOf()) 
 
     override suspend fun write(uri: String, text: String) {
         files[uri] = text
+    }
+}
+
+/** Сообщение о восстановлении базы в памяти (ADR-0033). */
+class FakeRecoveryNotices : RecoveryNotices {
+    override val pending = MutableStateFlow<DatabaseRecovery?>(null)
+
+    override fun report(recovery: DatabaseRecovery) {
+        pending.value = recovery
+    }
+
+    override fun dismiss() {
+        pending.value = null
     }
 }

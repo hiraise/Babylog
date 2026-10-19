@@ -48,7 +48,8 @@ fun analyticsModel(events: List<BabyEvent>, period: AnalyticsPeriod, now: Long, 
     if (length == null) {
         // «Всё время» — с первой записи режима: вес и рост с рождения не растягивают графики на пустые недели
         val firstRoutine = events.filter { it.isRoutine }.minOfOrNull { it.start } ?: now
-        val firstDay = Instant.ofEpochMilli(firstRoutine).atZone(zone).toLocalDate()
+        // Записи «из будущего» (часы телефона спешили, опечатка в дате) период не сдвигают: он кончается сегодня
+        val firstDay = minOf(Instant.ofEpochMilli(firstRoutine).atZone(zone).toLocalDate(), today)
         // Недели — с понедельника: столбики «всего времени» совпадают с календарными неделями
         days = dailyStats(events, firstDay.minusDays(firstDay.dayOfWeek.value - 1L), today, now, zone)
         previous = emptyList()

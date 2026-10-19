@@ -16,6 +16,7 @@ import com.kid.babylog.testing.FakeDiaryRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CsvImportTest {
@@ -209,5 +210,29 @@ class CsvImportTest {
         val result = importCsv(repo, "PROFILE,2026-05-20 00:00:00,,,,Маша\r\n", defaultChildId = 1)
         assertEquals(1, result.birthDateConflicts)
         assertEquals(ms("2026-05-21 00:00:00"), repo.children.value.single().birthDate)
+    }
+
+    @Test
+    fun `an unclosed quote stops the whole import and names its line`() = runTest {
+        val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null)))
+        val file = "type,start,end,detail,note,child\r\n" +
+            "DIAPER,2026-08-15 15:10:00,,WET,,Маша\r\n" +
+            "DIAPER,2026-08-15 16:10:00,,WET,\"кавычку забыли закрыть,Маша\r\n" +
+            "DIAPER,2026-08-15 17:10:00,,WET,,Маша\r\n"
+        val error = runCatching { importCsv(repo, file, defaultChildId = 1) }.exceptionOrNull()
+        assertTrue(error is IllegalArgumentException)
+        assertEquals("в строке 3 кавычка не закрыта — исправьте файл", error?.message)
+        assertTrue(repo.events.value.isEmpty())
+    }
+
+    @Test
+    fun `a field longer than any record is an error, not a giant note`() = runTest {
+        val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null)))
+        val file = "NOTE,2026-08-15 21:50:00,,," + "а".repeat(CsvCodec.MAX_FIELD_LENGTH + 1) + ",Маша\r\n" +
+            "DIAPER,2026-08-15 15:10:00,,WET,,Маша\r\n"
+        val result = importCsv(repo, file, defaultChildId = 1)
+        assertEquals(1, result.errors)
+        assertEquals(1, result.added)
+        assertTrue(repo.events.value.single() is Diaper)
     }
 }

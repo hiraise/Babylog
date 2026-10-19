@@ -48,7 +48,8 @@ private val EARLIER_OPTIONS = listOf(0 to "Нет", 5 to "5 мин", 10 to "10 �
  * Лист после остановки плача (ADR-0030): сколько длился, «Начался раньше?» — таймер жмут, когда ребёнок
  * уже плачет, — «Что было до» из дневника ([context]), «Почему, как думаете?» — метки, общие с заметками,
  * «Что помогло?» — свой список, комментарий. «Сохранить» пишет начало и подробности в запись; «Ещё плачет»
- * ([onResume]) — остановили по ошибке, таймер идёт дальше; закрыть лист свайпом — плач остаётся без подробностей.
+ * ([onResume]) — остановили по ошибке, таймер идёт дальше; null — кнопки нет (плач закончил сон, а спящий
+ * не плачет); закрыть лист свайпом — плач остаётся без подробностей.
  */
 @Composable
 fun CryingDoneSheet(
@@ -56,7 +57,7 @@ fun CryingDoneSheet(
     context: CryingContext?,
     choices: CryingChoices,
     sex: Sex?,
-    onResume: () -> Unit,
+    onResume: (() -> Unit)?,
     onDismiss: () -> Unit,
     onSave: (start: Long, reasons: List<String>, helped: List<String>, note: String) -> Unit,
 ) {
@@ -71,7 +72,7 @@ fun CryingDoneSheet(
         title = "Плач · ${formatDuration(end - start)}",
         icon = R.drawable.ic_crying,
         confirm = SheetAction("Сохранить") { onSave(start, reasons.unpacked(), helped.unpacked(), note.trim()) },
-        secondary = SheetAction("Ещё плачет", onClick = onResume),
+        secondary = onResume?.let { SheetAction("Ещё плачет", onClick = it) },
     ) {
         CryingDoneFields(
             crying = crying,

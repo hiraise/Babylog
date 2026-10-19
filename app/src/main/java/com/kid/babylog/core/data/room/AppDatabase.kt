@@ -5,7 +5,9 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.model.Child
+import java.util.concurrent.Executor
 
 /**
  * База дневника. Схема меняется только повышением [version] с миграцией в [Migrations.kt];
@@ -16,8 +18,17 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun diaryDao(): DiaryDao
 
     companion object {
-        fun build(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, "babylog.db")
+        const val NAME = "babylog.db"
+
+        /**
+         * База открывается только через [SafeOpenHelperFactory] (ADR-0033): ежедневная копия и восстановление
+         * повреждённой базы из неё, а не удаление. [background] — проверка снимков для копий, [now] — часы для копий.
+         */
+        fun build(context: Context, notices: RecoveryNotices, background: Executor, now: () -> Long): AppDatabase =
+            Room.databaseBuilder(context, AppDatabase::class.java, NAME)
+                .openHelperFactory(
+                    SafeOpenHelperFactory(DatabaseBackups(context.getDatabasePath(NAME), context.noBackupFilesDir, notices, now), background)
+                )
                 .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .addCallback(CreateFirstChild)
                 .build()

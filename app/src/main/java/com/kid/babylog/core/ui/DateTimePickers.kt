@@ -11,6 +11,7 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
@@ -107,9 +108,11 @@ fun BirthDateSheet(initial: Long?, onDismiss: () -> Unit, onSave: (Long) -> Unit
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateSheet(initial: LocalDate?, confirmLabel: String, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) {
+    val today = LocalDate.now(LocalClock.current)
     // DatePicker работает в UTC-миллисекундах «полуночи выбранного дня»
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
+        initialSelectedDateMillis = initial?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+        selectableDates = remember(today) { notAfter(today) },
     )
     AppSheet(
         onDismiss = onDismiss,
@@ -131,4 +134,16 @@ private fun DatePickerState.selectedDate(): LocalDate? =
 @Composable
 internal fun ChipIcon(@DrawableRes id: Int) {
     AppIcon(id, contentDescription = null, modifier = Modifier.size(AssistChipDefaults.IconSize))
+}
+
+/**
+ * Дни не позже [today]: в дневнике — то, что уже было, и рождение тоже. Запись «из будущего» сдвинула бы
+ * сводки и «Аналитику».
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun notAfter(today: LocalDate): SelectableDates = object : SelectableDates {
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+        Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate() <= today
+
+    override fun isSelectableYear(year: Int): Boolean = year <= today.year
 }
