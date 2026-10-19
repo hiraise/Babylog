@@ -14,9 +14,12 @@ import androidx.compose.ui.graphics.Color
  * Поэтому у бутылочки своего цвета нет: оранжевый и красный рядом с зелёным для дальтоника сливаются.
  * Плач (ADR-0030) в «Ритме дня» соседствует со сном и кормлением — поэтому пурпурный: красный
  * и оранжевый рядом с зелёным не различить, а от фиолетового сна его отделяет и светлота.
- * Контраст проверяет `ThemeContrastTest`.
+ * Контраст во всех палитрах проверяет `ThemeContrastTest`.
  *
- * Новый ряд — новое поле здесь и в обеих палитрах, а не литерал в экране (ADR-0010).
+ * Тёмных наборов два: спокойный [CalmDarkChartColors] — общий для спокойных палитр (ADR-0032),
+ * и прежний [ClassicDarkChartColors] — для «Классики».
+ *
+ * Новый ряд — новое поле здесь и во всех трёх наборах, а не литерал в экране (ADR-0010).
  */
 @Immutable
 class ChartColors(
@@ -42,8 +45,11 @@ internal val LightChartColors = ChartColors(
     crying = Color(0xFFB5338A),
 )
 
-/** Тёмная палитра — те же оттенки, но светлее для тёмной карточки; зелёный темнее `primary`, чтобы не светился. */
-internal val DarkChartColors = ChartColors(
+/**
+ * Тёмный набор «Классики» — те же оттенки, что у светлой, но светлее для тёмной карточки; зелёный
+ * темнее её `primary`, чтобы не светился.
+ */
+internal val ClassicDarkChartColors = ChartColors(
     sleep = Color(0xFF9085E9),
     feeding = Color(0xFF3F9E3E),
     diaperWet = Color(0xFF3987E5),
@@ -52,6 +58,23 @@ internal val DarkChartColors = ChartColors(
     weight = Color(0xFFD95926),
     height = Color(0xFF199E70),
     crying = Color(0xFFE05A9C),
+)
+
+/**
+ * Спокойный тёмный набор (ADR-0032): те же сущности, но хрома ниже — 0,10–0,13 в OKLCH против 0,14–0,17.
+ * Плач — малиновый и темнее сна: при спокойной хроме одного оттенка не хватает, чтобы различить их
+ * при дальтонизме. Соседи в столбике и полосе различимы: ΔE в OKLab не меньше 10 при протанопии
+ * и дейтеранопии и не меньше 19 при обычном зрении.
+ */
+internal val CalmDarkChartColors = ChartColors(
+    sleep = Color(0xFF868BD9),
+    feeding = Color(0xFF6C9F61),
+    diaperWet = Color(0xFF5798CE),
+    diaperMixed = Color(0xFFAE5A84),
+    diaperDirty = Color(0xFFB48E34),
+    weight = Color(0xFFCF8358),
+    height = Color(0xFF46A499),
+    crying = Color(0xFFAF4F71),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }

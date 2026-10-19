@@ -6,7 +6,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Crying
@@ -69,7 +69,7 @@ class CryingFlowTest {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {})
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {})
             }
         }
     }

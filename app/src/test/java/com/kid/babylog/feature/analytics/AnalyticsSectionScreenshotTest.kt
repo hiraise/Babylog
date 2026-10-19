@@ -5,7 +5,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import com.github.takahirom.roborazzi.captureRoboImage
-import com.kid.babylog.core.data.ThemeMode
+import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
 import com.kid.babylog.feature.diary.DiaryTab
@@ -57,7 +57,7 @@ class AnalyticsSectionScreenshotTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeMode.SYSTEM, onThemeModeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
             }
         }
     }
