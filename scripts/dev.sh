@@ -193,7 +193,8 @@ check_docs() {
     hits="$(ls "$adr" | sed -n 's/^\([0-9]\{4\}\)-.*\.md$/\1/p' | sort | uniq -d)"
     report "Номера ADR повторяются" "$hits" || failed=1
     hits=""
-    # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md
+    # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md. Из .claude/ берём только
+    # скиллы проекта: остальное там локальное (настройки, worktree)
     while IFS= read -r f; do
         while IFS= read -r link; do
             target="${link%%#*}"
@@ -201,7 +202,8 @@ check_docs() {
             [[ -e "$(dirname "$f")/$target" ]] || hits+="$f → $link"$'\n'
         done < <(grep -oE '\]\([^) ]+\)' "$f" | sed 's/^](//; s/)$//')
     done < <(find "$ROOT" -name '*.md' ! -name template.md \
-        ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' ! -path '*/.claude/*')
+        ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' \
+        \( ! -path '*/.claude/*' -o -path "$ROOT/.claude/skills/*" \))
     report "Битые ссылки в документации" "${hits%$'\n'}" || failed=1
     return "$failed"
 }
