@@ -98,7 +98,6 @@ class RhythmTest {
     @Test
     fun `active sleep is drawn up to now`() {
         val model = rhythm(listOf(Sleep(1, 1, at(today, 10))))
-        // Вечерний или дневной сон, пока не наступила полночь, — дневной (ADR-0036)
         val sleep = model.days.first().daySleeps.single()
         assertEquals(10 / 24f, sleep.from)
         assertEquals((11 + 20 / 60f) / 24f, sleep.to, 1e-4f)
@@ -108,16 +107,15 @@ class RhythmTest {
 
     @Test
     fun `night sleep and naps are drawn apart`() {
-        // Ночь с пробуждениями в 01:30 и 04:40 — ночной сон, сны в 10:00 и 17:00 — дневной (ADR-0036)
+        // Ночь — с 19:00 до 7:00 (ADR-0036): сон с 18:30 до 19:30 — две полосы
         val events = night(day(1), LocalTime.of(21, 30), LocalTime.of(6, 45), 1) +
             Sleep(10, 1, at(day(1), 10), end = at(day(1), 11, 30)) +
-            Sleep(11, 1, at(day(1), 17), end = at(day(1), 17, 30))
+            Sleep(11, 1, at(day(1), 18, 30), end = at(day(1), 19, 30))
         val model = rhythm(events)
         val yesterday = model.days[1]
-        assertEquals(listOf(0f, 110 / 1440f, 300 / 1440f), yesterday.nightSleeps.map { it.from })
-        assertEquals(405 / 1440f, yesterday.nightSleeps.last().to, 1e-6f)
-        assertEquals(listOf(10 / 24f, 17 / 24f), yesterday.daySleeps.map { it.from })
-        assertEquals(listOf(11.5f / 24, 17.5f / 24), yesterday.daySleeps.map { it.to })
+        assertEquals(listOf(0f, 110 / 1440f, 300 / 1440f, 19 / 24f), yesterday.nightSleeps.map { it.from })
+        assertEquals(listOf(10 / 24f, 18.5f / 24), yesterday.daySleeps.map { it.from })
+        assertEquals(listOf(11.5f / 24, 19 / 24f), yesterday.daySleeps.map { it.to })
         // Засыпание в 21:30 — ночной сон и в строке позавчера
         assertEquals(listOf(DaySpan(21.5f / 24, 1f)), model.days[2].nightSleeps)
         assertTrue(model.days[2].daySleeps.isEmpty())

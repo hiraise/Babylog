@@ -40,8 +40,8 @@ data class DayStats(
     val breastMillis: Long?,
     val sleepMillis: Long,
     /**
-     * Часть [sleepMillis] ночью (ADR-0036): сны блоков, захватывающих ядро ночи ([nightSleeps]). Ночь через
-     * полночь делится между сутками, как весь сон: ночь и день вместе — сон суток из сводки.
+     * Часть [sleepMillis] ночью (ADR-0036): с 0:00 до 7:00 и с 19:00 до полуночи этих суток ([splitByNight]).
+     * Ночь и день вместе — сон суток из сводки.
      */
     val nightSleepMillis: Long = 0,
     /** Самый долгий законченный сон, начатый в эти сутки. */
@@ -94,7 +94,6 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
     val days = generateSequence(from) { it.plusDays(1) }.takeWhile { it <= to }.associateWith { DayAccumulator() }
     fun dateOf(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
     fun startOf(date: LocalDate): Long = date.atStartOfDay(zone).toInstant().toEpochMilli()
-    val night = nightSleeps(events, now, zone)
 
     /** Часть отрезка [start, end) внутри каждых суток периода. */
     fun spread(start: Long, end: Long, add: DayAccumulator.(Long) -> Unit) {
@@ -136,10 +135,8 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
                     sleepStarts += event.start
                 }
                 val end = event.end ?: now
-                spread(event.start, end) {
-                    sleepMillis += it
-                    if (event in night) nightSleepMillis += it
-                }
+                spread(event.start, end) { sleepMillis += it }
+                splitByNight(event.start, end, zone).first.forEach { (from, to) -> spread(from, to) { nightSleepMillis += it } }
                 if (event.end != null) {
                     days[dateOf(event.start)]?.apply { longestSleepMillis = maxOf(longestSleepMillis, end - event.start) }
                 }

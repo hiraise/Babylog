@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -116,18 +117,25 @@ private fun Swatch(color: Color, modifier: Modifier = Modifier) {
 
 /**
  * Карточка-график величины за период: число, сравнение, легенда, столбики. Касание столбика
- * показывает его итоги под графиком, у суток — с «В историю» ([onOpenDay]).
+ * показывает его итоги под графиком, у суток — с «В историю» ([onOpenDay]). [onHelp] — «?» после
+ * легенды: как она считается (у сна — ночь и день, ADR-0036).
  */
 @Composable
-internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> Unit, onOpenDay: (LocalDate) -> Unit) {
+internal fun MetricCard(
+    model: MetricModel,
+    selected: Int?,
+    onSelect: (Int?) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onHelp: (() -> Unit)? = null,
+) {
     val chart = BabyLogTheme.chartColors
     val spacing = BabyLogTheme.spacing
     AppCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
             CardHeader(model.metric.icon(), model.metric.title, model.delta)
             Headline(model.value, model.unit, model.note)
-            if (model.legend.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
+            if (model.legend.isNotEmpty()) Row(verticalAlignment = Alignment.CenterVertically) {
+                FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
                     model.legend.forEach { item ->
                         Row(
                             modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "${item.label} ${item.text}" },
@@ -145,6 +153,11 @@ internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> 
                             }
                             Text(item.text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+                }
+                onHelp?.let {
+                    IconButton(onClick = it) {
+                        AppIcon(R.drawable.ic_help, contentDescription = "Как считается: ${model.metric.title.lowercase()}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

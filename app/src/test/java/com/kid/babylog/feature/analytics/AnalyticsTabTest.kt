@@ -102,4 +102,12 @@ class AnalyticsTabTest {
         compose.onAllNodes(hasClickAction() and hasContentDescription("пт, 16 окт.: сон", substring = true)).onFirst().performClick()
         compose.onNodeWithText("16 октября, пятница").assertIsDisplayed()
     }
+
+    @Test
+    fun `question mark explains night and day sleep`() {
+        compose.onNodeWithText("Сон").performClick()
+        compose.onNodeWithContentDescription("Как считается: сон").performClick()
+        compose.onNodeWithText("Сон ночью и днём").assertIsDisplayed()
+        compose.onNodeWithText("Ночью — сон с 19:00 до 7:00", substring = true).assertIsDisplayed()
+    }
 }

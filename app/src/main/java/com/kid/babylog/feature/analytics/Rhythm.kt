@@ -47,6 +47,12 @@ data class RhythmModel(val days: List<RhythmDay>, val summary: String?)
 
 const val RHYTHM_DAYS = 7
 
+/** Перерыв в сне до часа (ночное кормление, смена подгузника) не прерывает ночь. */
+private const val NIGHT_GAP_MILLIS = 60 * 60_000L
+
+/** Ночь суток — сон, захватывающий отрезок от полуночи до этого часа. */
+private const val NIGHT_CORE_END_HOUR = 5L
+
 /** Средние засыпания и пробуждения показываются, если ночей не меньше стольких. */
 private const val MIN_NIGHTS = 3
 
@@ -56,12 +62,11 @@ private val CLOCK = DateTimeFormatter.ofPattern("HH:mm")
 
 /** [stats] — итоги тех же суток ([dailyStats]), по возрастанию даты: из них подпись строки для TalkBack. */
 fun rhythmModel(events: List<BabyEvent>, stats: List<DayStats>, now: Long, zone: ZoneId): RhythmModel {
-    val night = nightSleeps(events, now, zone)
-    val days = stats.reversed().map { day -> rhythmDay(events, night, day, now, zone) }
+    val days = stats.reversed().map { day -> rhythmDay(events, day, now, zone) }
     return RhythmModel(days, rhythmSummary(events, stats.map { it.date }, now, zone))
 }
 
-private fun rhythmDay(events: List<BabyEvent>, night: Set<Sleep>, day: DayStats, now: Long, zone: ZoneId): RhythmDay {
+private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: ZoneId): RhythmDay {
     val start = day.date.atStartOfDay(zone).toInstant().toEpochMilli()
     val end = day.date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     val visibleEnd = minOf(end, now)
@@ -79,7 +84,11 @@ private fun rhythmDay(events: List<BabyEvent>, night: Set<Sleep>, day: DayStats,
     val notes = mutableListOf<Float>()
     events.forEach { event ->
         when (event) {
-            is Sleep -> span(event.start, event.end ?: now)?.let { (if (event in night) nightSleeps else daySleeps) += it }
+            // Сон через 7:00 или 19:00 — две полосы: ночная часть и дневная (ADR-0036)
+            is Sleep -> splitByNight(event.start, event.end ?: now, zone).let { (night, day) ->
+                night.forEach { (from, to) -> span(from, to)?.let(nightSleeps::add) }
+                day.forEach { (from, to) -> span(from, to)?.let(daySleeps::add) }
+            }
             is Feeding -> {
                 val feedingEnd = event.end
                 if (feedingEnd != null && feedingEnd <= event.start) {
@@ -122,16 +131,31 @@ private fun rhythmDay(events: List<BabyEvent>, night: Set<Sleep>, day: DayStats,
 /** Ночной сон: от засыпания до утреннего пробуждения, [wakings] — сколько раз просыпался между. */
 internal data class Night(val start: Long, val end: Long, val wakings: Int)
 
+private class SleepBlock(val start: Long, var end: Long, var pieces: Int, var active: Boolean)
+
 /**
  * Ночи, закончившиеся утром суток [dates]. Ночь — подряд идущие сны с перерывами до часа, которые
  * захватывают отрезок с полуночи до 5:00 (из них — с наибольшим захватом). Ночь, которая ещё идёт, не в счёт.
  */
 internal fun nights(events: List<BabyEvent>, dates: List<LocalDate>, now: Long, zone: ZoneId): List<Night> {
-    val blocks = sleepBlocks(events, now)
+    val blocks = mutableListOf<SleepBlock>()
+    events.filterIsInstance<Sleep>().sortedBy { it.start }.forEach { sleep ->
+        val end = sleep.end ?: now
+        val last = blocks.lastOrNull()
+        if (last != null && sleep.start - last.end <= NIGHT_GAP_MILLIS) {
+            last.end = maxOf(last.end, end)
+            last.pieces++
+            last.active = last.active || sleep.isActive
+        } else {
+            blocks += SleepBlock(sleep.start, end, pieces = 1, active = sleep.isActive)
+        }
+    }
     return dates.mapNotNull { date ->
-        blocks.maxByOrNull { nightCoreOverlap(it, date, zone) }
-            ?.takeIf { nightCoreOverlap(it, date, zone) > 0 && !it.active && it.end < now - NIGHT_GAP_MILLIS }
-            ?.let { Night(it.start, it.end, it.sleeps.size - 1) }
+        val coreStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
+        val coreEnd = date.atStartOfDay(zone).plusHours(NIGHT_CORE_END_HOUR).toInstant().toEpochMilli()
+        blocks.maxByOrNull { minOf(it.end, coreEnd) - maxOf(it.start, coreStart) }
+            ?.takeIf { minOf(it.end, coreEnd) > maxOf(it.start, coreStart) && !it.active && it.end < now - NIGHT_GAP_MILLIS }
+            ?.let { Night(it.start, it.end, it.pieces - 1) }
     }
 }
 

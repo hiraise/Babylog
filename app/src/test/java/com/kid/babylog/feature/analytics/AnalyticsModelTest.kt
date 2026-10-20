@@ -227,12 +227,14 @@ class AnalyticsModelTest {
 
     @Test
     fun `sleep shows night and day averages and stacks them`() {
-        // Двое суток: ночью 10 и 8 ч, днём 3 и 4 ч — в среднем 9 и 3,5 ч (ADR-0036)
+        // Ночь — с 19:00 до 7:00 (ADR-0036): ночью 10 и 8 ч, днём 3 и 4 ч — в среднем 9 и 3,5 ч
         val events = listOf(
-            Sleep(1, 1, at(day(2), 0), end = at(day(2), 10)),
+            Sleep(1, 1, at(day(2), 0), end = at(day(2), 6)),
             Sleep(2, 1, at(day(2), 13), end = at(day(2), 16)),
-            Sleep(3, 1, at(day(1), 0), end = at(day(1), 8)),
-            Sleep(4, 1, at(day(1), 12), end = at(day(1), 16)),
+            Sleep(3, 1, at(day(2), 20), end = at(day(1), 0)),
+            Sleep(4, 1, at(day(1), 0), end = at(day(1), 5)),
+            Sleep(5, 1, at(day(1), 12), end = at(day(1), 16)),
+            Sleep(6, 1, at(day(1), 21), end = at(today, 0)),
         )
         val sleep = model(events).metric(Metric.SLEEP)
         assertEquals("12 ч 30 мин", sleep.value)
@@ -242,13 +244,17 @@ class AnalyticsModelTest {
         )
         // Ночь внизу столбика, день сверху
         assertEquals(listOf(Series.NIGHT_SLEEP to 8f, Series.DAY_SLEEP to 4f), sleep.columns[5].parts)
-        assertEquals("пт, 16 окт.: сон 13 ч (ночью 10 ч, днём 3 ч), 2 раза, самый долгий 10 ч", sleep.columns[4].caption)
+        assertEquals("пт, 16 окт.: сон 13 ч (ночью 10 ч, днём 3 ч), 3 раза, самый долгий 6 ч", sleep.columns[4].caption)
     }
 
     @Test
     fun `weekly sleep caption tells night and day`() {
         val events = (1L..14L).flatMap { n ->
-            listOf(Sleep(n * 2, 1, at(day(n), 0), end = at(day(n), 9)), Sleep(n * 2 + 1, 1, at(day(n), 13), end = at(day(n), 16)))
+            listOf(
+                Sleep(n * 3, 1, at(day(n), 0), end = at(day(n), 6)),
+                Sleep(n * 3 + 1, 1, at(day(n), 13), end = at(day(n), 16)),
+                Sleep(n * 3 + 2, 1, at(day(n), 21), end = at(day(n - 1), 0)),
+            )
         }
         val sleep = model(events, AnalyticsPeriod.ALL).metric(Metric.SLEEP)
         assertTrue(sleep.columns.first().caption, sleep.columns.first().caption.endsWith("в среднем 12 ч в сутки (ночью 9 ч, днём 3 ч)"))

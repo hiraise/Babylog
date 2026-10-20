@@ -11,6 +11,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
@@ -45,6 +49,8 @@ internal fun AnalyticsDetail(
     onOpenTag: (String) -> Unit = {},
 ) {
     val chart = BabyLogTheme.chartColors
+    var sleepHelp by rememberSaveable { mutableStateOf(false) }
+    if (sleepHelp) SleepHelpSheet(onDismiss = { sleepHelp = false })
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = analyticsListPadding(),
@@ -76,6 +82,8 @@ internal fun AnalyticsDetail(
                             selected = selection?.takeIf { it.startsWith(prefix) }?.removePrefix(prefix)?.toIntOrNull(),
                             onSelect = { index -> onSelection(index?.let { prefix + it }) },
                             onOpenDay = onOpenDay,
+                            // Как сон делится на ночь и день (ADR-0036)
+                            onHelp = if (metric.metric == Metric.SLEEP) ({ sleepHelp = true }) else null,
                         )
                     }
                 }
