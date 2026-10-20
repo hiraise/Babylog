@@ -52,7 +52,7 @@ data class DiaryUiState(
     val photoCounts: Map<Long, Int> = emptyMap(),
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
     val message: String? = null,
-    /** Кнопка сообщения: «Отменить» или «Отметить» ([MessageAction]); null — сообщение без кнопки. */
+    /** Кнопка сообщения «Отменить» ([MessageAction]); null — сообщение без кнопки. */
     val messageAction: MessageAction? = null,
 ) {
     companion object {
@@ -78,16 +78,13 @@ data class DiaryUiState(
     }
 }
 
-/** Что делает кнопка снекбара. «Отменить» выполняет ViewModel, «Отметить» — экран: открывает лист. */
+/** Что делает кнопка снекбара «Отменить» — выполняет ViewModel. */
 sealed interface MessageAction {
     /** «Отменить» остановку касанием (ADR-0021): таймер [timer] идёт дальше. */
     data class ResumeTimer(val timer: BabyEvent) : MessageAction
 
     /** «Отменить» начало плача (ADR-0030): плач [cryingId] удаляется, прерванный им сон [sleep] идёт дальше. */
     data class CancelCrying(val cryingId: Long, val sleep: Sleep?) : MessageAction
-
-    /** «Отметить»: плач [cryingId] закончился засыпанием — лист «Плач закончился» спросит, почему и что помогло. */
-    data class CryingDetails(val cryingId: Long) : MessageAction
 }
 
 /**

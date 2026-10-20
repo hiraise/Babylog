@@ -14,6 +14,7 @@ import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.testing.FakeRecoveryNotices
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -33,7 +34,7 @@ class RoomDiaryRepositoryTest {
 
     /** Открывает базу приложения, как после запуска, и закрывает её после [block]. */
     private fun <T> withRepository(block: suspend (RoomDiaryRepository) -> T): T = runBlocking {
-        val db = AppDatabase.build(context)
+        val db = AppDatabase.build(context, FakeRecoveryNotices(), Runnable::run, System::currentTimeMillis)
         try {
             block(RoomDiaryRepository(db))
         } finally {

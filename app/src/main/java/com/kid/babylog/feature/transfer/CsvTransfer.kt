@@ -56,6 +56,7 @@ private class CsvImporter(
         for (row in CsvCodec.parseRows(text)) {
             val type = row[0].trim()
             when {
+                row.any { it.length > CsvCodec.MAX_FIELD_LENGTH } -> result = result.copy(errors = result.errors + 1)
                 type.equals("type", ignoreCase = true) -> Unit // заголовок
                 type.equals(CsvCodec.PROFILE_ROW, ignoreCase = true) -> importProfile(row)
                 else -> importEvent(row)

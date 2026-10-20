@@ -36,7 +36,7 @@ import java.util.TimeZone
 
 /**
  * Плач с главного экрана (ADR-0030): касание плитки запускает таймер, второе — останавливает его и
- * открывает лист; выбранные причина и «что помогло» сохраняются в ту же запись, а «Ещё плачет»
+ * открывает лист (как и начало сна); выбранные причина и «что помогло» сохраняются в ту же запись, а «Ещё плачет»
  * продолжает таймер.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -118,6 +118,25 @@ class CryingFlowTest {
 
         assertTrue(crying.isActive)
         compose.onNodeWithText("Что было до").assertDoesNotExist()
+    }
+
+    @Test
+    fun `falling asleep while crying opens the sheet by itself`() {
+        tapCryingTile()
+        compose.onNode(hasText("Сон") and hasClickAction()).performClick()
+        compose.onNodeWithText("Запустить таймер").performClick()
+        compose.waitForIdle()
+
+        assertFalse(crying.isActive)
+        compose.onNodeWithText("Что было до").assertIsDisplayed()
+        // Спит — значит, уже не плачет: продолжить плач нельзя
+        compose.onNodeWithText("Ещё плачет").assertDoesNotExist()
+        compose.onNodeWithText("колики").performClick()
+        compose.onNodeWithText("Сохранить").performClick()
+        compose.waitForIdle()
+
+        assertEquals(listOf("колики"), crying.reasons)
+        assertTrue(repository.events.value.filterIsInstance<Sleep>().any { it.isActive })
     }
 
     private fun at(iso: String): Long = Instant.parse(iso).toEpochMilli()

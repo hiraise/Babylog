@@ -34,6 +34,7 @@ class MainActivity : ComponentActivity() {
         syncSystemNightMode(container.themeMode.choice.value.mode)
         setContent {
             val theme by container.themeMode.choice.collectAsStateWithLifecycle()
+            val recovery by container.recoveryNotices.pending.collectAsStateWithLifecycle()
             // На API 31+ конфигурация уже несёт выбранную тему (setApplicationNightMode), до 31 — системную
             val dark = theme.mode.isDark(systemDark = isSystemInDarkTheme())
             BabyLogTheme(clock = container.clock, darkTheme = dark, darkPalette = theme.darkPalette) {
@@ -43,6 +44,8 @@ class MainActivity : ComponentActivity() {
                     viewModel = viewModel(factory = container.diaryViewModelFactory),
                     theme = theme,
                     onThemeChange = ::changeTheme,
+                    recovery = recovery,
+                    onRecoverySeen = container.recoveryNotices::dismiss,
                 )
             }
         }

@@ -28,6 +28,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kid.babylog.R
+import com.kid.babylog.core.data.DatabaseRecovery
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.ui.LocalClock
@@ -74,6 +75,8 @@ fun DiaryScreen(
     theme: ThemeChoice,
     onThemeChange: (ThemeChoice) -> Unit,
     initialTab: DiaryTab = DiaryTab.TODAY,
+    recovery: DatabaseRecovery? = null,
+    onRecoverySeen: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
@@ -84,26 +87,24 @@ fun DiaryScreen(
             delay(1_000)
         }
     }
-    // Плач, остановленный касанием плитки или засыпанием («Отметить»): лист «Плач закончился»
-    // спрашивает подробности (ADR-0030)
+    // Плач, остановленный касанием плитки или началом сна: лист «Плач закончился» спрашивает подробности
+    // (ADR-0030). После засыпания лист открывается сам, а не кнопкой в снекбаре: снекбар гаснет через
+    // 10 секунд, пока укладывают ребёнка. «Ещё плачет» в нём нет, пока идёт сон: спящий не плачет
     var finishedCryingId by rememberSaveable { mutableLongStateOf(NONE) }
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let { text ->
-            // С кнопкой сообщение висит дольше: остановку или случайный плач можно вернуть, плач — отметить
+            // С кнопкой сообщение висит дольше: остановку или случайный плач можно вернуть
             val button = state.messageAction
             val result = snackbarHostState.showSnackbar(
                 message = text,
                 actionLabel = when (button) {
                     is MessageAction.ResumeTimer, is MessageAction.CancelCrying -> "Отменить"
-                    is MessageAction.CryingDetails -> "Отметить"
                     null -> null
                 },
                 duration = if (button != null) SnackbarDuration.Long else SnackbarDuration.Short,
             )
-            val performed = result == SnackbarResult.ActionPerformed
-            if (performed && button is MessageAction.CryingDetails) finishedCryingId = button.cryingId
-            viewModel.consumeMessage(performed)
+            viewModel.consumeMessage(result == SnackbarResult.ActionPerformed)
         }
     }
 
@@ -255,6 +256,17 @@ fun DiaryScreen(
         ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
     }
 
+    recovery?.let {
+        DatabaseRecoveredSheet(
+            recovery = it,
+            onDismiss = onRecoverySeen,
+            onImport = {
+                onRecoverySeen()
+                importLauncher.launch(arrayOf("*/*"))
+            },
+        )
+    }
+
     if (child == null) return
 
     newEvent?.let { kind ->
@@ -277,6 +289,7 @@ fun DiaryScreen(
             activeCrying = state.activeCrying,
             onDismiss = { startingSleep = false },
             onSave = {
+                state.activeCrying?.let { finishedCryingId = it.id }
                 viewModel.startSleep(it)
                 startingSleep = false
             },
@@ -332,7 +345,7 @@ fun DiaryScreen(
                 onResume = {
                     viewModel.resumeCrying(crying)
                     finishedCryingId = NONE
-                },
+                }.takeIf { state.activeSleep == null },
                 onDismiss = { finishedCryingId = NONE },
                 onSave = { start, reasons, helped, note ->
                     viewModel.saveCryingDetails(crying, start, reasons, helped, note)

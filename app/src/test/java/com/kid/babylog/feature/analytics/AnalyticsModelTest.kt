@@ -148,6 +148,15 @@ class AnalyticsModelTest {
     }
 
     @Test
+    fun `all time with every routine record in a future week ends today instead of crashing`() {
+        // Часы телефона спешили: все записи режима — на следующей неделе
+        val events = listOf(fed(1, at(today.plusDays(9), 8)), fed(2, at(today.plusDays(10), 8)))
+        val feedings = model(events, AnalyticsPeriod.ALL).metric(Metric.FEEDINGS)
+        assertEquals(1, feedings.columns.size)
+        assertTrue(feedings.columns.single().partial)
+    }
+
+    @Test
     fun `all time is weekly from the monday of the first routine record`() {
         val events = sampleMonths(childId = 1, today = today, now = now, zone = zone, days = 30)
         val feedings = model(events, AnalyticsPeriod.ALL).metric(Metric.FEEDINGS)
