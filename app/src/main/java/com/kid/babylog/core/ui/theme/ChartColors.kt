@@ -61,20 +61,21 @@ internal val ClassicDarkChartColors = ChartColors(
 )
 
 /**
- * Спокойный тёмный набор (ADR-0032): те же сущности, но хрома ниже — 0,10–0,13 в OKLCH против 0,14–0,17.
- * Плач — малиновый и темнее сна: при спокойной хроме одного оттенка не хватает, чтобы различить их
- * при дальтонизме. Соседи в столбике и полосе различимы: ΔE в OKLab не меньше 10 при протанопии
- * и дейтеранопии и не меньше 19 при обычном зрении.
+ * Спокойный тёмный набор (ADR-0032): те же сущности, хрома 0,12–0,16 в OKLCH — на ступень ниже
+ * «Классики» (0,14–0,17), но достаточно, чтобы ряды не сливались с цветным фоном палитры.
+ * Плач — малиновый и темнее сна: одного оттенка не хватает, чтобы различить их при дальтонизме.
+ * Соседи в столбике и полосе различимы: ΔE в OKLab не меньше 10 при протанопии и дейтеранопии
+ * и не меньше 21 при обычном зрении.
  */
 internal val CalmDarkChartColors = ChartColors(
-    sleep = Color(0xFF868BD9),
-    feeding = Color(0xFF6C9F61),
-    diaperWet = Color(0xFF5798CE),
-    diaperMixed = Color(0xFFAE5A84),
-    diaperDirty = Color(0xFFB48E34),
-    weight = Color(0xFFCF8358),
-    height = Color(0xFF46A499),
-    crying = Color(0xFFAF4F71),
+    sleep = Color(0xFF8387EA),
+    feeding = Color(0xFF5FA350),
+    diaperWet = Color(0xFF3D99DF),
+    diaperMixed = Color(0xFFC0558D),
+    diaperDirty = Color(0xFFB98C06),
+    weight = Color(0xFFD8783D),
+    height = Color(0xFF02A99B),
+    crying = Color(0xFFBE4673),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }
