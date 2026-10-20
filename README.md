@@ -289,7 +289,6 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 | `scripts/dev.sh check`             | правила проекта, unit-тесты со сверкой скриншотов, lint и debug-сборка (обязательная проверка) |
 | `scripts/dev.sh rules`             | только правила проекта, без Gradle — за пару секунд                     |
 | `scripts/dev.sh goldens`           | перезаписать эталонные скриншоты экранов после намеренной правки UI     |
-| `scripts/dev.sh deps`              | заново записать контрольные суммы зависимостей — после новой зависимости или версии |
 | `scripts/dev.sh logcat`            | логи приложения (не теряются при перезапуске и падении)                 |
 | `scripts/dev.sh db`                | скачать базу в `build/debug-db/babylog.db` (в VS Code — SQLite Viewer)  |
 | `scripts/dev.sh seed`              | тестовый дневник «Сони» за все дни с рождения — в Download устройства; дальше ⋮ → «Импорт из CSV» |
@@ -323,9 +322,7 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 сверяет схемы базы; debug APK прикладывается к прогону. Упавший шаг повторяется
 локально той же командой: `scripts/dev.sh rules`, `build` или `schemas`.
 Зависимости раз в неделю обновляет Dependabot. Почему так —
-[ADR-0011](docs/adr/0011-ci-github-actions.md). Сборка сверяет SHA-256 каждой зависимости
-с `gradle/verification-metadata.xml`: после новой зависимости или версии (и в PR Dependabot)
-суммы записывает `scripts/dev.sh deps` ([ADR-0034](docs/adr/0034-dependency-verification.md)).
+[ADR-0011](docs/adr/0011-ci-github-actions.md).
 
 Повторяемые процедуры агента — скиллы в [.claude/skills/](.claude/skills/): сдача задачи
 `/pr`, тестовый дневник `/seed`, выпуск версии `/release`. Версию агент собирает по команде

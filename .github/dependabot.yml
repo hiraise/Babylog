@@ -1,6 +1,5 @@
 # Обновления зависимостей (ADR-0011). Каждый PR Dependabot проходит CI; обновление без смены
-# поведения ADR не требует (ADR-0006). Суммы новых версий Dependabot не пишет: в его ветке нужен
-# scripts/dev.sh deps, иначе CI упадёт на проверке зависимостей (ADR-0034)
+# поведения ADR не требует (ADR-0006).
 version: 2
 updates:
   - package-ecosystem: gradle
