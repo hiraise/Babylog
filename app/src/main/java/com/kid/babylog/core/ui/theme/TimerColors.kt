@@ -8,7 +8,9 @@ import androidx.compose.ui.graphics.Color
 /**
  * Заливка идущего таймера (`TimerTile`, `WideTimerTile`): фон [container], текст и иконка на нём —
  * [content]. В светлой теме это акцент `primary`, в тёмной — тон акцента `primaryContainer`
- * со светлыми цифрами: большая светлая плашка ночью слепит (ADR-0032).
+ * со светлыми цифрами: большая светлая плашка ночью слепит (ADR-0032). Заливка отделяется от карточек
+ * соседних плиток светлотой, а не только оттенком: не меньше 2:1 к `surfaceContainerLow` во всех палитрах,
+ * кроме «Классики», — проверяет `ThemeContrastTest`.
  */
 @Immutable
 class TimerColors(val container: Color, val content: Color)
