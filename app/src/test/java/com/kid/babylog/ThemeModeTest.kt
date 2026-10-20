@@ -3,8 +3,8 @@ package com.kid.babylog
 import android.content.ComponentName
 import android.content.pm.ActivityInfo
 import android.graphics.drawable.ColorDrawable
-import android.os.Looper
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.kid.babylog.core.data.DarkPalette
 import com.kid.babylog.core.data.PrefsThemeModeStore
@@ -17,13 +17,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import java.time.Duration
 
 /**
  * Тема, выбранная в приложении, перекрывает системную и меняется без пересоздания окна (ADR-0017),
@@ -31,6 +30,14 @@ import java.time.Duration
  */
 @RunWith(RobolectricTestRunner::class)
 class ThemeModeTest {
+
+    /**
+     * Окно перекомпоновывает рекомпозер этого правила, и `waitForIdle` доводит смену темы до окна. Общий
+     * диспетчер Compose ненадёжен: если тест до этого закончился с отложенной задачей главного потока,
+     * Robolectric её выбрасывает, и диспетчер стоит до конца JVM — смена темы не дошла бы до окна.
+     */
+    @get:Rule
+    val compose = createEmptyComposeRule()
 
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
@@ -76,7 +83,7 @@ class ThemeModeTest {
         val activity = controller.get()
         assertEquals(LightColors.background.toArgb(), activity.windowColor())
         store.select(ThemeChoice(mode = ThemeMode.DARK))
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        compose.waitForIdle()
         assertSame(activity, controller.get())
         assertFalse(activity.isFinishing)
         assertEquals(background(DarkPalette.DEFAULT), activity.windowColor())
@@ -88,7 +95,7 @@ class ThemeModeTest {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         val activity = controller.get()
         store.select(ThemeChoice(mode = ThemeMode.DARK, darkPalette = DarkPalette.NIGHTLIGHT))
-        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+        compose.waitForIdle()
         assertSame(activity, controller.get())
         assertFalse(activity.isFinishing)
         assertEquals(background(DarkPalette.NIGHTLIGHT), activity.windowColor())
