@@ -1,6 +1,6 @@
 # ADR-0019: Главный экран — ребёнок в шапке, вкладки «Сегодня» и «История»
 
-- **Статус:** Принято
+- **Статус:** Заменено [ADR-0035](0035-bottom-navigation.md)
 - **Дата:** 2026-10-16
 - **Затрагивает:** `feature/diary/` (`DiaryScreen.kt`, `DiaryContent.kt`), `feature/children/ChildSelector.kt`, `core/ui/components/Avatar.kt`, `core/ui/Format.kt` (`diaryTitle`)
 

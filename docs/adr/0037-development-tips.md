@@ -1,6 +1,6 @@
 # ADR-0037: «Развитие» — советы и окна навыков ВОЗ по возрасту из файлов приложения, каждый совет сверен с источником
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-20
 - **Затрагивает:** `feature/development/`, `app/src/main/assets/development/`, `.claude/agents/tips-verifier.md`, `DevelopmentSeenStore`, полоса советов в `TodayContent`, роль навыков в `ChartColors`
 
