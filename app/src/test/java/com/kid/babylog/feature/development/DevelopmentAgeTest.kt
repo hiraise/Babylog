@@ -56,7 +56,7 @@ class DevelopmentAgeTest {
 
     @Test
     fun `milestone state is relative to its window`() {
-        val sitting = MilestoneWindow("sitting", "Сидит без поддержки", 115..279)
+        val sitting = MilestoneWindow("sitting", "Сидит без поддержки", 115..279, 3.8..9.2)
         assertEquals(MilestoneState.AHEAD, sitting.stateAt(114))
         assertEquals(MilestoneState.IN_WINDOW, sitting.stateAt(115))
         assertEquals(MilestoneState.IN_WINDOW, sitting.stateAt(279))

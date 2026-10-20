@@ -1,6 +1,7 @@
 package com.kid.babylog.testing
 
 import com.kid.babylog.core.data.DatabaseRecovery
+import com.kid.babylog.core.data.DevelopmentSeenStore
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.data.SelectedChildStore
@@ -18,11 +19,18 @@ import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toEvent
 import com.kid.babylog.core.model.toRecord
+import com.kid.babylog.feature.development.DevelopmentViewModel
+import com.kid.babylog.feature.development.MilestoneTable
+import com.kid.babylog.feature.development.Tip
+import com.kid.babylog.feature.development.TipSource
+import com.kid.babylog.feature.development.TipsSource
 import com.kid.babylog.feature.transfer.DocumentStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 
 /** Репозиторий в памяти с тем же поведением, что у Room-реализации. */
 class FakeDiaryRepository(
@@ -167,3 +175,28 @@ class FakeRecoveryNotices : RecoveryNotices {
         pending.value = null
     }
 }
+
+/** Отметки «раздел „Развитие“ открывали» в памяти (ADR-0037). */
+class FakeDevelopmentSeenStore(initial: Map<Long, Int> = emptyMap()) : DevelopmentSeenStore {
+    override val seenWeeks = MutableStateFlow(initial)
+
+    override fun markSeen(childId: Long, week: Int) {
+        seenWeeks.value += childId to week
+    }
+}
+
+/** Советы и окна навыков для тестов; по умолчанию — пусто: полосы советов на «Сегодня» нет. */
+class FakeTipsSource(
+    private val tips: List<Tip> = emptyList(),
+    private val milestones: MilestoneTable = MilestoneTable(TipSource("ВОЗ", "https://www.who.int/", "Таблица"), LocalDate.of(2026, 10, 20), emptyList()),
+) : TipsSource {
+    override fun tips() = tips
+
+    override fun milestones() = milestones
+}
+
+/** «Развитие» для тестов экрана: данные готовы сразу, без фонового потока. */
+fun testDevelopment(
+    source: TipsSource = FakeTipsSource(),
+    seen: DevelopmentSeenStore = FakeDevelopmentSeenStore(),
+) = DevelopmentViewModel(source, seen, io = Dispatchers.Unconfined)

@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     viewModel = viewModel(factory = container.diaryViewModelFactory),
                     theme = theme,
                     onThemeChange = ::changeTheme,
+                    development = viewModel(factory = container.developmentViewModelFactory),
                     recovery = recovery,
                     onRecoverySeen = container.recoveryNotices::dismiss,
                 )

@@ -184,6 +184,8 @@ check_adr_rules() {
         report "ADR-0033: база открывается через SafeOpenHelperFactory — иначе Android удалит повреждённую базу" "$code/core/data/room/AppDatabase.kt" || failed=1
     hits="$(grep -rnH 'fallbackToDestructiveMigration' "$code" || true)"
     report "ADR-0033: fallbackToDestructiveMigration не включается — неудачная миграция не должна стирать дневник" "$hits" || failed=1
+    hits="$(grep -rnHE '(Primary|Secondary|Scrollable|Primary.*Scrollable)?TabRow\(' "$code/feature/diary" || true)"
+    report "ADR-0035: разделы главного экрана переключает нижняя панель — вкладок на главном экране нет" "$hits" || failed=1
     return "$failed"
 }
 

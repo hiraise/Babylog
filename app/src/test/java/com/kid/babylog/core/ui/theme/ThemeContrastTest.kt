@@ -118,6 +118,7 @@ private typealias ChartSeries = KProperty1<ChartColors, Color>
 private val CHART_SERIES: List<ChartSeries> = listOf(
     ChartColors::sleep, ChartColors::daySleep, ChartColors::feeding, ChartColors::diaperWet, ChartColors::diaperMixed,
     ChartColors::diaperDirty, ChartColors::weight, ChartColors::height, ChartColors::crying,
+    ChartColors::milestone, ChartColors::milestoneOther,
 )
 
 /**
@@ -133,6 +134,7 @@ private val CHART_NEIGHBORS: List<Pair<ChartSeries, ChartSeries>> = listOf(
     ChartColors::feeding to ChartColors::crying,
     ChartColors::diaperWet to ChartColors::diaperMixed,
     ChartColors::diaperMixed to ChartColors::diaperDirty,
+    ChartColors::milestone to ChartColors::milestoneOther,
 )
 
 /** Графики светлой темы и всех тёмных палитр — вместе с палитрой, на карточке которой они лежат. */

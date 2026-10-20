@@ -22,6 +22,9 @@ import androidx.compose.ui.graphics.Color
  * Тёмных наборов два: спокойный [CalmDarkChartColors] — общий для спокойных палитр (ADR-0032),
  * и прежний [ClassicDarkChartColors] — для «Классики».
  *
+ * Окна навыков ВОЗ (ADR-0037): окно, в котором ребёнок сейчас, — [milestone], остальные — [milestoneOther].
+ * Это соседи на одном графике, их различает и светлота: зелёный против серого.
+ *
  * Новый ряд — новое поле здесь и во всех трёх наборах, а не литерал в экране (ADR-0010).
  */
 @Immutable
@@ -38,6 +41,10 @@ class ChartColors(
     val weight: Color,
     val height: Color,
     val crying: Color,
+    /** Окно навыка ВОЗ, в котором ребёнок сейчас (ADR-0037); в каждом наборе — как [feeding]. */
+    val milestone: Color,
+    /** Окна навыков, до которых ребёнок не дорос или которые прошли: серый той же заметности. */
+    val milestoneOther: Color,
 )
 
 internal val LightChartColors = ChartColors(
@@ -50,6 +57,8 @@ internal val LightChartColors = ChartColors(
     weight = Color(0xFFEB6834),
     height = Color(0xFF0F8A6A),
     crying = Color(0xFFB5338A),
+    milestone = Color(0xFF348333),
+    milestoneOther = Color(0xFF8C8C8C),
 )
 
 /**
@@ -66,6 +75,8 @@ internal val ClassicDarkChartColors = ChartColors(
     weight = Color(0xFFD95926),
     height = Color(0xFF199E70),
     crying = Color(0xFFE05A9C),
+    milestone = Color(0xFF3F9E3E),
+    milestoneOther = Color(0xFF9AA3AD),
 )
 
 /**
@@ -85,6 +96,8 @@ internal val CalmDarkChartColors = ChartColors(
     weight = Color(0xFFD8783D),
     height = Color(0xFF02A99B),
     crying = Color(0xFFBE4673),
+    milestone = Color(0xFF5FA350),
+    milestoneOther = Color(0xFF9AA2AA),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }
