@@ -31,8 +31,8 @@ enum class Metric(val title: String) {
     CRYING("Плач"),
 }
 
-/** Ряд графика; цвет ряда UI берёт из темы (`ChartColors`), а не из модели. */
-enum class Series { FEEDING, SLEEP, DIAPER_WET, DIAPER_MIXED, DIAPER_DIRTY, CRYING }
+/** Ряд графика; цвет ряда UI берёт из темы (`ChartColors`), а не из модели. Сон — ночной и дневной (ADR-0036). */
+enum class Series { FEEDING, NIGHT_SLEEP, DAY_SLEEP, DIAPER_WET, DIAPER_MIXED, DIAPER_DIRTY, CRYING }
 
 /**
  * Столбик графика: части снизу вверх. [partial] — сутки или неделя ещё идут; [date] — день,
@@ -47,8 +47,11 @@ data class ChartColumn(
     val caption: String,
 )
 
-/** Пункт легенды: цвет ряда, вид подгузника для иконки, его название для TalkBack и среднее за сутки. */
-data class LegendItem(val series: Series, val kind: DiaperKind, val label: String, val text: String)
+/**
+ * Пункт легенды: цвет ряда, вид подгузника для иконки (у сна иконки нет), название ряда для TalkBack
+ * и среднее за сутки — у сна вместе с «ночью» или «днём».
+ */
+data class LegendItem(val series: Series, val kind: DiaperKind?, val label: String, val text: String)
 
 /** Карточка-график: главное число, сравнение, пояснение, легенда и столбики. */
 data class MetricModel(
@@ -132,7 +135,8 @@ private fun parts(metric: Metric, days: List<DayStats>): List<Pair<Series, Float
     return when (metric) {
         Metric.FEEDINGS -> listOf(Series.FEEDING to avg { it.feedings })
         Metric.BOTTLES -> listOf(Series.FEEDING to avg { it.bottleMl })
-        Metric.SLEEP -> listOf(Series.SLEEP to avg { it.sleepMillis } / HOUR)
+        // Ночь внизу столбика, день сверху: ночной сон — основа суток
+        Metric.SLEEP -> listOf(Series.NIGHT_SLEEP to avg { it.nightSleepMillis } / HOUR, Series.DAY_SLEEP to avg { it.daySleepMillis } / HOUR)
         Metric.DIAPERS -> DIAPER_SERIES.map { (kind, series) -> series to avg { it.diapers[kind] ?: 0 } }
         Metric.CRYING -> listOf(Series.CRYING to avg { it.cryingMillis } / MINUTE)
     }
@@ -226,12 +230,17 @@ internal fun metricModel(metric: Metric, period: AnalyticsPeriod, days: List<Day
         unit = if (value == null) "нет полных суток с записями" else "в сутки",
         delta = delta,
         note = note,
-        legend = if (metric == Metric.DIAPERS && legendDays.isNotEmpty()) {
-            DIAPER_SERIES.map { (kind, series) ->
+        legend = when {
+            legendDays.isEmpty() -> emptyList()
+            metric == Metric.DIAPERS -> DIAPER_SERIES.map { (kind, series) ->
                 LegendItem(series, kind, diaperLabel(kind, sex), "%.1f".format(RU, legendDays.map { (it.diapers[kind] ?: 0).toFloat() }.average()))
             }
-        } else {
-            emptyList()
+            // Сколько спит ночью и сколько днём — в среднем за те же сутки, что и главное число
+            metric == Metric.SLEEP -> listOf(
+                LegendItem(Series.NIGHT_SLEEP, null, "сон", "ночью " + formatDuration(legendDays.map { it.nightSleepMillis }.average().roundToLong())),
+                LegendItem(Series.DAY_SLEEP, null, "сон", "днём " + formatDuration(legendDays.map { it.daySleepMillis }.average().roundToLong())),
+            )
+            else -> emptyList()
         },
         columns = columns,
         maxValue = top.toFloat(),
@@ -296,7 +305,12 @@ private fun caption(metric: Metric, bucket: Bucket, byWeeks: Boolean, sex: Sex?)
     if (bucket.days.isEmpty()) return "${bucket.name}: записей нет$suffix"
     if (byWeeks) {
         val average = total(metric, bucket.days) ?: 0f
-        return "${bucket.name}: в среднем ${formatValue(metric, average)} в сутки$suffix"
+        val split = if (metric == Metric.SLEEP) {
+            sleepSplit(bucket.days.map { it.nightSleepMillis }.average().roundToLong(), bucket.days.map { it.daySleepMillis }.average().roundToLong())
+        } else {
+            ""
+        }
+        return "${bucket.name}: в среднем ${formatValue(metric, average)} в сутки$split$suffix"
     }
     val day = bucket.days.single()
     val text = when (metric) {
@@ -306,7 +320,7 @@ private fun caption(metric: Metric, bucket: Bucket, byWeeks: Boolean, sex: Sex?)
             day.breastMillis?.takeIf { it > 0 }?.let { append(", у груди ${formatDuration(it)}") }
         }
         Metric.BOTTLES -> "${day.bottles} ${plural(day.bottles, "бутылочка", "бутылочки", "бутылочек")}, ${day.bottleMl} мл"
-        Metric.SLEEP -> "сон ${formatDuration(day.sleepMillis)}" +
+        Metric.SLEEP -> "сон ${formatDuration(day.sleepMillis)}${day.sleepSplit()}" +
             (day.sleeps.takeIf { it > 0 }?.let { ", $it ${plural(it, "раз", "раза", "раз")}" } ?: "") +
             (day.longestSleepMillis.takeIf { it > 0 }?.let { ", самый долгий ${formatDuration(it)}" } ?: "")
         // Плач через полночь: минуты есть в обоих сутках, а раз — только в тех, где он начался
@@ -322,3 +336,12 @@ private fun caption(metric: Metric, bucket: Bucket, byWeeks: Boolean, sex: Sex?)
     }
     return "${bucket.name}: $text$suffix"
 }
+
+/** « (ночью 9 ч 40 мин, днём 2 ч 52 мин)» — из чего сложился сон (ADR-0036); сна нет — пусто. */
+internal fun sleepSplit(nightMillis: Long, dayMillis: Long): String =
+    listOfNotNull(
+        nightMillis.takeIf { it > 0 }?.let { "ночью ${formatDuration(it)}" },
+        dayMillis.takeIf { it > 0 }?.let { "днём ${formatDuration(it)}" },
+    ).joinToString(", ", prefix = " (", postfix = ")").takeIf { nightMillis > 0 || dayMillis > 0 }.orEmpty()
+
+internal fun DayStats.sleepSplit(): String = sleepSplit(nightSleepMillis, daySleepMillis)

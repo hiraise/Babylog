@@ -116,7 +116,7 @@ private val RU = Locale.forLanguageTag("ru")
 private typealias ChartSeries = KProperty1<ChartColors, Color>
 
 private val CHART_SERIES: List<ChartSeries> = listOf(
-    ChartColors::sleep, ChartColors::feeding, ChartColors::diaperWet, ChartColors::diaperMixed,
+    ChartColors::sleep, ChartColors::daySleep, ChartColors::feeding, ChartColors::diaperWet, ChartColors::diaperMixed,
     ChartColors::diaperDirty, ChartColors::weight, ChartColors::height, ChartColors::crying,
 )
 
@@ -126,6 +126,9 @@ private val CHART_SERIES: List<ChartSeries> = listOf(
  */
 private val CHART_NEIGHBORS: List<Pair<ChartSeries, ChartSeries>> = listOf(
     ChartColors::sleep to ChartColors::feeding,
+    ChartColors::sleep to ChartColors::daySleep,
+    ChartColors::daySleep to ChartColors::feeding,
+    ChartColors::daySleep to ChartColors::crying,
     ChartColors::sleep to ChartColors::crying,
     ChartColors::feeding to ChartColors::crying,
     ChartColors::diaperWet to ChartColors::diaperMixed,

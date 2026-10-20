@@ -136,7 +136,7 @@ class AnalyticsModelTest {
         }
         val sleep = model(events).metric(Metric.SLEEP)
         assertEquals("4,0 раза в сутки · обычно раз в 3 ч · самый долгий сон — 5 ч", sleep.note)
-        assertEquals("сб, 17 окт.: сон 8 ч, 4 раза, самый долгий 5 ч", sleep.columns[5].caption)
+        assertEquals("сб, 17 окт.: сон 8 ч (ночью 5 ч, днём 3 ч), 4 раза, самый долгий 5 ч", sleep.columns[5].caption)
     }
 
     @Test
@@ -232,5 +232,40 @@ class AnalyticsModelTest {
         assertEquals("+1,9 см в месяц с 19 июл.", height.note)
         assertEquals(listOf("56", "58", "60", "62", "64 см"), height.yTicks.map { it.label })
         assertNull(model(listOf(Diaper(1, 1, at(day(1), 8), DiaperKind.WET))).height)
+    }
+
+    @Test
+    fun `sleep shows night and day averages and stacks them`() {
+        // Ночь — с 19:00 до 7:00 (ADR-0036): ночью 10 и 8 ч, днём 3 и 4 ч — в среднем 9 и 3,5 ч
+        val events = listOf(
+            Sleep(1, 1, at(day(2), 0), end = at(day(2), 6)),
+            Sleep(2, 1, at(day(2), 13), end = at(day(2), 16)),
+            Sleep(3, 1, at(day(2), 20), end = at(day(1), 0)),
+            Sleep(4, 1, at(day(1), 0), end = at(day(1), 5)),
+            Sleep(5, 1, at(day(1), 12), end = at(day(1), 16)),
+            Sleep(6, 1, at(day(1), 21), end = at(today, 0)),
+        )
+        val sleep = model(events).metric(Metric.SLEEP)
+        assertEquals("12 ч 30 мин", sleep.value)
+        assertEquals(
+            listOf(Series.NIGHT_SLEEP to "ночью 9 ч", Series.DAY_SLEEP to "днём 3 ч 30 мин"),
+            sleep.legend.map { it.series to it.text },
+        )
+        // Ночь внизу столбика, день сверху
+        assertEquals(listOf(Series.NIGHT_SLEEP to 8f, Series.DAY_SLEEP to 4f), sleep.columns[5].parts)
+        assertEquals("пт, 16 окт.: сон 13 ч (ночью 10 ч, днём 3 ч), 3 раза, самый долгий 6 ч", sleep.columns[4].caption)
+    }
+
+    @Test
+    fun `weekly sleep caption tells night and day`() {
+        val events = (1L..14L).flatMap { n ->
+            listOf(
+                Sleep(n * 3, 1, at(day(n), 0), end = at(day(n), 6)),
+                Sleep(n * 3 + 1, 1, at(day(n), 13), end = at(day(n), 16)),
+                Sleep(n * 3 + 2, 1, at(day(n), 21), end = at(day(n - 1), 0)),
+            )
+        }
+        val sleep = model(events, AnalyticsPeriod.ALL).metric(Metric.SLEEP)
+        assertTrue(sleep.columns.first().caption, sleep.columns.first().caption.endsWith("в среднем 12 ч в сутки (ночью 9 ч, днём 3 ч)"))
     }
 }

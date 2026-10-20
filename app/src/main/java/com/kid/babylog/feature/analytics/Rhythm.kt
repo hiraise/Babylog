@@ -24,14 +24,15 @@ import kotlin.math.roundToInt
 data class DaySpan(val from: Float, val to: Float)
 
 /**
- * Строка «Ритма дня»: сон, кормления грудью и плач (ADR-0030) — полосами, бутылочки и кормления без
- * длительности (до ADR-0015) — рисками, подгузники — точками, заметки (ADR-0031) — булавками над строкой;
- * [end] — докуда сутки уже прошли (у сегодня — до `now`).
+ * Строка «Ритма дня»: сон — ночной и дневной (ADR-0036), кормления грудью и плач (ADR-0030) — полосами,
+ * бутылочки и кормления без длительности (до ADR-0015) — рисками, подгузники — точками, заметки (ADR-0031) —
+ * булавками над строкой; [end] — докуда сутки уже прошли (у сегодня — до `now`).
  */
 data class RhythmDay(
     val date: LocalDate,
     val label: String,
-    val sleeps: List<DaySpan>,
+    val nightSleeps: List<DaySpan>,
+    val daySleeps: List<DaySpan>,
     val feedings: List<DaySpan>,
     val cryings: List<DaySpan>,
     val instantFeedings: List<Float>,
@@ -74,7 +75,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
         if (to <= start || from >= visibleEnd) null else DaySpan(fraction(maxOf(from, start)), fraction(minOf(to, visibleEnd)))
     fun instant(t: Long): Float? = if (t in start until visibleEnd) fraction(t) else null
 
-    val sleeps = mutableListOf<DaySpan>()
+    val nightSleeps = mutableListOf<DaySpan>()
+    val daySleeps = mutableListOf<DaySpan>()
     val feedings = mutableListOf<DaySpan>()
     val cryings = mutableListOf<DaySpan>()
     val instants = mutableListOf<Float>()
@@ -82,7 +84,11 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
     val notes = mutableListOf<Float>()
     events.forEach { event ->
         when (event) {
-            is Sleep -> span(event.start, event.end ?: now)?.let(sleeps::add)
+            // Сон через 7:00 или 19:00 — две полосы: ночная часть и дневная (ADR-0036)
+            is Sleep -> splitByNight(event.start, event.end ?: now, zone).let { (night, day) ->
+                night.forEach { (from, to) -> span(from, to)?.let(nightSleeps::add) }
+                day.forEach { (from, to) -> span(from, to)?.let(daySleeps::add) }
+            }
             is Feeding -> {
                 val feedingEnd = event.end
                 if (feedingEnd != null && feedingEnd <= event.start) {
@@ -102,7 +108,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
     return RhythmDay(
         date = day.date,
         label = if (day.complete) day.date.format(ROW_LABEL) else "сегодня",
-        sleeps = sleeps,
+        nightSleeps = nightSleeps,
+        daySleeps = daySleeps,
         feedings = feedings,
         cryings = cryings,
         instantFeedings = instants,
@@ -112,7 +119,7 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
         description = if (!day.tracked) {
             "$name: записей нет"
         } else {
-            "$name: сон ${formatDuration(day.sleepMillis)}, " +
+            "$name: сон ${formatDuration(day.sleepMillis)}${day.sleepSplit()}, " +
                 "${day.feedings} ${plural(day.feedings, "кормление", "кормления", "кормлений")}, " +
                 "${day.diaperCount} ${plural(day.diaperCount, "подгузник", "подгузника", "подгузников")}" +
                 (day.cryingMillis.takeIf { it > 0 }?.let { ", плач ${formatDuration(it)}" } ?: "") +
