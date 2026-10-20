@@ -5,8 +5,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 /**
- * Ночь — с этого часа вечера до [NIGHT_END_HOUR] утра, день — остальное (ADR-0036): так считают
- * в исследованиях детского сна (опросник BISQ) и в большинстве дневников малыша.
+ * Ночь — с этого часа вечера до [NIGHT_END_HOUR] утра, день — остальное (ADR-0036), как в опроснике
+ * детского сна BISQ; источники — [SLEEP_SOURCES].
  */
 internal const val NIGHT_START_HOUR = 19
 internal const val NIGHT_END_HOUR = 7
