@@ -20,7 +20,7 @@ fun parseTips(json: String): List<Tip> {
     }
 }
 
-/** Окна навыков из `who_motor_milestones.json`: источник, дата сверки и шесть навыков с днями окна. */
+/** Окна навыков из `who_motor_milestones.json`: источник, дата сверки и шесть навыков с окнами в днях и месяцах. */
 fun parseMilestones(json: String): MilestoneTable {
     val obj = parse { JSONObject(json) }
     return parse("окна навыков") {
@@ -30,10 +30,13 @@ fun parseMilestones(json: String): MilestoneTable {
             reviewedAt = obj.date("reviewedAt"),
             milestones = (0 until items.length()).map { index ->
                 val item = items.getJSONObject(index)
+                val months = item.getDouble("fromMonths")..item.getDouble("toMonths")
+                require(months.start < months.endInclusive) { "fromMonths больше toMonths" }
                 MilestoneWindow(
                     id = item.requiredString("id", "навык №$index"),
                     title = item.requiredString("title", "навык №$index"),
                     window = item.dayRange("fromDays", "toDays"),
+                    months = months,
                 )
             },
         )

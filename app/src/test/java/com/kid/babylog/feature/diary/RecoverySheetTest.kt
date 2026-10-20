@@ -13,6 +13,7 @@ import com.kid.babylog.testing.ComponentActivityRule
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -54,7 +55,7 @@ class RecoverySheetTest {
         val viewModel = DiaryViewModel(FakeDiaryRepository(), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, recovery = recovery, onRecoverySeen = { seen++ })
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), recovery = recovery, onRecoverySeen = { seen++ })
             }
         }
     }

@@ -69,10 +69,10 @@ class DevelopmentJsonTest {
             """
             {"source": {"name": "ВОЗ", "url": "https://cdn.who.int/t.pdf", "section": "1st и 99th"},
              "reviewedAt": "2026-10-20",
-             "milestones": [{"id": "sitting", "title": "Сидит без поддержки", "fromDays": 115, "toDays": 279}]}
+             "milestones": [{"id": "sitting", "title": "Сидит без поддержки", "fromDays": 115, "toDays": 279, "fromMonths": 3.8, "toMonths": 9.2}]}
             """.trimIndent()
         )
-        assertEquals(listOf(MilestoneWindow("sitting", "Сидит без поддержки", 115..279)), table.milestones)
+        assertEquals(listOf(MilestoneWindow("sitting", "Сидит без поддержки", 115..279, 3.8..9.2)), table.milestones)
         assertEquals("ВОЗ", table.source.name)
     }
 

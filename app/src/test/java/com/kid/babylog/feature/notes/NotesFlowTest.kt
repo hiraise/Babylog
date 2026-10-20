@@ -21,12 +21,14 @@ import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.analytics.TALL_PIXEL_5
 import com.kid.babylog.feature.diary.DiaryScreen
-import com.kid.babylog.feature.diary.DiaryTab
+import com.kid.babylog.feature.diary.DiaryView
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.diary.MainSection
 import com.kid.babylog.testing.ComponentActivityRule
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -78,18 +80,18 @@ class NotesFlowTest {
     @After
     fun restoreTimeZone() = TimeZone.setDefault(systemZone)
 
-    private fun show(tab: DiaryTab) {
+    private fun show(section: MainSection, view: DiaryView = DiaryView.DAYS) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = tab)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = section, initialDiaryView = view)
             }
         }
     }
 
     @Test
     fun `new note with a tag appears in the feed and the tag shows its summary`() {
-        show(DiaryTab.NOTES)
+        show(MainSection.DIARY, DiaryView.NOTES)
         compose.onNode(hasText("Заметка") and hasClickAction()).performClick()
         compose.onNode(hasSetTextAction() and hasText("Что заметили")).performTextInput("Тёрла ушко")
         compose.onNodeWithText("зубки").performClick()
@@ -113,7 +115,7 @@ class NotesFlowTest {
 
     @Test
     fun `note tile on Today opens the same note sheet`() {
-        show(DiaryTab.TODAY)
+        show(MainSection.TODAY)
         compose.onNode(hasText("Заметка") and hasClickAction()).performClick()
         compose.onNode(hasSetTextAction() and hasText("Что заметили")).performTextInput("Первый зуб")
         compose.onNodeWithText("Сохранить").performClick()
@@ -125,7 +127,7 @@ class NotesFlowTest {
 
     @Test
     fun `crying of the week leads to the crying section of analytics`() {
-        show(DiaryTab.NOTES)
+        show(MainSection.DIARY, DiaryView.NOTES)
         compose.onNode(hasText("в сутки за неделю", substring = true)).performClick()
         compose.onNodeWithText("Перед плачем").assertIsDisplayed()
     }

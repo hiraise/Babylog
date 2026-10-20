@@ -1,8 +1,8 @@
 package com.kid.babylog.feature.diary
 
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
@@ -46,6 +46,11 @@ import com.kid.babylog.feature.analytics.cryingWeekSummary
 import com.kid.babylog.feature.children.ChildSelector
 import com.kid.babylog.feature.children.ChildSheet
 import com.kid.babylog.feature.children.ChildrenSheet
+import com.kid.babylog.feature.development.DevelopmentContent
+import com.kid.babylog.feature.development.DevelopmentViewModel
+import com.kid.babylog.feature.development.WeekTipsBanner
+import com.kid.babylog.feature.development.developmentWeek
+import com.kid.babylog.feature.development.hasNewTips
 import com.kid.babylog.feature.editor.CryingDoneSheet
 import com.kid.babylog.feature.editor.EditEventSheet
 import com.kid.babylog.feature.editor.FeedingStartSheet
@@ -65,8 +70,10 @@ private enum class ChildSheetMode { NONE, ADD, EDIT }
 private const val NONE = -1L
 
 /**
- * Главный экран: подключает [DiaryViewModel] к [DiaryContent] и показывает нижние листы (ADR-0018).
- * Тему применяет `MainActivity` (ADR-0017): экран только показывает выбор и сообщает о новом.
+ * Главный экран (ADR-0035): шапка с ребёнком, нижняя панель разделов и нижние листы (ADR-0018).
+ * Подключает [DiaryViewModel] и [DevelopmentViewModel] (ADR-0037). Тему применяет `MainActivity`
+ * (ADR-0017): экран только показывает выбор и сообщает о новом. Системная «Назад» сначала закрывает
+ * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня».
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,7 +81,9 @@ fun DiaryScreen(
     viewModel: DiaryViewModel,
     theme: ThemeChoice,
     onThemeChange: (ThemeChoice) -> Unit,
-    initialTab: DiaryTab = DiaryTab.TODAY,
+    development: DevelopmentViewModel,
+    initialSection: MainSection = MainSection.TODAY,
+    initialDiaryView: DiaryView = DiaryView.DAYS,
     recovery: DatabaseRecovery? = null,
     onRecoverySeen: () -> Unit = {},
 ) {
@@ -110,7 +119,8 @@ fun DiaryScreen(
 
     val child = state.child
     // id вместо объектов: переживают поворот экрана
-    var tab by rememberSaveable { mutableStateOf(initialTab) }
+    var section by rememberSaveable { mutableStateOf(initialSection) }
+    var diaryView by rememberSaveable { mutableStateOf(initialDiaryView) }
     var newEvent by rememberSaveable { mutableStateOf<NewEventKind?>(null) }
     var startingSleep by rememberSaveable { mutableStateOf(false) }
     var startingFeeding by rememberSaveable { mutableStateOf(false) }
@@ -126,13 +136,32 @@ fun DiaryScreen(
     // NONE — «сегодня»: после полуночи история сама переходит на новый день. Запоминается только
     // день, выбранный вручную; при смене ребёнка — снова сегодня
     var selectedEpochDay by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
-    // Фильтр «Заметок» (ADR-0031) — здесь, а не во вкладке: метку открывает и «Аналитика»
+    // Фильтр «Заметок» (ADR-0031) — здесь, а не в «Дневнике»: метку открывает и «Аналитика»
     var notesFilter by rememberSaveable(child?.id, stateSaver = NotesFilterSaver) { mutableStateOf<NotesFilter>(NotesFilter.All) }
     // Раздел, с которого откроется «Аналитика»: карточка плача на «Заметках» ведёт сразу в «Плач»
     var analyticsStart by rememberSaveable { mutableStateOf<AnalyticsSection?>(null) }
     val today = now.toLocalDate()
     val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
     val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
+    val openSection = { target: MainSection ->
+        section = target
+        analyticsStart = null
+    }
+
+    // «Развитие» (ADR-0037): неделя ребёнка, точка на панели и «новые» на полосе, пока неделю не открывали
+    val developmentData by development.data.collectAsStateWithLifecycle()
+    val seenWeeks by development.seenWeeks.collectAsStateWithLifecycle()
+    val birth = child?.birthDate?.toLocalDate()
+    val week = remember(developmentData, birth, today) {
+        val data = developmentData
+        if (data != null && birth != null) developmentWeek(data, birth, today) else null
+    }
+    val newTips = child != null && hasNewTips(week, child.id, seenWeeks)
+    LaunchedEffect(section, child?.id, week?.week) {
+        if (section == MainSection.DEVELOPMENT && child != null && week != null) development.markSeen(child.id, week.week)
+    }
+    // Объявлен раньше «Назад» внутри разделов, поэтому срабатывает после них
+    BackHandler(enabled = section != MainSection.TODAY) { openSection(MainSection.TODAY) }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -143,37 +172,32 @@ fun DiaryScreen(
 
     Scaffold(
         topBar = {
-            Column {
-                // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
-                // как логотип в макете, под ним возраст, вес и рост (ADR-0019, ADR-0027)
-                TopAppBar(
-                    title = {
-                        if (child != null) {
-                            ChildSelector(child, state.lastWeight, state.lastHeight, now, onClick = { showChildren = true })
-                        } else {
-                            Text(
-                                "Дневник малыша",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        scrolledContainerColor = MaterialTheme.colorScheme.background,
-                    ),
-                    actions = {
-                        IconButton(onClick = { menuOpen = true }) {
-                            AppIcon(R.drawable.ic_more, contentDescription = "Меню")
-                        }
-                    },
-                )
-                DiaryTabs(tab) {
-                    tab = it
-                    analyticsStart = null
-                }
-            }
+            // Шапка сливается с фоном экрана. Слева — выбор ребёнка: «Дневник Маши» фирменным шрифтом,
+            // как логотип в макете, под ним возраст, вес и рост (ADR-0035, ADR-0027)
+            TopAppBar(
+                title = {
+                    if (child != null) {
+                        ChildSelector(child, state.lastWeight, state.lastHeight, now, onClick = { showChildren = true })
+                    } else {
+                        Text(
+                            "Дневник малыша",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.background,
+                ),
+                actions = {
+                    IconButton(onClick = { menuOpen = true }) {
+                        AppIcon(R.drawable.ic_more, contentDescription = "Меню")
+                    }
+                },
+            )
         },
+        bottomBar = { MainNavigationBar(section, onSelect = openSection, developmentBadge = newTips) },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
         if (child != null) {
@@ -194,46 +218,67 @@ fun DiaryScreen(
                 onSelectDate = selectDay,
                 onPickDate = { showDaySelector = true },
             )
-            when (tab) {
-                DiaryTab.TODAY -> TodayContent(state, child, now, actions, Modifier.padding(padding))
-                DiaryTab.HISTORY -> HistoryContent(state, child, now, selectedDate, actions, Modifier.padding(padding))
-                DiaryTab.NOTES -> {
-                    val minuteNow = now / 60_000
-                    val cryingWeek = remember(state.events, minuteNow) {
-                        cryingWeekSummary(state.events, now, ZoneId.systemDefault())?.let { CryingWeek(it.perDay, it.note) }
+            when (section) {
+                MainSection.TODAY -> TodayContent(
+                    state = state,
+                    child = child,
+                    now = now,
+                    actions = actions,
+                    modifier = Modifier.padding(padding),
+                    tipsBanner = week?.takeIf { it.allTips.isNotEmpty() }?.let { current ->
+                        { WeekTipsBanner(current, isNew = newTips, onClick = { openSection(MainSection.DEVELOPMENT) }) }
+                    },
+                )
+                MainSection.DIARY -> DiarySection(diaryView, onView = { diaryView = it }, modifier = Modifier.padding(padding)) { view ->
+                    when (view) {
+                        DiaryView.DAYS -> HistoryContent(state, child, now, selectedDate, actions)
+                        DiaryView.NOTES -> {
+                            val minuteNow = now / 60_000
+                            val cryingWeek = remember(state.events, minuteNow) {
+                                cryingWeekSummary(state.events, now, ZoneId.systemDefault())?.let { CryingWeek(it.perDay, it.note) }
+                            }
+                            NotesContent(
+                                events = state.events,
+                                sex = child.sex,
+                                now = now,
+                                photoCounts = state.photoCounts,
+                                filter = notesFilter,
+                                onFilter = { notesFilter = it },
+                                cryingWeek = cryingWeek,
+                                onOpenAnalytics = {
+                                    openSection(MainSection.ANALYTICS)
+                                    analyticsStart = AnalyticsSection.CRYING
+                                },
+                                onAddNote = { newEvent = NewEventKind.NOTE },
+                                onEdit = { editingId = it.id },
+                                onDelete = { deletingId = it.id },
+                            )
+                        }
                     }
-                    NotesContent(
-                        events = state.events,
-                        sex = child.sex,
-                        now = now,
-                        photoCounts = state.photoCounts,
-                        filter = notesFilter,
-                        onFilter = { notesFilter = it },
-                        cryingWeek = cryingWeek,
-                        onOpenAnalytics = {
-                            analyticsStart = AnalyticsSection.CRYING
-                            tab = DiaryTab.ANALYTICS
-                        },
-                        onAddNote = { newEvent = NewEventKind.NOTE },
-                        onEdit = { editingId = it.id },
-                        onDelete = { deletingId = it.id },
-                        modifier = Modifier.padding(padding),
-                    )
                 }
-                DiaryTab.ANALYTICS -> AnalyticsContent(
+                MainSection.DEVELOPMENT -> DevelopmentContent(
+                    child = child,
+                    data = developmentData,
+                    today = today,
+                    onSetBirthDate = { childSheet = ChildSheetMode.EDIT },
+                    modifier = Modifier.padding(padding),
+                )
+                MainSection.ANALYTICS -> AnalyticsContent(
                     events = state.events,
                     child = child,
                     now = now,
-                    // «В историю» и строка ритма открывают день на вкладке «История»
+                    // «В историю» и строка ритма открывают день в «Дневнике», вид «По дням»
                     onOpenDay = { day ->
                         selectDay(day)
-                        tab = DiaryTab.HISTORY
+                        diaryView = DiaryView.DAYS
+                        openSection(MainSection.DIARY)
                     },
                     modifier = Modifier.padding(padding),
                     initialSection = analyticsStart,
                     onOpenTag = { tag ->
                         notesFilter = NotesFilter.Tag(tag)
-                        tab = DiaryTab.NOTES
+                        diaryView = DiaryView.NOTES
+                        openSection(MainSection.DIARY)
                     },
                 )
             }

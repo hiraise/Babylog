@@ -17,6 +17,7 @@ import com.kid.babylog.core.data.room.AppDatabase
 import com.kid.babylog.core.data.room.RoomDiaryRepository
 import com.kid.babylog.core.ui.photo.sweepPhotoCache
 import com.kid.babylog.feature.development.AssetTipsSource
+import com.kid.babylog.feature.development.DevelopmentViewModel
 import com.kid.babylog.feature.development.TipsSource
 import com.kid.babylog.feature.diary.DiaryViewModel
 import com.kid.babylog.feature.transfer.ContentResolverDocumentStore
@@ -58,6 +59,10 @@ class AppContainer(context: Context) {
 
     val diaryViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
         initializer { DiaryViewModel(repository, selectedChild, documents, clock) }
+    }
+
+    val developmentViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
+        initializer { DevelopmentViewModel(tips, developmentSeen) }
     }
 }
 

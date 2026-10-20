@@ -8,12 +8,14 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
-import com.kid.babylog.feature.diary.DiaryTab
+import com.kid.babylog.feature.diary.DiaryView
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.diary.MainSection
 import com.kid.babylog.testing.ComponentActivityRule
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import com.kid.babylog.testing.SCREENSHOT_OPTIONS
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -58,7 +60,7 @@ class AnalyticsSectionScreenshotTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = MainSection.ANALYTICS)
             }
         }
     }

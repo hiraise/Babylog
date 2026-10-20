@@ -21,6 +21,7 @@ import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import com.kid.babylog.testing.SCREENSHOT_OPTIONS
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -74,7 +75,7 @@ class DiaryScreenshotTest {
     fun `crying in progress`() = capture("diary_crying", sampleDiary(cryingNow = true), dark = false)
 
     @Test
-    fun `history tab`() = capture("diary_history", sampleDiary(), dark = false, tab = DiaryTab.HISTORY)
+    fun `history tab`() = capture("diary_history", sampleDiary(), dark = false, section = MainSection.DIARY)
 
     @Test
     fun `first launch`() = capture("diary_first_launch", FakeDiaryRepository(), dark = false)
@@ -83,13 +84,13 @@ class DiaryScreenshotTest {
         name: String,
         repository: FakeDiaryRepository,
         dark: Boolean,
-        tab: DiaryTab = DiaryTab.TODAY,
+        section: MainSection = MainSection.TODAY,
         palette: DarkPalette = DarkPalette.DEFAULT,
     ) {
         val viewModel = DiaryViewModel(repository, FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark, darkPalette = palette) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = tab)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = section)
             }
         }
     }

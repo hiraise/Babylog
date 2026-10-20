@@ -14,7 +14,8 @@ NHS) запрещают менять текст и требуют сети ([ADR
 ## Решение
 
 - Контент — файлы `assets/development/`: `tips_ru.json` (советы) и `who_motor_milestones.json` (окна
-  шести навыков ВОЗ — 1-й и 99-й перцентили в днях из таблицы Motor Development Study). Читай встроенным
+  шести навыков ВОЗ — 1-й и 99-й перцентили в днях и в месяцах из таблицы Motor Development Study;
+  месяцы показывай как в таблице, а не пересчётом дней). Читай встроенным
   `org.json` через интерфейс `TipsSource`; библиотек не подключай. Сеть не используется.
 - Совет: `id`, `ageFromDays`, `ageToDays` (в пределах 0–364), `category` (`SLEEP`, `FEEDING`, `DEVELOPMENT`,
   `SAFETY`, `CRYING` — плач и поведение, `HEALTH`), `kind` (`TIP` или `DOCTOR` — «когда показать педиатру»),

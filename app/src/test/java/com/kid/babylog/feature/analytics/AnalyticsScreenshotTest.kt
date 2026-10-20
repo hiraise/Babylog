@@ -6,13 +6,15 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
-import com.kid.babylog.feature.diary.DiaryTab
+import com.kid.babylog.feature.diary.DiaryView
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.diary.MainSection
 import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import com.kid.babylog.testing.SCREENSHOT_OPTIONS
 import com.kid.babylog.testing.sampleMonths
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -62,7 +64,7 @@ class AnalyticsScreenshotTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         captureRoboImage("src/test/screenshots/$name.png", roborazziOptions = SCREENSHOT_OPTIONS) {
             BabyLogTheme(clock = clock, darkTheme = dark) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = MainSection.ANALYTICS)
             }
         }
     }

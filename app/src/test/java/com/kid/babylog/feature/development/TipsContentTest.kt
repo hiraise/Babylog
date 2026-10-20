@@ -7,6 +7,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.time.LocalDate
+import kotlin.math.abs
 
 /**
  * Проверка контента раздела «Развитие» по правилам ADR-0037 — на тех файлах, что попадут в сборку:
@@ -77,6 +78,12 @@ class TipsContentTest {
         assertEquals(6, table.milestones.size)
         assertTrue(table.source.url.startsWith("https://cdn.who.int/"))
         assertEquals(table.milestones.size, table.milestones.map { it.id }.toSet().size)
+        // Месяцы — как напечатаны у ВОЗ, но не дальше 0,1 от пересчёта дней: опечатку в одном из столбцов видно
+        val mismatched = table.milestones.filter { m ->
+            abs(m.months.start - m.window.first / DAYS_PER_MONTH) > MONTH_TOLERANCE ||
+                abs(m.months.endInclusive - m.window.last / DAYS_PER_MONTH) > MONTH_TOLERANCE
+        }
+        assertTrue("дни и месяцы не сходятся: ${mismatched.map { it.id }}", mismatched.isEmpty())
     }
 
     private fun LocalDate.isFresh() = !isAfter(today) && !isBefore(today.minusYears(2))
@@ -85,6 +92,7 @@ class TipsContentTest {
 
     private companion object {
         const val LAST_WEEK = 52
+        const val MONTH_TOLERANCE = 0.1
         const val MAX_TITLE = 60
         const val MAX_SUMMARY = 100
         const val MAX_BODY = 600
