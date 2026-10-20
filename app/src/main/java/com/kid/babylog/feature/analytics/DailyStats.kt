@@ -39,6 +39,11 @@ data class DayStats(
      */
     val breastMillis: Long?,
     val sleepMillis: Long,
+    /**
+     * Часть [sleepMillis] ночью (ADR-0036): сны блоков, захватывающих ядро ночи ([nightSleeps]). Ночь через
+     * полночь делится между сутками, как весь сон: ночь и день вместе — сон суток из сводки.
+     */
+    val nightSleepMillis: Long = 0,
     /** Самый долгий законченный сон, начатый в эти сутки. */
     val longestSleepMillis: Long,
     val diapers: Map<DiaperKind, Int>,
@@ -54,6 +59,7 @@ data class DayStats(
 ) {
     val feedings: Int get() = breastFeedings + bottles
     val sleeps: Int get() = sleepStarts.size
+    val daySleepMillis: Long get() = sleepMillis - nightSleepMillis
     val diaperCount: Int get() = diapers.values.sum()
 
     /** Сутки идут в средние, только если закончились и в них вели дневник. */
@@ -68,6 +74,7 @@ private class DayAccumulator {
     var breastMillis = 0L
     var breastUnknown = false
     var sleepMillis = 0L
+    var nightSleepMillis = 0L
     var longestSleepMillis = 0L
     val diapers = mutableMapOf<DiaperKind, Int>()
     val feedingStarts = mutableListOf<Long>()
@@ -87,6 +94,7 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
     val days = generateSequence(from) { it.plusDays(1) }.takeWhile { it <= to }.associateWith { DayAccumulator() }
     fun dateOf(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
     fun startOf(date: LocalDate): Long = date.atStartOfDay(zone).toInstant().toEpochMilli()
+    val night = nightSleeps(events, now, zone)
 
     /** Часть отрезка [start, end) внутри каждых суток периода. */
     fun spread(start: Long, end: Long, add: DayAccumulator.(Long) -> Unit) {
@@ -128,7 +136,10 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
                     sleepStarts += event.start
                 }
                 val end = event.end ?: now
-                spread(event.start, end) { sleepMillis += it }
+                spread(event.start, end) {
+                    sleepMillis += it
+                    if (event in night) nightSleepMillis += it
+                }
                 if (event.end != null) {
                     days[dateOf(event.start)]?.apply { longestSleepMillis = maxOf(longestSleepMillis, end - event.start) }
                 }
@@ -156,6 +167,7 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
             bottleMl = day.bottleMl,
             breastMillis = day.breastMillis.takeUnless { day.breastUnknown },
             sleepMillis = day.sleepMillis,
+            nightSleepMillis = day.nightSleepMillis,
             longestSleepMillis = day.longestSleepMillis,
             diapers = day.diapers.toMap(),
             feedingStarts = day.feedingStarts.sorted(),

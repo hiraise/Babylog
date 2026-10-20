@@ -14,6 +14,8 @@ import androidx.compose.ui.graphics.Color
  * Поэтому у бутылочки своего цвета нет: оранжевый и красный рядом с зелёным для дальтоника сливаются.
  * Плач (ADR-0030) в «Ритме дня» соседствует со сном и кормлением — поэтому пурпурный: красный
  * и оранжевый рядом с зелёным не различить, а от фиолетового сна его отделяет и светлота.
+ * Дневной сон (ADR-0036) — тот же фиолетовый, но светлее ночного [sleep] во всех наборах: в столбике
+ * они соседи, и различает их светлота. В тёмных темнее ночного нельзя — не будет 3:1 к карточке.
  * Контраст во всех палитрах проверяет `ThemeContrastTest`.
  *
  * Тёмных наборов два: спокойный [CalmDarkChartColors] — общий для спокойных палитр (ADR-0032),
@@ -23,7 +25,10 @@ import androidx.compose.ui.graphics.Color
  */
 @Immutable
 class ChartColors(
+    /** Ночной сон и сон вообще: «засыпает на ночь», плитка «Сон». */
     val sleep: Color,
+    /** Дневной сон (ADR-0036): светлее [sleep], лежит над ним в столбике «Сна». */
+    val daySleep: Color,
     /** Кормление грудью и бутылочкой. В светлой теме совпадает с `primary`. */
     val feeding: Color,
     val diaperWet: Color,
@@ -36,6 +41,7 @@ class ChartColors(
 
 internal val LightChartColors = ChartColors(
     sleep = Color(0xFF6250D6),
+    daySleep = Color(0xFF8D8BCF),
     feeding = Color(0xFF348333),
     diaperWet = Color(0xFF2A78D6),
     diaperMixed = Color(0xFFD55181),
@@ -51,6 +57,7 @@ internal val LightChartColors = ChartColors(
  */
 internal val ClassicDarkChartColors = ChartColors(
     sleep = Color(0xFF9085E9),
+    daySleep = Color(0xFFC6C3FD),
     feeding = Color(0xFF3F9E3E),
     diaperWet = Color(0xFF3987E5),
     diaperMixed = Color(0xFFD55181),
@@ -68,6 +75,7 @@ internal val ClassicDarkChartColors = ChartColors(
  */
 internal val CalmDarkChartColors = ChartColors(
     sleep = Color(0xFF868BD9),
+    daySleep = Color(0xFFC0C6FC),
     feeding = Color(0xFF6C9F61),
     diaperWet = Color(0xFF5798CE),
     diaperMixed = Color(0xFFAE5A84),

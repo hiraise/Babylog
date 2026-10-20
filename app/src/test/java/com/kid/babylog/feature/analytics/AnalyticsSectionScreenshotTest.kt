@@ -32,8 +32,9 @@ private const val CRYING_PIXEL_5 = "w393dp-h1400dp-normal-long-notround-any-440d
 
 /**
  * Экраны разделов «Аналитики» (ADR-0029) на эталонных скриншотах: раздел открывается касанием плитки,
- * как в приложении. Кормления — с графиком бутылочки, вес — со списком взвешиваний, плач — с «Перед
- * плачем» и причинами (ADR-0030), метки — с «Метками и режимом» (ADR-0031). Обновить — `scripts/dev.sh goldens`.
+ * как в приложении. Кормления — с графиком бутылочки, сон — ночной и дневной (ADR-0036), вес — со списком
+ * взвешиваний, плач — с «Перед плачем» и причинами (ADR-0030), метки — с «Метками и режимом» (ADR-0031).
+ * Обновить — `scripts/dev.sh goldens`.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -67,6 +68,9 @@ class AnalyticsSectionScreenshotTest {
 
     @Test
     fun `feedings with bottles`() = capture(tile = "Кормления", name = "analytics_feedings")
+
+    @Test
+    fun `sleep at night and in the day`() = capture(tile = "Сон", name = "analytics_sleep")
 
     @Test
     fun `weight with weighings`() = capture(tile = "Вес", name = "analytics_weight")

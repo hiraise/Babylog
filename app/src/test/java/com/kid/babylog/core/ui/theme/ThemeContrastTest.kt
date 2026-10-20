@@ -137,7 +137,7 @@ class ThemeContrastTest {
             DarkPalette.entries.map { Triple("тёмная ${it.name}", darkColors(it), darkChartColors(it)) }
         val failures = charts.flatMap { (name, scheme, chart) ->
             listOf(
-                "sleep" to chart.sleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,
+                "sleep" to chart.sleep, "daySleep" to chart.daySleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,
                 "diaperMixed" to chart.diaperMixed, "diaperDirty" to chart.diaperDirty, "weight" to chart.weight,
                 "height" to chart.height, "crying" to chart.crying,
             ).mapNotNull { (series, color) ->

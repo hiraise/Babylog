@@ -24,14 +24,15 @@ import kotlin.math.roundToInt
 data class DaySpan(val from: Float, val to: Float)
 
 /**
- * Строка «Ритма дня»: сон, кормления грудью и плач (ADR-0030) — полосами, бутылочки и кормления без
- * длительности (до ADR-0015) — рисками, подгузники — точками, заметки (ADR-0031) — булавками над строкой;
- * [end] — докуда сутки уже прошли (у сегодня — до `now`).
+ * Строка «Ритма дня»: сон — ночной и дневной (ADR-0036), кормления грудью и плач (ADR-0030) — полосами,
+ * бутылочки и кормления без длительности (до ADR-0015) — рисками, подгузники — точками, заметки (ADR-0031) —
+ * булавками над строкой; [end] — докуда сутки уже прошли (у сегодня — до `now`).
  */
 data class RhythmDay(
     val date: LocalDate,
     val label: String,
-    val sleeps: List<DaySpan>,
+    val nightSleeps: List<DaySpan>,
+    val daySleeps: List<DaySpan>,
     val feedings: List<DaySpan>,
     val cryings: List<DaySpan>,
     val instantFeedings: List<Float>,
@@ -46,12 +47,6 @@ data class RhythmModel(val days: List<RhythmDay>, val summary: String?)
 
 const val RHYTHM_DAYS = 7
 
-/** Перерыв в сне до часа (ночное кормление, смена подгузника) не прерывает ночь. */
-private const val NIGHT_GAP_MILLIS = 60 * 60_000L
-
-/** Ночь суток — сон, захватывающий отрезок от полуночи до этого часа. */
-private const val NIGHT_CORE_END_HOUR = 5L
-
 /** Средние засыпания и пробуждения показываются, если ночей не меньше стольких. */
 private const val MIN_NIGHTS = 3
 
@@ -61,11 +56,12 @@ private val CLOCK = DateTimeFormatter.ofPattern("HH:mm")
 
 /** [stats] — итоги тех же суток ([dailyStats]), по возрастанию даты: из них подпись строки для TalkBack. */
 fun rhythmModel(events: List<BabyEvent>, stats: List<DayStats>, now: Long, zone: ZoneId): RhythmModel {
-    val days = stats.reversed().map { day -> rhythmDay(events, day, now, zone) }
+    val night = nightSleeps(events, now, zone)
+    val days = stats.reversed().map { day -> rhythmDay(events, night, day, now, zone) }
     return RhythmModel(days, rhythmSummary(events, stats.map { it.date }, now, zone))
 }
 
-private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: ZoneId): RhythmDay {
+private fun rhythmDay(events: List<BabyEvent>, night: Set<Sleep>, day: DayStats, now: Long, zone: ZoneId): RhythmDay {
     val start = day.date.atStartOfDay(zone).toInstant().toEpochMilli()
     val end = day.date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
     val visibleEnd = minOf(end, now)
@@ -74,7 +70,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
         if (to <= start || from >= visibleEnd) null else DaySpan(fraction(maxOf(from, start)), fraction(minOf(to, visibleEnd)))
     fun instant(t: Long): Float? = if (t in start until visibleEnd) fraction(t) else null
 
-    val sleeps = mutableListOf<DaySpan>()
+    val nightSleeps = mutableListOf<DaySpan>()
+    val daySleeps = mutableListOf<DaySpan>()
     val feedings = mutableListOf<DaySpan>()
     val cryings = mutableListOf<DaySpan>()
     val instants = mutableListOf<Float>()
@@ -82,7 +79,7 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
     val notes = mutableListOf<Float>()
     events.forEach { event ->
         when (event) {
-            is Sleep -> span(event.start, event.end ?: now)?.let(sleeps::add)
+            is Sleep -> span(event.start, event.end ?: now)?.let { (if (event in night) nightSleeps else daySleeps) += it }
             is Feeding -> {
                 val feedingEnd = event.end
                 if (feedingEnd != null && feedingEnd <= event.start) {
@@ -102,7 +99,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
     return RhythmDay(
         date = day.date,
         label = if (day.complete) day.date.format(ROW_LABEL) else "сегодня",
-        sleeps = sleeps,
+        nightSleeps = nightSleeps,
+        daySleeps = daySleeps,
         feedings = feedings,
         cryings = cryings,
         instantFeedings = instants,
@@ -112,7 +110,7 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
         description = if (!day.tracked) {
             "$name: записей нет"
         } else {
-            "$name: сон ${formatDuration(day.sleepMillis)}, " +
+            "$name: сон ${formatDuration(day.sleepMillis)}${day.sleepSplit()}, " +
                 "${day.feedings} ${plural(day.feedings, "кормление", "кормления", "кормлений")}, " +
                 "${day.diaperCount} ${plural(day.diaperCount, "подгузник", "подгузника", "подгузников")}" +
                 (day.cryingMillis.takeIf { it > 0 }?.let { ", плач ${formatDuration(it)}" } ?: "") +
@@ -124,31 +122,16 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
 /** Ночной сон: от засыпания до утреннего пробуждения, [wakings] — сколько раз просыпался между. */
 internal data class Night(val start: Long, val end: Long, val wakings: Int)
 
-private class SleepBlock(val start: Long, var end: Long, var pieces: Int, var active: Boolean)
-
 /**
  * Ночи, закончившиеся утром суток [dates]. Ночь — подряд идущие сны с перерывами до часа, которые
  * захватывают отрезок с полуночи до 5:00 (из них — с наибольшим захватом). Ночь, которая ещё идёт, не в счёт.
  */
 internal fun nights(events: List<BabyEvent>, dates: List<LocalDate>, now: Long, zone: ZoneId): List<Night> {
-    val blocks = mutableListOf<SleepBlock>()
-    events.filterIsInstance<Sleep>().sortedBy { it.start }.forEach { sleep ->
-        val end = sleep.end ?: now
-        val last = blocks.lastOrNull()
-        if (last != null && sleep.start - last.end <= NIGHT_GAP_MILLIS) {
-            last.end = maxOf(last.end, end)
-            last.pieces++
-            last.active = last.active || sleep.isActive
-        } else {
-            blocks += SleepBlock(sleep.start, end, pieces = 1, active = sleep.isActive)
-        }
-    }
+    val blocks = sleepBlocks(events, now)
     return dates.mapNotNull { date ->
-        val coreStart = date.atStartOfDay(zone).toInstant().toEpochMilli()
-        val coreEnd = date.atStartOfDay(zone).plusHours(NIGHT_CORE_END_HOUR).toInstant().toEpochMilli()
-        blocks.maxByOrNull { minOf(it.end, coreEnd) - maxOf(it.start, coreStart) }
-            ?.takeIf { minOf(it.end, coreEnd) > maxOf(it.start, coreStart) && !it.active && it.end < now - NIGHT_GAP_MILLIS }
-            ?.let { Night(it.start, it.end, it.pieces - 1) }
+        blocks.maxByOrNull { nightCoreOverlap(it, date, zone) }
+            ?.takeIf { nightCoreOverlap(it, date, zone) > 0 && !it.active && it.end < now - NIGHT_GAP_MILLIS }
+            ?.let { Night(it.start, it.end, it.sleeps.size - 1) }
     }
 }
 

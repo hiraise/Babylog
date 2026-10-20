@@ -46,6 +46,7 @@ class DailyStatsTest {
             assertEquals("мл ${day.date}", summary.bottleMl, day.bottleMl)
             assertEquals("подгузники ${day.date}", summary.diapers, day.diapers)
             assertEquals("сон ${day.date}", summary.sleepMillis, day.sleepMillis)
+            assertEquals("ночь и день ${day.date}", day.sleepMillis, day.nightSleepMillis + day.daySleepMillis)
         }
     }
 
@@ -121,5 +122,30 @@ class DailyStatsTest {
         assertEquals(120, day.bottleMl)
         assertEquals(listOf(at(today, 7), at(today, 10)), day.feedingStarts)
         assertEquals(15 * minute, day.breastMillis)
+    }
+
+    @Test
+    fun `sleep is split into night and day`() {
+        // Ночь — сны, которые вместе с перерывами до часа захватывают 0:00–5:00 (ADR-0036)
+        val events = listOf(
+            Sleep(1, 1, at(yesterday, 13), end = at(yesterday, 15)), // дневной
+            Sleep(2, 1, at(yesterday, 17), end = at(yesterday, 18)), // вечерний: до ночи больше часа
+            Sleep(3, 1, at(yesterday, 21), end = at(today, 2)),
+            Sleep(4, 1, at(today, 2, 30), end = at(today, 6, 30)), // проснулся покормить — та же ночь
+            Sleep(5, 1, at(today, 10)), // идёт
+        )
+        val (before, after) = dailyStats(events, yesterday, today, now, zone)
+        assertEquals(3 * hour, before.nightSleepMillis)
+        assertEquals(3 * hour, before.daySleepMillis)
+        assertEquals(6 * hour, after.nightSleepMillis)
+        assertEquals(80 * minute, after.daySleepMillis)
+    }
+
+    @Test
+    fun `naps without a night are daytime sleep`() {
+        val events = listOf(Sleep(1, 1, at(yesterday, 9), end = at(yesterday, 11)), Sleep(2, 1, at(yesterday, 19), end = at(yesterday, 23)))
+        val day = dailyStats(events, yesterday, yesterday, now, zone).single()
+        assertEquals(0L, day.nightSleepMillis)
+        assertEquals(6 * hour, day.daySleepMillis)
     }
 }
