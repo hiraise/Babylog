@@ -62,5 +62,4 @@ internal fun SleepHelp() {
             "до $NIGHT_END_HOUR:00 и вечер после $NIGHT_START_HOUR:00. Средние — по прошедшим суткам, в которые вели дневник.",
         style = style,
     )
-    Text("В «Ритме дня» дневной сон светлее ночного.", style = style)
 }
