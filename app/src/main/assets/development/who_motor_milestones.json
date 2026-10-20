@@ -1,0 +1,16 @@
+{
+  "source": {
+    "name": "ВОЗ — Motor Development Study: перцентили освоения шести моторных навыков",
+    "url": "https://cdn.who.int/media/docs/default-source/child-growth/child-growth-standards/indicators/motor-development-milestones/mm_percentiles_table.pdf?sfvrsn=81f3b60b_5",
+    "section": "Таблица «Percentiles and mean in days and months for six gross motor milestones», строки 1st и 99th, столбцы Days и Months"
+  },
+  "reviewedAt": "2026-10-20",
+  "milestones": [
+    {"id": "sitting-without-support", "title": "Сидит без поддержки", "fromDays": 115, "toDays": 279, "fromMonths": 3.8, "toMonths": 9.2},
+    {"id": "standing-with-assistance", "title": "Стоит с поддержкой", "fromDays": 147, "toDays": 348, "fromMonths": 4.8, "toMonths": 11.4},
+    {"id": "hands-and-knees-crawling", "title": "Ползает на четвереньках", "fromDays": 157, "toDays": 409, "fromMonths": 5.2, "toMonths": 13.5},
+    {"id": "walking-with-assistance", "title": "Ходит с поддержкой", "fromDays": 181, "toDays": 418, "fromMonths": 5.9, "toMonths": 13.7},
+    {"id": "standing-alone", "title": "Стоит самостоятельно", "fromDays": 211, "toDays": 514, "fromMonths": 6.9, "toMonths": 16.9},
+    {"id": "walking-alone", "title": "Ходит самостоятельно", "fromDays": 250, "toDays": 534, "fromMonths": 8.2, "toMonths": 17.6}
+  ]
+}

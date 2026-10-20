@@ -87,6 +87,18 @@ class PhotoBitmapsTest {
         assertEquals("photos", prepared.parentFile?.name)
     }
 
+    @Test
+    fun `too detailed photo is compressed and then reduced until it fits a database row`() {
+        // Шум не сжимается: JPEG такого «фото» велик при любом качестве
+        val random = java.util.Random(1)
+        val noise = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888).apply {
+            for (x in 0 until width) for (y in 0 until height) setPixel(x, y, random.nextInt() or 0xFF000000.toInt())
+        }
+        val jpeg = fittingJpeg(noise, maxBytes = 40_000)
+        assertEquals(true, jpeg.size <= 40_000)
+        assertEquals(true, BitmapFactory.decodeByteArray(jpeg, 0, jpeg.size).width < 400)
+    }
+
     private fun save(bitmap: Bitmap): File =
         tmp.newFile("photo.jpg").also { file -> file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) } }
 }

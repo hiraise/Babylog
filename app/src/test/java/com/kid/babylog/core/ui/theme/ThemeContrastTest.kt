@@ -11,6 +11,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
+import kotlin.math.cbrt
+import kotlin.math.pow
+import kotlin.math.sqrt
 import kotlin.reflect.KProperty1
 
 /**
@@ -109,9 +112,77 @@ private val HUELESS = setOf(Color.White, Color.Black)
 
 private val RU = Locale.forLanguageTag("ru")
 
+/** Ряд графика — ссылка на свойство `ChartColors`, как роль палитры. */
+private typealias ChartSeries = KProperty1<ChartColors, Color>
+
+private val CHART_SERIES: List<ChartSeries> = listOf(
+    ChartColors::sleep, ChartColors::daySleep, ChartColors::feeding, ChartColors::diaperWet, ChartColors::diaperMixed,
+    ChartColors::diaperDirty, ChartColors::weight, ChartColors::height, ChartColors::crying,
+    ChartColors::milestone, ChartColors::milestoneOther,
+)
+
 /**
- * Правила палитры из ADR-0010: контраст пар «текст — фон», ни одной роли из базовой схемы
- * и `surfaceTint`, равный `surface`.
+ * Ряды, которые стоят рядом (KDoc `ChartColors`): сон, кормление и плач — в полосе «Ритма дня»,
+ * подгузники — в столбике в порядке `DIAPER_SERIES`. Новый график поставил рядом другие ряды — добавь пару.
+ */
+private val CHART_NEIGHBORS: List<Pair<ChartSeries, ChartSeries>> = listOf(
+    ChartColors::sleep to ChartColors::feeding,
+    ChartColors::sleep to ChartColors::daySleep,
+    ChartColors::daySleep to ChartColors::feeding,
+    ChartColors::daySleep to ChartColors::crying,
+    ChartColors::sleep to ChartColors::crying,
+    ChartColors::feeding to ChartColors::crying,
+    ChartColors::diaperWet to ChartColors::diaperMixed,
+    ChartColors::diaperMixed to ChartColors::diaperDirty,
+    ChartColors::milestone to ChartColors::milestoneOther,
+)
+
+/** Графики светлой темы и всех тёмных палитр — вместе с палитрой, на карточке которой они лежат. */
+private val CHARTS: List<Triple<String, ColorScheme, ChartColors>> =
+    listOf(Triple("светлая", LightColors, LightChartColors)) +
+        DarkPalette.entries.map { Triple("тёмная ${it.name}", darkColors(it), darkChartColors(it)) }
+
+/**
+ * Как глаз различает цвета: [matrix] переводит линейный sRGB в то, что видит дальтоник (null — обычное
+ * зрение), [minimum] — наименьшая разница ΔE в OKLab ×100 между соседними рядами графика.
+ */
+private class Vision(val name: String, val matrix: List<DoubleArray>?, val minimum: Double)
+
+/**
+ * Обычное зрение, полные протанопия и дейтеранопия — матрицы Machado, Oliveira и Fernandes (2009).
+ * Ниже 15 соседей путает и обычный глаз, ниже 8 — дальтоник. Тританопия редка, её не проверяем.
+ */
+private val VISIONS: List<Vision> = listOf(
+    Vision("обычное зрение", null, 15.0),
+    Vision(
+        "протанопия",
+        listOf(
+            doubleArrayOf(0.152286, 1.052583, -0.204868),
+            doubleArrayOf(0.114503, 0.786281, 0.099216),
+            doubleArrayOf(-0.003882, -0.048116, 1.051998),
+        ),
+        8.0,
+    ),
+    Vision(
+        "дейтеранопия",
+        listOf(
+            doubleArrayOf(0.367322, 0.860646, -0.227968),
+            doubleArrayOf(0.280085, 0.672501, 0.047413),
+            doubleArrayOf(-0.011820, 0.042940, 0.968881),
+        ),
+        8.0,
+    ),
+)
+
+/**
+ * Заливка идущего таймера к карточке. Плитка таймера стоит в ряду с карточками других плиток
+ * и должна отделяться от них светлотой, а не только оттенком.
+ */
+private const val TIMER_MINIMUM = 2.0
+
+/**
+ * Правила палитры из ADR-0010 и ADR-0032: контраст пар «текст — фон», рядов графиков и идущего таймера,
+ * различимость соседних рядов при дальтонизме, ни одной роли из базовой схемы и `surfaceTint`, равный `surface`.
  */
 class ThemeContrastTest {
 
@@ -133,20 +204,49 @@ class ThemeContrastTest {
     @Test
     fun `chart colors stand out on the card`() {
         // Ряды графиков «Аналитики» — нетекстовые элементы на карточке: не меньше 3:1 (ADR-0028)
-        val charts = listOf(Triple("светлая", LightColors, LightChartColors)) +
-            DarkPalette.entries.map { Triple("тёмная ${it.name}", darkColors(it), darkChartColors(it)) }
-        val failures = charts.flatMap { (name, scheme, chart) ->
-            listOf(
-                "sleep" to chart.sleep, "feeding" to chart.feeding, "diaperWet" to chart.diaperWet,
-                "diaperMixed" to chart.diaperMixed, "diaperDirty" to chart.diaperDirty, "weight" to chart.weight,
-                "height" to chart.height, "crying" to chart.crying,
-            ).mapNotNull { (series, color) ->
+        val failures = CHARTS.flatMap { (name, scheme, chart) ->
+            CHART_SERIES.mapNotNull { series ->
+                val color = series.get(chart)
                 val ratio = contrast(color, scheme.surfaceContainerLow)
                 if (ratio >= NON_TEXT_MINIMUM) return@mapNotNull null
-                "$name: $series ${color.hex()} на карточке — ${"%.2f".format(RU, ratio)}:1"
+                "$name: ${series.name} ${color.hex()} на карточке — ${"%.2f".format(RU, ratio)}:1"
             }
         }
         assertTrue("Цвет графика сливается с карточкой:\n" + failures.joinToString("\n"), failures.isEmpty())
+    }
+
+    @Test
+    fun `neighboring chart colors differ under color blindness`() {
+        val failures = CHARTS.flatMap { (name, _, chart) ->
+            CHART_NEIGHBORS.flatMap { (first, second) ->
+                VISIONS.mapNotNull { vision ->
+                    val difference = difference(first.get(chart), second.get(chart), vision.matrix)
+                    if (difference >= vision.minimum) return@mapNotNull null
+                    "$name, ${vision.name}: ${first.name} и ${second.name} — ΔE ${"%.1f".format(RU, difference)}, " +
+                        "нужно не меньше ${"%.0f".format(RU, vision.minimum)}"
+                }
+            }
+        }
+        assertTrue("Соседние ряды графика сливаются:\n" + failures.joinToString("\n"), failures.isEmpty())
+    }
+
+    @Test
+    fun `running timer stands out among the cards`() {
+        // «Классика» — прежняя зелёная тема, её оставили как есть (ADR-0032): тон акцента к карточке у неё 1,27:1
+        val palettes = listOf(Triple("светлая", LightColors, false)) +
+            (DarkPalette.entries - DarkPalette.CLASSIC).map { Triple("тёмная ${it.name}", darkColors(it), true) }
+        val failures = palettes.mapNotNull { (name, scheme, dark) ->
+            val fill = timerColors(scheme, dark).container
+            val card = scheme.surfaceContainerLow
+            val ratio = contrast(fill, card)
+            if (ratio >= TIMER_MINIMUM) return@mapNotNull null
+            "$name: заливка ${fill.hex()} на фоне карточки ${card.hex()} — ${"%.2f".format(RU, ratio)}:1"
+        }
+        assertTrue(
+            "Идущий таймер теряется среди карточек, нужно не меньше ${"%.0f".format(RU, TIMER_MINIMUM)}:1:\n" +
+                failures.joinToString("\n"),
+            failures.isEmpty(),
+        )
     }
 
     @Test
@@ -201,6 +301,32 @@ private fun contrast(a: Color, b: Color): Double {
     val lb = b.luminance().toDouble()
     return (maxOf(la, lb) + 0.05) / (minOf(la, lb) + 0.05)
 }
+
+/** Цветовая разница ΔE в OKLab ×100 — какой её видит глаз с матрицей [vision] (null — обычное зрение). */
+private fun difference(a: Color, b: Color, vision: List<DoubleArray>?): Double {
+    val x = a.oklab(vision)
+    val y = b.oklab(vision)
+    return 100 * sqrt((x[0] - y[0]).pow(2) + (x[1] - y[1]).pow(2) + (x[2] - y[2]).pow(2))
+}
+
+/** Цвет в OKLab (Björn Ottosson, 2020) — каким его видит глаз с матрицей [vision] для линейного sRGB. */
+private fun Color.oklab(vision: List<DoubleArray>?): DoubleArray {
+    val linear = listOf(red, green, blue).map { decodeSrgb(it.toDouble()) }
+    val (r, g, b) = vision?.map { row -> (row[0] * linear[0] + row[1] * linear[1] + row[2] * linear[2]).coerceIn(0.0, 1.0) }
+        ?: linear
+    val long = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
+    val medium = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b)
+    val short = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b)
+    return doubleArrayOf(
+        0.2104542553 * long + 0.7936177850 * medium - 0.0040720468 * short,
+        1.9779984951 * long - 2.4285922050 * medium + 0.4505937099 * short,
+        0.0259040371 * long + 0.7827717662 * medium - 0.8086757660 * short,
+    )
+}
+
+/** Гамма-кодированный канал sRGB → линейный, оба 0–1. */
+private fun decodeSrgb(encoded: Double): Double =
+    if (encoded <= 0.04045) encoded / 12.92 else ((encoded + 0.055) / 1.055).pow(2.4)
 
 /** `#RRGGBB` без альфы — для сообщений и сравнения с цветами из XML-ресурсов. */
 internal fun Color.hex(): String = "#%06X".format(toArgb() and 0xFFFFFF)

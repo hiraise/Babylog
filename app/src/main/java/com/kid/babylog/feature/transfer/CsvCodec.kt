@@ -20,6 +20,12 @@ object CsvCodec {
 
     const val HEADER = "type,start,end,detail,note,child"
     const val PROFILE_ROW = "PROFILE"
+
+    /**
+     * Поле длиннее — не запись приложения: так выглядят строки, склеенные незакрытой кавычкой, или чужой
+     * файл. Строка базы с таким полем не влезла бы в окно курсора SQLite (2 МБ) и роняла бы чтение дневника.
+     */
+    const val MAX_FIELD_LENGTH = 100_000
     private val FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
     fun formatTime(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
@@ -65,16 +71,22 @@ object CsvCodec {
             "\"" + s.replace("\"", "\"\"") + "\""
         } else s
 
-    /** Разбирает CSV в строки-записи с учётом кавычек и переносов внутри кавычек. */
+    /**
+     * Разбирает CSV в строки-записи с учётом кавычек и переносов внутри кавычек. Кавычка, не закрытая до
+     * конца файла, — [IllegalArgumentException] с номером строки: иначе остаток файла молча стал бы одним полем.
+     */
     fun parseRows(text: String): List<List<String>> {
         val rows = mutableListOf<List<String>>()
         val row = mutableListOf<String>()
         val field = StringBuilder()
         var inQuotes = false
+        var line = 1
+        var quoteLine = 0
         var i = 0
         val src = text.removePrefix("\uFEFF")
         while (i < src.length) {
             val c = src[i]
+            if (c == '\n') line++
             when {
                 inQuotes -> when {
                     c == '"' && i + 1 < src.length && src[i + 1] == '"' -> { field.append('"'); i++ }
@@ -82,7 +94,10 @@ object CsvCodec {
                     else -> field.append(c)
                 }
                 // Режим кавычек — только с начала поля; кавычка в середине — литерал (как в Excel)
-                c == '"' && field.isEmpty() -> inQuotes = true
+                c == '"' && field.isEmpty() -> {
+                    inQuotes = true
+                    quoteLine = line
+                }
                 c == ',' -> { row.add(field.toString()); field.clear() }
                 c == '\r' -> { /* пропускаем, строку завершит \n */ }
                 c == '\n' -> {
@@ -94,6 +109,7 @@ object CsvCodec {
             }
             i++
         }
+        require(!inQuotes) { "в строке $quoteLine кавычка не закрыта — исправьте файл" }
         row.add(field.toString())
         if (row.any { it.isNotBlank() }) rows.add(row.toList())
         return rows

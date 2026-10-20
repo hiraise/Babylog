@@ -8,12 +8,14 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
-import com.kid.babylog.feature.diary.DiaryTab
+import com.kid.babylog.feature.diary.DiaryView
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.diary.MainSection
 import com.kid.babylog.testing.ComponentActivityRule
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import com.kid.babylog.testing.SCREENSHOT_OPTIONS
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -32,8 +34,9 @@ private const val CRYING_PIXEL_5 = "w393dp-h1400dp-normal-long-notround-any-440d
 
 /**
  * Экраны разделов «Аналитики» (ADR-0029) на эталонных скриншотах: раздел открывается касанием плитки,
- * как в приложении. Кормления — с графиком бутылочки, вес — со списком взвешиваний, плач — с «Перед
- * плачем» и причинами (ADR-0030), метки — с «Метками и режимом» (ADR-0031). Обновить — `scripts/dev.sh goldens`.
+ * как в приложении. Кормления — с графиком бутылочки, сон — ночной и дневной (ADR-0036), вес — со списком
+ * взвешиваний, плач — с «Перед плачем» и причинами (ADR-0030), метки — с «Метками и режимом» (ADR-0031).
+ * Обновить — `scripts/dev.sh goldens`.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -57,7 +60,7 @@ class AnalyticsSectionScreenshotTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = MainSection.ANALYTICS)
             }
         }
     }
@@ -67,6 +70,9 @@ class AnalyticsSectionScreenshotTest {
 
     @Test
     fun `feedings with bottles`() = capture(tile = "Кормления", name = "analytics_feedings")
+
+    @Test
+    fun `sleep at night and in the day`() = capture(tile = "Сон", name = "analytics_sleep")
 
     @Test
     fun `weight with weighings`() = capture(tile = "Вес", name = "analytics_weight")

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,7 +53,8 @@ private val PinStroke = 2.dp
 
 internal fun ChartColors.of(series: Series): Color = when (series) {
     Series.FEEDING -> feeding
-    Series.SLEEP -> sleep
+    Series.NIGHT_SLEEP -> sleep
+    Series.DAY_SLEEP -> daySleep
     Series.DIAPER_WET -> diaperWet
     Series.DIAPER_MIXED -> diaperMixed
     Series.DIAPER_DIRTY -> diaperDirty
@@ -115,18 +117,25 @@ private fun Swatch(color: Color, modifier: Modifier = Modifier) {
 
 /**
  * Карточка-график величины за период: число, сравнение, легенда, столбики. Касание столбика
- * показывает его итоги под графиком, у суток — с «В историю» ([onOpenDay]).
+ * показывает его итоги под графиком, у суток — с «В историю» ([onOpenDay]). [onHelp] — «?» после
+ * легенды: как она считается (у сна — ночь и день, ADR-0036).
  */
 @Composable
-internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> Unit, onOpenDay: (LocalDate) -> Unit) {
+internal fun MetricCard(
+    model: MetricModel,
+    selected: Int?,
+    onSelect: (Int?) -> Unit,
+    onOpenDay: (LocalDate) -> Unit,
+    onHelp: (() -> Unit)? = null,
+) {
     val chart = BabyLogTheme.chartColors
     val spacing = BabyLogTheme.spacing
     AppCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
             CardHeader(model.metric.icon(), model.metric.title, model.delta)
             Headline(model.value, model.unit, model.note)
-            if (model.legend.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
+            if (model.legend.isNotEmpty()) Row(verticalAlignment = Alignment.CenterVertically) {
+                FlowRow(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
                     model.legend.forEach { item ->
                         Row(
                             modifier = Modifier.semantics(mergeDescendants = true) { contentDescription = "${item.label} ${item.text}" },
@@ -134,14 +143,21 @@ internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> 
                             horizontalArrangement = Arrangement.spacedBy(spacing.xs),
                         ) {
                             Swatch(chart.of(item.series))
-                            AppIcon(
-                                diaperIcon(item.kind),
-                                contentDescription = null,
-                                modifier = Modifier.size(LegendIconSize),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            item.kind?.let { kind ->
+                                AppIcon(
+                                    diaperIcon(kind),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(LegendIconSize),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Text(item.text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+                }
+                onHelp?.let {
+                    IconButton(onClick = it) {
+                        AppIcon(R.drawable.ic_help, contentDescription = "Как считается: ${model.metric.title.lowercase()}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -171,14 +187,15 @@ internal fun MetricCard(model: MetricModel, selected: Int?, onSelect: (Int?) -> 
 }
 
 /**
- * Строки [DayTimeline] из суток ритма: сон, кормления грудью и плач — полосами, остальные кормления —
- * рисками, заметки — булавками (ADR-0031). Плач — поверх сна, с обводкой: он стык в стык с пробуждением,
- * и без обводки полосы слились бы.
+ * Строки [DayTimeline] из суток ритма: сон (ночной и дневной — разным цветом, ADR-0036), кормления грудью
+ * и плач — полосами, остальные кормления — рисками, заметки — булавками (ADR-0031). Плач — поверх сна,
+ * с обводкой: он стык в стык с пробуждением, и без обводки полосы слились бы.
  */
 internal fun timelineRows(days: List<RhythmDay>, chart: ChartColors): List<TimelineRow> = days.map { day ->
     TimelineRow(
         label = day.label,
-        bands = day.sleeps.map { TimelineBand(it.from, it.to, chart.sleep) } +
+        bands = day.nightSleeps.map { TimelineBand(it.from, it.to, chart.sleep) } +
+            day.daySleeps.map { TimelineBand(it.from, it.to, chart.daySleep) } +
             day.feedings.map { TimelineBand(it.from, it.to, chart.feeding, ring = true) } +
             day.cryings.map { TimelineBand(it.from, it.to, chart.crying, ring = true) },
         ticks = day.instantFeedings.map { TimelineTick(it, chart.feeding) },
@@ -207,7 +224,12 @@ internal fun RhythmCard(model: RhythmModel, onOpenDay: (LocalDate) -> Unit) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(spacing.m)) {
                 // «плач» в легенде — только если он есть на шкале: тем, кто его не отмечает, пункт ни к чему
                 val crying = model.days.any { it.cryings.isNotEmpty() }
-                listOfNotNull(chart.sleep to "сон", chart.feeding to "кормление", (chart.crying to "плач").takeIf { crying }).forEach { (color, text) ->
+                listOfNotNull(
+                    chart.sleep to "ночной сон",
+                    chart.daySleep to "дневной сон",
+                    chart.feeding to "кормление",
+                    (chart.crying to "плач").takeIf { crying },
+                ).forEach { (color, text) ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                         Swatch(color)
                         Text(text, style = MaterialTheme.typography.bodySmall, color = muted)

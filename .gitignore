@@ -31,6 +31,7 @@ keystore.properties
 .vscode/*
 !.vscode/tasks.json
 
-# Claude Code: скиллы проекта — в репозитории, личные настройки и worktree — нет
+# Claude Code: скиллы и субагенты проекта — в репозитории, личные настройки и worktree — нет
 .claude/*
 !.claude/skills/
+!.claude/agents/

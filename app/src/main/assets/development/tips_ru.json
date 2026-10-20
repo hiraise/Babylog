@@ -1,0 +1,1790 @@
+[
+  {
+    "id": "m0-enough-milk",
+    "ageFromDays": 0,
+    "ageToDays": 20,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Как понять, что молока хватает",
+    "summary": "При грудном вскармливании подскажут сами кормления, подгузники и прибавка в весе",
+    "body": "В первые дни мокрых подгузников мало, а примерно с 5-го дня их становится больше. С 4-го дня и первые недели стул мягкий, жёлтый, каждый день. После первых 3–4 дней малыш стабильно прибавляет в весе. Точное число подгузников и раз стула NHS и AAP называют по-разному (см. ниже) — обсудите с педиатром. Если сомневаетесь, что молока хватает, просите помощи пораньше: у педиатра, патронажной медсестры или консультанта по грудному вскармливанию. Хорошие признаки при кормлении грудью:",
+    "points": [
+      "Сначала несколько быстрых сосательных движений, потом долгие ритмичные — с глотками",
+      "Слышно и видно, как малыш глотает",
+      "Щёки при сосании круглые, не втянутые",
+      "В конце кормления малыш сам отпускает грудь и выглядит довольным",
+      "Грудь после кормления становится мягче"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Is my baby getting enough milk?",
+        "url": "https://www.nhs.uk/baby/breastfeeding-and-bottle-feeding/breastfeeding-problems/enough-milk/",
+        "section": "Signs your baby is getting enough milk; Other signs your baby is feeding well; Things that can affect your milk supply"
+      },
+      {
+        "name": "AAP — How often and how much should your baby eat",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/feeding-nutrition/Pages/How-Often-and-How-Much-Should-Your-Baby-Eat.aspx",
+        "section": "How do I know if my baby is getting enough to eat? → Daily diapers"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "NHS",
+        "position": "в первые 48 часов — 2–3 мокрых подгузника; с 5-го дня — не меньше 6 тяжёлых мокрых в сутки; с 4-го дня первые недели — стул не меньше 2 раз в день (для грудного вскармливания)"
+      },
+      {
+        "source": "AAP",
+        "position": "в первые дни — 2–3 мокрых подгузника в день; после 4–5 дней — не меньше 5–6; к 4-му дню — стул не меньше 4 раз в день, точное число зависит от вида вскармливания"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-birth-weight",
+    "ageFromDays": 0,
+    "ageToDays": 27,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Вес в первые недели",
+    "summary": "Сначала малыш немного теряет в весе, а к 2–3 неделям обычно возвращается к весу при рождении",
+    "body": "В первые дни после рождения все малыши теряют немного веса. Потом вес начинает стабильно расти: примерно к 2 неделям малыш обычно снова весит столько же, сколько при рождении, а к 3 неделям — почти все малыши. Если малыш теряет много веса или к 3 неделям всё ещё весит меньше, чем при рождении, обсудите с педиатром, как идут кормления. После первых 2 недель NHS советует взвешивать малыша не чаще раза в месяц до 6 месяцев, если нет опасений за здоровье или рост.",
+    "sources": [
+      {
+        "name": "AAP — First month: growth",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/First-Month-Physical-Appearance-and-Growth.aspx",
+        "section": "Первый абзац (до раздела «Growth spurts in newborns»)"
+      },
+      {
+        "name": "NHS — Baby weight and height",
+        "url": "https://www.nhs.uk/baby/babys-development/height-weight-and-reviews/baby-height-and-weight/",
+        "section": "Вступление; How often should my baby be weighed?"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-cord-care",
+    "ageFromDays": 0,
+    "ageToDays": 27,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Уход за пупочной ранкой",
+    "summary": "Держите ранку чистой и сухой — остаток пуповины обычно отпадает за 1–3 недели",
+    "body": "Подворачивайте подгузник ниже пупка, чтобы на ранку не попадала моча. Промывать кожу вокруг ранки нужно, только если там моча или кал: чистой ватой и тёплой водой, затем осторожно промокнуть полотенцем. Спиртом обрабатывать не нужно. Когда остаток пуповины отпадает, на подгузнике может быть несколько капель крови. Иногда на его месте остаётся мокнущее пятнышко с капелькой сукровицы: держите его чистым и сухим — оно заживёт само.",
+    "sources": [
+      {
+        "name": "AAP — Umbilical cord care",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/bathing-skin-care/Pages/Umbilical-Cord-Care.aspx",
+        "section": "Вступление; Keep it clean; When should the umbilical cord stump fall off?"
+      },
+      {
+        "name": "AAP — First month: growth",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/First-Month-Physical-Appearance-and-Growth.aspx",
+        "section": "When does the umbilical cord fall off?"
+      },
+      {
+        "name": "NHS — Washing and bathing your baby",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/washing-and-bathing-your-baby/",
+        "section": "Topping and tailing tips"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-cord-doctor",
+    "ageFromDays": 0,
+    "ageToDays": 34,
+    "category": "HEALTH",
+    "kind": "DOCTOR",
+    "title": "Пупочная ранка: когда к врачу",
+    "summary": "Воспаление пупка бывает нечасто, но при этих признаках покажите малыша педиатру",
+    "body": "Остаток пуповины обычно отпадает за 1–3 недели. Если через 3 недели он не отпал или ранка не зажила и не высохла, покажите малыша педиатру. Воспаление пупочной ранки бывает нечасто, но обратитесь к врачу, если:",
+    "points": [
+      "Из пупка идут желтоватые выделения с неприятным запахом",
+      "Кожа вокруг пупка красная",
+      "Малыш плачет, когда вы трогаете пупок или кожу рядом",
+      "Пупок продолжает кровоточить, а не оставляет пару капель, — звоните врачу сразу"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Umbilical cord care",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/bathing-skin-care/Pages/Umbilical-Cord-Care.aspx",
+        "section": "Keep it clean; Signs & symptoms of umbilical cord infection; When should the umbilical cord stump fall off?"
+      },
+      {
+        "name": "AAP — First month: growth",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/First-Month-Physical-Appearance-and-Growth.aspx",
+        "section": "When does the umbilical cord fall off?"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-feeding-on-demand",
+    "ageFromDays": 0,
+    "ageToDays": 34,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Кормите по требованию, а не по часам",
+    "summary": "Предлагайте грудь или бутылочку, как только малыш показывает голод, — не дожидайтесь плача",
+    "body": "Большинство здоровых доношенных малышей можно кормить по признакам голода, а не по часам. Недоношенных и малышей с особенностями здоровья кормят по графику, который посоветует педиатр; плохо прибавляет в весе — не ждите долго между кормлениями, даже если придётся будить. При грудном вскармливании в первые недели — очень приблизительно не меньше 8–12 кормлений в сутки. Плач — поздний признак голода: плачущего малыша труднее накормить. Сосёт малыш не только от голода, но и чтобы успокоиться. Закрывает рот или отворачивается — признак сытости, кормление можно закончить. Ранние признаки голода:",
+    "points": [
+      "Беспокоится, ёрзает, капризничает",
+      "Тянет руку ко рту, сосёт кулачок или пальцы",
+      "Причмокивает, облизывает губы, высовывает язык",
+      "Поворачивает голову и открывает рот — ищет грудь",
+      "Издаёт тихие звуки"
+    ],
+    "sources": [
+      {
+        "name": "AAP — How often and how much should your baby eat",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/feeding-nutrition/Pages/How-Often-and-How-Much-Should-Your-Baby-Eat.aspx",
+        "section": "How do I know when my baby is hungry?; Hunger cues; Trouble gaining weight?"
+      },
+      {
+        "name": "NHS — Breastfeeding: the first few days",
+        "url": "https://www.nhs.uk/baby/breastfeeding-and-bottle-feeding/breastfeeding/the-first-few-days/",
+        "section": "How often should I feed my baby?"
+      },
+      {
+        "name": "CDC — Milestones 2 months",
+        "url": "https://www.cdc.gov/act-early/milestones/2-months.html",
+        "section": "Tips and activities → More parenting tips and activities"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-car-seat",
+    "ageFromDays": 0,
+    "ageToDays": 120,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "В машине — только в автокресле против хода",
+    "summary": "С первой поездки из роддома. Держать малыша на руках в машине очень опасно",
+    "body": "Малыш всегда едет в детском автокресле, установленном против хода движения, — начиная с поездки домой из роддома. Безопаснее всего — на заднем сиденье. Устанавливайте автокресло по инструкциям к креслу и к машине.",
+    "points": [
+      "Никогда — на переднем сиденье перед включённой подушкой безопасности",
+      "Ремни плотные: на плече не получается собрать складку пальцами",
+      "Без объёмного комбинезона; если нужно, укройте пледом поверх ремней",
+      "Уснуть в дороге можно, но на месте переложите малыша в кроватку на спину",
+      "Подержанное кресло — только от близких, чтобы знать, что оно не побывало в аварии"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Что нужно для малыша: автокресло",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/what-you-will-need-for-your-baby/",
+        "section": "Car seats for babies"
+      },
+      {
+        "name": "AAP — Автокресла",
+        "url": "https://www.healthychildren.org/English/safety-prevention/on-the-go/Pages/Car-Safety-Seats-Information-for-Families.aspx",
+        "section": "3 types of rear facing seats; What is the safest seat for a child in the car?; When using a rear-facing seat, keep the following tips in mind; Why should I dress my child in thinner layers of clothing…"
+      },
+      {
+        "name": "CDC — Безопасность детей в машине",
+        "url": "https://www.cdc.gov/child-passenger-safety/about/index.html",
+        "section": "Know the stages → Rear-facing car seat"
+      },
+      {
+        "name": "NHS — Синдром внезапной детской смерти",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/sudden-infant-death-syndrome-sids/",
+        "section": "How to reduce the risk of sudden infant death syndrome (SIDS) → Don't"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-smoke-free",
+    "ageFromDays": 0,
+    "ageToDays": 120,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Дом и машина — без табачного дыма",
+    "summary": "Не курите рядом с малышом и не позволяйте другим: безопасного уровня дыма нет",
+    "body": "Табачный дым рядом с малышом повышает риск синдрома внезапной детской смерти, а у детей может вызывать инфекции дыхательных путей и ушей и приступы астмы. Открытое окно или курение в другой комнате не защищают: дым расходится по дому и может держаться в воздухе часами.",
+    "points": [
+      "Курите только на улице и подальше от малыша, просите о том же гостей",
+      "Не курите в машине и не разрешайте другим",
+      "Вещества из дыма остаются на одежде, даже если курить на улице",
+      "Электронные сигареты рядом с малышом тоже не используйте",
+      "Лучшая защита — бросить курить"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Пассивное курение",
+        "url": "https://www.cdc.gov/tobacco/secondhand-smoke/health.html",
+        "section": "Key points; Overview; Secondhand smoke causes sudden infant death syndrome (SIDS)"
+      },
+      {
+        "name": "NHS — Пассивное курение",
+        "url": "https://www.nhs.uk/live-well/quit-smoking/passive-smoking-protect-your-family-and-friends/",
+        "section": "Passive smoking (вступление); How to protect against secondhand smoke; The risks of passive smoking; How safe is e-cig vapour?"
+      },
+      {
+        "name": "AAP — Безопасный сон",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx",
+        "section": "Don't smoke or use nicotine during pregnancy or after your baby is born"
+      },
+      {
+        "name": "NHS — Синдром внезапной детской смерти",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/sudden-infant-death-syndrome-sids/",
+        "section": "How to reduce the risk of sudden infant death syndrome (SIDS) → Don't"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-fever-young-baby",
+    "ageFromDays": 0,
+    "ageToDays": 181,
+    "category": "HEALTH",
+    "kind": "DOCTOR",
+    "title": "Жар до 6 месяцев: когда вызывать скорую",
+    "summary": "До 3 месяцев — от 38 °C, в 3–6 месяцев — от 39 °C: сразу вызывайте скорую",
+    "body": "Температуру измеряйте цифровым термометром под мышкой. Сразу вызывайте скорую, если малышу нет 3 месяцев и температура 38 °C и выше или малышу 3–6 месяцев и температура 39 °C и выше. Жар в 3–6 месяцев в первые 2 дня после прививки NHS не относит к признакам тяжёлой болезни, но и тогда срочно обратитесь к врачу. Скорая нужна и при любом жаре с судорогами, сыпью, которая не бледнеет при нажатии, трудным дыханием, или если малыша трудно разбудить. Срочно обратитесь к врачу, если вам кажется, что у малыша жар, или:",
+    "points": [
+      "Кроме жара есть сыпь или другие признаки болезни",
+      "Жар держится 5 дней и дольше",
+      "Малыш не хочет есть или не похож на себя, и вы волнуетесь",
+      "Есть признаки обезвоживания: подгузники почти сухие, запавшие глаза, плач без слёз"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Жар у детей",
+        "url": "https://www.nhs.uk/symptoms/fever-in-children/",
+        "section": "Checking a high temperature; Urgent advice: Call 111 if your child:; Immediate action required: Call 999 if your child:"
+      },
+      {
+        "name": "NHS — Срочная помощь детям до 5 лет",
+        "url": "https://www.nhs.uk/baby/health/when-to-get-urgent-medical-help-for-babies-and-children-under-5/",
+        "section": "Immediate action required: Call 999 or go to A&E if:; Signs of serious illness → A high temperature (fever)"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-safe-sleep",
+    "ageFromDays": 0,
+    "ageToDays": 181,
+    "category": "SLEEP",
+    "kind": "TIP",
+    "title": "Сон — на спине и в своей кроватке",
+    "summary": "На каждый сон, днём и ночью: на спину, в отдельную кроватку без лишних вещей",
+    "body": "Так ниже риск синдрома внезапной детской смерти и удушья во сне. Ставьте кроватку или люльку малыша в своей комнате — хотя бы первые 6 месяцев. Если малыш переворачивается на живот, кладите обратно на спину — пока малыш не научится уверенно переворачиваться сам в обе стороны.",
+    "points": [
+      "Кладите на спину, ногами к изножью кроватки",
+      "Матрас — твёрдый и ровный, сверху только простыня на резинке",
+      "Без подушек, одеял, бортиков и мягких игрушек",
+      "Без коконов, гнёзд и других приспособлений, которые фиксируют малыша",
+      "Боитесь, что холодно, — спальный мешок или на один слой одежды больше, чем на вас"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Синдром внезапной детской смерти",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/sudden-infant-death-syndrome-sids/",
+        "section": "How to reduce the risk of sudden infant death syndrome (SIDS) → Do"
+      },
+      {
+        "name": "AAP — Безопасный сон",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx",
+        "section": "Place your baby on their back for all naps & at night; Choose a firm, flat sleep surface for sleep; Share a room with your baby, but never share a bed; Keep soft objects & loose bedding out of your baby's sleep area"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-sofa-sleep",
+    "ageFromDays": 0,
+    "ageToDays": 181,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Не засыпайте с малышом на диване или в кресле",
+    "summary": "Так риск гибели малыша во сне — до 67 раз выше",
+    "body": "Когда малыш спит вместе со взрослым на диване или в мягком кресле, риск гибели во сне до 67 раз выше. Самое безопасное место для сна малыша — отдельная кроватка или люлька. Если берёте малыша к себе покормить или успокоить, верните малыша в кроватку до того, как заснёте сами.",
+    "sources": [
+      {
+        "name": "AAP — Безопасный сон",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/a-parents-guide-to-safe-sleep.aspx",
+        "section": "Share a room with your baby, but never share a bed"
+      },
+      {
+        "name": "NHS — Синдром внезапной детской смерти",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/sudden-infant-death-syndrome-sids/",
+        "section": "How to reduce the risk of sudden infant death syndrome (SIDS) → Don't; How to be safe if you share a bed with your baby"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-talk-read-sing",
+    "ageFromDays": 0,
+    "ageToDays": 181,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Разговаривайте, читайте и пойте малышу",
+    "summary": "Ваш голос успокаивает малыша и помогает осваивать речь. Читать можно с рождения",
+    "body": "Малыш, может быть, ещё не понимает слов, но уже впитывает ритм, интонации и звуки речи — это важно для развития мозга и будущей речи. AAP советует читать ребёнку с рождения. Больше всего малышу дают ваш голос и ваши объятия.",
+    "points": [
+      "Отвечайте на звуки малыша: повторяйте их и добавляйте слова",
+      "Пойте и включайте музыку — это помогает развитию мозга",
+      "Читайте, держа малыша на коленях, и показывайте картинки",
+      "Подойдут книжки с простыми стишками и чёткими картинками",
+      "Малыш отворачивается или капризничает — сделайте паузу, дочитывать не нужно"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Советы родителям: младенцы",
+        "url": "https://www.cdc.gov/child-development/positive-parenting-tips/infants.html",
+        "section": "Positive parenting tips"
+      },
+      {
+        "name": "AAP — Книжки с малышом",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/how-to-share-books-with-your-baby.aspx",
+        "section": "Вступление; Birth to 6 months → What your baby can do / What you can do"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-urgent-signs",
+    "ageFromDays": 0,
+    "ageToDays": 181,
+    "category": "HEALTH",
+    "kind": "DOCTOR",
+    "title": "Когда сразу вызывать скорую",
+    "summary": "Трудно дышать, синеет, не просыпается, судороги, сыпь не бледнеет при нажатии",
+    "body": "Вызовите скорую, если у малыша есть любой из этих признаков, — все сразу не нужны. Скорая нужна и при температуре 38 °C и выше до 3 месяцев, 39 °C и выше в 3–6 месяцев или ниже 36 °C, а также при отёке губ, языка или горла, если малышу трудно глотать. Доверяйте чутью: если кажется, что с малышом что-то серьёзно не так, сразу обращайтесь за помощью. Когда малыш болеет, следите за новыми признаками, даже ночью.",
+    "points": [
+      "Дышит очень часто или с трудом: кряхтит, втягивает живот при вдохе",
+      "Кожа, губы или язык синие, серые, бледные или мраморные; кожа холодная или влажная",
+      "Сыпь не бледнеет, если на неё надавить",
+      "Трудно разбудить, не просыпается или теряет сознание; судороги",
+      "Слабый, пронзительный или непрерывный плач; нет мочи 12 часов"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Когда малышу нужна срочная помощь",
+        "url": "https://www.nhs.uk/baby/health/when-to-get-urgent-medical-help-for-babies-and-children-under-5/",
+        "section": "Immediate action required: Call 999 or go to A&E if:; Important: Trust your instincts; Signs of serious illness in babies and young children"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-vaccines-calendar",
+    "ageFromDays": 0,
+    "ageToDays": 190,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Прививки — по национальному календарю",
+    "summary": "Сроки задаёт календарь Минздрава России, прививки по нему бесплатны в поликлинике",
+    "body": "В России сроки прививок задаёт национальный календарь профилактических прививок — приказ Минздрава России № 1122н от 06.12.2021 с изменениями от 12.12.2023. Прививки по нему делают бесплатно, по ОМС, в поликлинике по месту жительства. Какие прививки и когда предстоят малышу, обсудите с педиатром. Возможны и прививки сверх национального календаря — о них тоже спросите педиатра.",
+    "sources": [
+      {
+        "name": "Союз педиатров России — Календарь прививок",
+        "url": "https://www.pediatr-russia.ru/parents_information/vaktsinatsiya/kalendar-privivok.php",
+        "section": "Информация для родителей → Вакцинация → Календарь прививок"
+      },
+      {
+        "name": "Союз педиатров России — Идеальный календарь иммунизации 2026",
+        "url": "https://www.pediatr-russia.ru/information/vaktsinatsiya/kalendar-vaktsinatsii/2026-%D0%98%D0%9A%D0%92.pdf",
+        "section": "Стр. 1, «Малыши (дети до 2 лет)», сноска «*» под таблицей"
+      },
+      {
+        "name": "Приказ Минздрава России № 1122н",
+        "url": "http://publication.pravo.gov.ru/Document/View/0001202112200070",
+        "section": "Заголовок документа; Приложение № 1 «Национальный календарь профилактических прививок»"
+      },
+      {
+        "name": "Приказ Минздрава России № 677н (изменения в № 1122н)",
+        "url": "http://publication.pravo.gov.ru/Document/View/0001202401300021",
+        "section": "Заголовок документа"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-jaundice-doctor",
+    "ageFromDays": 2,
+    "ageToDays": 34,
+    "category": "HEALTH",
+    "kind": "DOCTOR",
+    "title": "Желтуха у новорождённого: когда к врачу",
+    "summary": "Обычно желтуха безвредна и проходит сама, но, заметив желтизну, покажите малыша врачу",
+    "body": "Желтуха у новорождённых бывает часто, обычно безвредна и проходит без лечения; заметнее всего желтизна около 3-го дня. Изредка билирубин поднимается очень высоко, поэтому его уровень важно проверять, как советует врач. Заметили желтизну кожи или белков глаз — покажите малыша врачу, NHS советует сделать это срочно. Сколько желтуха обычно держится и когда идти к врачу, если она не усиливается, NHS и AAP пишут по-разному (см. ниже) — обсудите с педиатром. Срочно обратитесь к врачу, если:",
+    "points": [
+      "Желтизна усиливается или переходит на живот, руки и ноги",
+      "Моча тёмно-жёлтая или коричневая, стул бледный, кремовый — сохраните подгузник для врача",
+      "Малыш с желтухой сонливее обычного, трудно просыпается или не ест — вызовите скорую",
+      "Малыш с желтухой вялый или, наоборот, скованный, подёргивается — вызовите скорую",
+      "С желтухой температура 38 °C и выше или 36 °C и ниже, нет мокрых подгузников — скорая"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Jaundice in babies",
+        "url": "https://www.nhs.uk/conditions/jaundice-in-babies/",
+        "section": "Symptoms of jaundice in babies; Urgent advice: Ask for an urgent GP or midwife appointment or call NHS 111 if; Immediate action required: Call 999 or go to A&E if"
+      },
+      {
+        "name": "AAP — Jaundice in newborns",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Jaundice.aspx",
+        "section": "Can jaundice harm my newborn?; When should I call my baby's doctor?; When does infant jaundice go away?"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "NHS",
+        "position": "обычно проходит примерно за 2 недели; если желтуха не уменьшается или усиливается — срочно к врачу"
+      },
+      {
+        "source": "AAP",
+        "position": "на смеси обычно проходит к 2 неделям, при грудном вскармливании часто держится около месяца, иногда дольше; сказать врачу, если желтуха держится дольше 2 недель у малыша на смеси или дольше 4 недель — у малыша в основном на грудном вскармливании"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-spitting-up",
+    "ageFromDays": 7,
+    "ageToDays": 55,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Малыш срыгивает после кормления",
+    "summary": "Срыгивать немного молока во время или после кормления — очень частое дело",
+    "body": "Срыгивания бывают очень часто и обычно проходят сами: как правило, начинаются до 8 недель и проходят к году. Если малыш доволен, здоров и прибавляет в весе, идти с этим к врачу обычно не нужно. Спать малыш и при срыгиваниях должен на спине на ровном матрасе: не кладите на бок или живот и не поднимайте изголовье кроватки. Если срыгивания беспокоят малыша, может помочь:",
+    "points": [
+      "Держите малыша вертикально во время кормления и как можно дольше после",
+      "Давайте срыгнуть воздух несколько раз за кормление",
+      "Попросите проверить, как вы прикладываете малыша к груди или кормите из бутылочки",
+      "Для бутылочки: проверьте, не слишком ли большое отверстие в соске",
+      "Не заставляйте малыша выпивать больше, чем хочется"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Reflux in babies",
+        "url": "https://www.nhs.uk/conditions/reflux-in-babies/",
+        "section": "Вступление; Symptoms of reflux in babies; Things you can try to ease reflux in babies → Do; Don't; Causes of reflux"
+      },
+      {
+        "name": "NHS — Bottle feeding advice",
+        "url": "https://www.nhs.uk/baby/breastfeeding-and-bottle-feeding/bottle-feeding/advice/",
+        "section": "Why is my baby sometimes sick after feeds?"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-soothing",
+    "ageFromDays": 7,
+    "ageToDays": 62,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Как успокоить плачущего малыша",
+    "summary": "Начните с самого насущного — голод, подгузник, тепло, а потом пробуйте разные способы",
+    "body": "Частые причины плача — голод, мокрый или грязный подгузник, усталость, желание на ручки, газы, жара или холод, скука или избыток впечатлений. Начните с самой насущной потребности. Если малыш сыт, в сухом подгузнике и не мёрзнет, пробуйте разные способы: одни подходят лучше других. Вниманием малыша первых месяцев не избаловать: если быстро откликаться на плач, малыш в целом плачет меньше. Что можно попробовать:",
+    "points": [
+      "Возьмите на руки или в слинг, покачивайтесь, ходите, разговаривайте и пойте",
+      "Покачайте в коляске или выйдите на прогулку",
+      "Включите тихий фоновый звук или спокойную музыку",
+      "Погладьте по спинке — прижав к себе или животом на коленях; заснёт — на спину в кроватку",
+      "Помогите срыгнуть воздух; тёплая ванна успокаивает многих, но не всех"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Soothing a crying baby",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/soothing-a-crying-baby/",
+        "section": "Вступление; How to calm a crying baby"
+      },
+      {
+        "name": "AAP — Responding to your baby's cries",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/pages/Responding-to-Your-Babys-Cries.aspx",
+        "section": "Different types of cries; Strategies to try when your baby cries; If your baby is warm, dry and well fed but the crying won't stop"
+      },
+      {
+        "name": "AAP — Colic relief tips",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/Pages/Colic.aspx",
+        "section": "How to relieve colic symptoms"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-reflux-doctor",
+    "ageFromDays": 7,
+    "ageToDays": 90,
+    "category": "HEALTH",
+    "kind": "DOCTOR",
+    "title": "Срыгивания: когда к врачу",
+    "summary": "Обычно срыгивания безвредны, но при некоторых признаках нужно срочно к врачу",
+    "body": "Обсудите с педиатром, если малыш не прибавляет или теряет вес или если срыгивания не уменьшаются, хотя вы уже пробовали держать малыша вертикально и давать срыгнуть воздух. Обращайтесь и при любых других тревогах. Срочно обратитесь к врачу, если у малыша жар, малыш горячий или холодный на ощупь, малыша знобит, понос длится дольше недели или есть признаки обезвоживания. А также если:",
+    "points": [
+      "Рвота зелёная или жёлтая или с кровью",
+      "Малыша рвёт фонтаном — с большей силой, чем обычно",
+      "Малыша рвёт снова и снова, жидкость не удерживается, или малыш отказывается есть",
+      "В стуле кровь, живот вздут или болит при касании",
+      "Малыш не перестаёт плакать и сильно беспокоится"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Reflux in babies",
+        "url": "https://www.nhs.uk/conditions/reflux-in-babies/",
+        "section": "Non-urgent advice: See a GP if your baby; Urgent advice: Ask for an urgent GP appointment or call NHS 111 if your baby"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-tummy-time",
+    "ageFromDays": 7,
+    "ageToDays": 90,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Время на животике",
+    "summary": "Выкладывайте малыша на живот, только когда малыш бодрствует, а вы рядом",
+    "body": "Лёжа на животе, малыш учится поднимать голову и укрепляет мышцы. Начать можно с первых дней дома: 2–3 раза в день по 3–5 минут, играя и разговаривая с малышом, — например, после смены подгузника или после сна. Если малышу нравится, понемногу добавляйте время. Сколько минут в день стоит набирать, AAP и ВОЗ пишут по-разному (см. ниже) — обсудите с педиатром. Если малыш засыпает, переложите на спину в кроватку.",
+    "points": [
+      "Положите игрушку перед малышом на уровне глаз",
+      "Лягте на спину и положите малыша себе на грудь — малыш будет поднимать голову к вам",
+      "Малышу пока не нравится — будьте рядом или положите игрушку, до которой можно дотянуться",
+      "Не оставляйте малыша одного"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Back to sleep, tummy to play",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/sleep/Pages/Back-to-Sleep-Tummy-to-Play.aspx",
+        "section": "2. Tummy to play; How much tummy time should a baby have?; What if my baby does not like being on their tummy?; How can I exercise my baby during tummy time?"
+      },
+      {
+        "name": "ВОЗ — Активность детей до 5 лет",
+        "url": "https://www.who.int/news/item/24-04-2019-to-grow-up-healthy-children-need-to-sit-less-and-play-more",
+        "section": "Recommendations at a glance → Infants (less than 1 year)"
+      },
+      {
+        "name": "CDC — Milestones 2 months",
+        "url": "https://www.cdc.gov/act-early/milestones/2-months.html",
+        "section": "Tips and activities → More parenting tips and activities"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "AAP",
+        "position": "начать с 3–5 минут 2–3 раза в день и к 7 неделям дойти до 15–30 минут в день"
+      },
+      {
+        "source": "ВОЗ",
+        "position": "малышам, которые ещё не передвигаются сами, — не меньше 30 минут в день на животе, частями в течение дня"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-crying-peak",
+    "ageFromDays": 14,
+    "ageToDays": 90,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Плач нарастает к 6 неделям, потом стихает",
+    "summary": "Обычно плача больше с 2 недель, дольше всего — около 6 недель, а к 3–4 месяцам меньше",
+    "body": "Все малыши плачут, часто без видимой причины: по AAP, новорождённые обычно плачут 1–4 часа в день. Примерно с 2 недель плача становится больше. У многих малышей каждый день бывает период капризов, чаще во второй половине дня и вечером. По AAP, дольше всего он длится к 6 неделям — около 3 часов в день, а к 3–4 месяцам сокращается до 1–2 часов. Если малыш успокаивается за несколько часов и в остальное время довольно спокоен, повода для тревоги нет. Если плач вас беспокоит или вам тяжело справляться, обсудите с педиатром: записи о том, когда и сколько малыш плачет, помогут врачу.",
+    "sources": [
+      {
+        "name": "AAP — Responding to your baby's cries",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/pages/Responding-to-Your-Babys-Cries.aspx",
+        "section": "Вступление"
+      },
+      {
+        "name": "AAP — Colic relief tips",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/crying-colic/Pages/Colic.aspx",
+        "section": "Вступление; When are babies the most fussy?"
+      },
+      {
+        "name": "NHS — Soothing a crying baby",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/soothing-a-crying-baby/",
+        "section": "Вступление; Getting help with a crying baby"
+      },
+      {
+        "name": "NHS — Colic",
+        "url": "https://www.nhs.uk/conditions/colic/",
+        "section": "Non-urgent advice: Call NHS 111 or see a GP if"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-never-shake",
+    "ageFromDays": 14,
+    "ageToDays": 139,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Плач выводит из себя? Положите малыша и отойдите",
+    "summary": "Трясти ребёнка нельзя никогда. Уложите малыша в кроватку и успокойтесь в другой комнате",
+    "body": "Плач, даже долгий и безутешный, — обычное дело для малыша в первые месяцы. Но если плач не похож на обычный или есть признаки болезни, например жар или отказ от еды, позвоните педиатру. Если чувствуете, что теряете терпение, уложите малыша в кроватку без одеял и игрушек, закройте дверь и выйдите в другую комнату. Дайте себе около 10 минут и вернитесь. Такое бывает со многими родителями — не стесняйтесь просить о помощи.",
+    "points": [
+      "Тряска может повредить мозг малыша",
+      "Сделайте глубокий вдох и посчитайте до 10",
+      "Позвоните близкому человеку или включите музыку",
+      "Не успокоились — загляните к малышу, но на руки пока не берите",
+      "Предупредите всех, кто остаётся с малышом: трясти нельзя"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Как успокоить плачущего малыша",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/soothing-a-crying-baby/",
+        "section": "Getting help with a crying baby; Never shake your baby; Crying and illness"
+      },
+      {
+        "name": "CDC — Травма головы от жестокого обращения",
+        "url": "https://www.cdc.gov/child-abuse-neglect/about/about-abusive-head-trauma.html",
+        "section": "Quick facts and stats; Prevention → If you are a parent or caregiver"
+      },
+      {
+        "name": "AAP — Синдром тряски младенца",
+        "url": "https://www.healthychildren.org/English/safety-prevention/at-home/Pages/Abusive-Head-Trauma-Shaken-Baby-Syndrome.aspx",
+        "section": "If you feel like you are getting angry and might lose control, try the following; Remember"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-milestones-2m",
+    "ageFromDays": 35,
+    "ageToDays": 90,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Что малыш умеет к 2 месяцам",
+    "summary": "Улыбается в ответ, следит за вами глазами, на животе держит голову",
+    "body": "CDC перечисляет, что к 2 месяцам умеет большинство детей — 75% и больше. Например, малыш реагирует на громкие звуки, двигает обеими руками и ногами, ненадолго раскрывает ладони. Помогайте малышу развиваться: улыбайтесь и отвечайте, когда малыш издаёт звуки, разговаривайте, пойте, чаще обнимайте и держите на руках — этим вы малыша не избалуете. Ещё по списку CDC к 2 месяцам малыш:",
+    "points": [
+      "Улыбается, когда вы улыбаетесь или говорите с малышом",
+      "Смотрит на ваше лицо и радуется, когда вы подходите",
+      "Успокаивается, когда с малышом говорят или берут на руки",
+      "Следит глазами, как вы двигаетесь, несколько секунд рассматривает игрушку",
+      "Лёжа на животе, держит голову; издаёт звуки, кроме плача"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Milestones 2 months",
+        "url": "https://www.cdc.gov/act-early/milestones/2-months.html",
+        "section": "Ways to monitor milestones; What most babies do by 2 months; Tips and activities → What you can do for your 2-month-old"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m0-milestones-doctor",
+    "ageFromDays": 60,
+    "ageToDays": 90,
+    "category": "DEVELOPMENT",
+    "kind": "DOCTOR",
+    "title": "Каких-то навыков нет — обсудите с педиатром",
+    "summary": "Если малыш не делает чего-то из списка CDC на 2 месяца, не ждите — расскажите педиатру",
+    "body": "Вы знаете своего ребёнка лучше всех. Если к 2 месяцам малыш не делает одного или нескольких пунктов из списка CDC, если пропали навыки, которые уже были, или вас что-то тревожит, — не ждите. Обсудите это с педиатром и спросите о скрининге развития. Если беспокойство у вас или у врача остаётся, можно попросить направление к специалисту, который подробнее оценит развитие малыша.",
+    "sources": [
+      {
+        "name": "CDC — Milestones 2 months",
+        "url": "https://www.cdc.gov/act-early/milestones/2-months.html",
+        "section": "Share with your child's doctor → Things to share and consider; If you or the doctor are still concerned"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-solids-false-signs",
+    "ageFromDays": 91,
+    "ageToDays": 147,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Грызёт кулачки — это ещё не сигнал к прикорму",
+    "summary": "Кулачки во рту, пробуждения ночью чаще обычного, просьбы о лишнем кормлении — обычное поведение",
+    "body": "Родители могут принять за готовность к прикорму то, что малыш грызёт кулачки, просыпается ночью чаще обычного или просит больше молока. По NHS, это обычное поведение и не обязательно признак голода или готовности к твёрдой пище. Прикорм не поможет малышу спать всю ночь. Пока малыш не готов к прикорму, иногда помогает немного больше молока.",
+    "points": [
+      "В бутылочку — только грудное молоко или смесь, без сахара и каши"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Первая твёрдая пища",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Signs your baby is ready for solid foods; Feeding your baby: from 0 to 6 months"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-floor-play",
+    "ageFromDays": 91,
+    "ageToDays": 168,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Играйте с малышом на полу каждый день",
+    "summary": "На полу или игровом коврике малыш учится двигаться и тянуться к игрушкам",
+    "body": "Игра на полу или на коврике каждый день помогает малышу двигаться, учиться и изучать всё вокруг. Дайте малышу безопасную возможность тянуться к игрушкам и пинать их ножками. Когда малыш издаёт звуки, отвечайте с радостью: улыбайтесь и говорите — так малыш учится «разговаривать» по очереди.",
+    "points": [
+      "Давайте безопасные по возрасту игрушки, которые легко держать: погремушки, мягкие книжки",
+      "Ближе к 6 месяцам кладите игрушку чуть дальше, чем малыш дотянется, — пусть перевернётся"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Навыки к 4 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/4-months.html",
+        "section": "Tips and activities — What You Can Do for Your 4-month-old"
+      },
+      {
+        "name": "CDC — Навыки к 6 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/6-months.html",
+        "section": "Tips and activities — What You Can Do for Your 6-month-old"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-sleep-3-6-months",
+    "ageFromDays": 91,
+    "ageToDays": 168,
+    "category": "SLEEP",
+    "kind": "TIP",
+    "title": "Сон в 3–6 месяцев",
+    "summary": "Ночных кормлений может стать меньше, а ночной сон — длиннее, но так бывает не у всех",
+    "body": "Малыш растёт, ночных кормлений нужно меньше, и ночью сон может стать дольше. Некоторые малыши могут спать ночью по 5–8 часов и дольше, но не все. Простой спокойный ритуал перед сном может помочь малышу успокоиться. Сон меняется у всех детей; на сон могут влиять, например, зубы и болезни. Если со сном трудности — обсудите с педиатром.",
+    "points": [
+      "Ритуал может быть таким: ванна, пижама и свежий подгузник",
+      "Приглушите свет, обнимите малыша, спойте колыбельную",
+      "Перед сном — спокойные занятия вместо возбуждающих игр",
+      "Держите постоянный распорядок сна и кормлений"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Как помочь малышу уснуть",
+        "url": "https://www.nhs.uk/baby/caring-for-a-newborn/helping-your-baby-to-sleep/",
+        "section": "Sleep requirements at 3 to 6 months old; Establishing a baby bedtime routine; Dealing with baby sleep pattern changes"
+      },
+      {
+        "name": "CDC — Навыки к 4 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/4-months.html",
+        "section": "Tips and activities — What You Can Do for Your 4-month-old"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-rolling-falls",
+    "ageFromDays": 91,
+    "ageToDays": 196,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Малыш скоро начнёт переворачиваться",
+    "summary": "Не оставляйте малыша одного на кровати, диване или пеленальном столе даже на секунду",
+    "body": "Малыши быстро учатся извиваться и толкаться ножками, а вскоре и переворачиваться — и могут скатиться с кровати или пеленального стола. Падение с высокого пеленального стола может быть серьёзным. Ремень на столе пристёгивайте, но не полагайтесь только на ремень и на свою внимательность.",
+    "points": [
+      "Меняйте подгузник на коврике на полу",
+      "На пеленальном столе всегда держите руку на малыше",
+      "Всё для смены подгузника держите под рукой, чтобы не отходить от малыша",
+      "Шезлонг и автокресло ставьте на пол, а не на стол: ёрзая, малыш может опрокинуть их с края"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Falls in babies"
+      },
+      {
+        "name": "AAP — Безопасная детская комната",
+        "url": "https://www.healthychildren.org/English/safety-prevention/at-home/Pages/Make-Babys-Room-Safe.aspx",
+        "section": "Changing Table"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-milestones-4-months",
+    "ageFromDays": 112,
+    "ageToDays": 154,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Что умеют большинство малышей к 4 месяцам",
+    "summary": "Ориентиры CDC: так к 4 месяцам умеют большинство детей — 75% и больше",
+    "body": "Возрастные ориентиры — то, что умеют большинство детей (75% и больше) к определённому возрасту. Такой список не заменяет проверку развития по стандартным тестам. Если малыш чего-то из списка не делает или вас что-то тревожит, обсудите с педиатром. Ниже — часть списка CDC, полный — по ссылке.",
+    "points": [
+      "Сам улыбается, чтобы привлечь внимание; посмеивается, когда вы пытаетесь рассмешить",
+      "Гулит («ооо», «ааа»), отвечает звуками на вашу речь, поворачивает голову на ваш голос",
+      "Ровно держит голову без поддержки, когда вы держите малыша на руках",
+      "Держит игрушку, вложенную в руку, и машет рукой, чтобы задеть игрушки",
+      "Тянет руки в рот; лёжа на животе, поднимается на локти или предплечья"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Навыки к 4 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/4-months.html",
+        "section": "Ways to monitor milestones; Keep in mind; What most babies do by 4 months"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-act-early",
+    "ageFromDays": 112,
+    "ageToDays": 181,
+    "category": "DEVELOPMENT",
+    "kind": "DOCTOR",
+    "title": "Когда обсудить развитие с педиатром",
+    "summary": "Не ждите, если малыш не делает того, что умеют большинство детей, или пропали навыки",
+    "body": "Вы знаете своего малыша лучше всех. Если малыш не делает чего-то из возрастных ориентиров, пропали навыки, которые уже были, или вас тревожит что-то ещё — не ждите. Обсудите с педиатром свои опасения и спросите о скрининге развития. Если тревога остаётся, можно попросить направление к специалисту. Расскажите врачу:",
+    "points": [
+      "Что вы делаете вместе и что малыш любит делать",
+      "Что малыш делает или не делает и что вас в этом тревожит",
+      "Пропали ли навыки, которые уже были",
+      "Есть ли у малыша особые потребности по здоровью и были ли роды раньше срока"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Навыки к 4 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/4-months.html",
+        "section": "Share with your child's doctor; If you or the doctor are still concerned"
+      },
+      {
+        "name": "CDC — Навыки к 6 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/6-months.html",
+        "section": "Share with your child's doctor; If you or the doctor are still concerned"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-safe-toys",
+    "ageFromDays": 119,
+    "ageToDays": 210,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Безопасные игрушки для малыша, который всё тянет в рот",
+    "summary": "Мелкие предметы и детали держите там, где малыш не дотянется: ими можно подавиться",
+    "body": "Малыши изучают мир, пробуя вещи ртом: к 6 месяцам так делают большинство детей. Мелкими предметами малыш может подавиться. Все игрушки и их детали должны быть больше рта малыша. Подвесные игрушки и мобили над кроваткой могут задушить малыша — вовремя их уберите.",
+    "points": [
+      "Пуговицы, монеты, мелкие детали игрушек держите вне досягаемости малыша",
+      "Игрушки для детей постарше держите отдельно: в них бывают мелкие детали",
+      "Батарейки-таблетки — подальше: проглоченные, они могут вызвать тяжёлые ожоги внутри",
+      "Магнитные игрушки с мелкими деталями — подальше: магниты могут слипнуться в кишечнике",
+      "Мобиль уберите в 5 месяцев или раньше — как только малыш начнёт вставать на четвереньки"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Choking"
+      },
+      {
+        "name": "AAP — Как выбрать безопасные игрушки",
+        "url": "https://www.healthychildren.org/English/safety-prevention/at-home/Pages/How-to-Buy-Safe-Toys.aspx",
+        "section": "10 toy buying tips"
+      },
+      {
+        "name": "AAP — Как предотвратить удушье",
+        "url": "https://www.healthychildren.org/English/health-issues/injuries-emergencies/Pages/Choking-Prevention.aspx",
+        "section": "Вводный абзац"
+      },
+      {
+        "name": "CDC — Навыки к 6 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/6-months.html",
+        "section": "What most babies do by 6 months — Cognitive Milestones"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-solids-timing",
+    "ageFromDays": 126,
+    "ageToDays": 181,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Когда начинать прикорм",
+    "summary": "ВОЗ советует с 6 месяцев, NHS — около 6, Союз педиатров России — в 4–6 месяцев",
+    "body": "Прикорм — это вся еда, кроме грудного молока и смеси. Сроки начала прикорма авторитетные источники называют разные. Обсудите с педиатром, когда начинать прикорм вашему малышу и какими продуктами малыш может подавиться.",
+    "sources": [
+      {
+        "name": "ВОЗ — Кормление детей грудного и раннего возраста",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding",
+        "section": "Key facts; Complementary feeding"
+      },
+      {
+        "name": "NHS — Первая твёрдая пища",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "When to start introducing solid foods; Signs your baby is ready for solid foods"
+      },
+      {
+        "name": "Союз педиатров России — Программа оптимизации вскармливания детей первого года жизни",
+        "url": "https://www.pediatr-russia.ru/information/dokumenty/other-docs/nacprog1year_2019.pdf",
+        "section": "Глава 5. Организация прикорма, с. 45–47"
+      },
+      {
+        "name": "CDC — Навыки к 6 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/6-months.html",
+        "section": "Tips and activities — What You Can Do for Your 6-month-old"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "ВОЗ",
+        "position": "первые 6 месяцев — только грудное молоко, прикорм — с 6 месяцев"
+      },
+      {
+        "source": "NHS",
+        "position": "прикорм — примерно с 6 месяцев, когда вместе появятся три признака готовности"
+      },
+      {
+        "source": "Союз педиатров России",
+        "position": "прикорм — в 4–6 месяцев, не раньше 4; здоровому ребёнку предпочтительно в 5 месяцев; сроки подбирают индивидуально, с учётом готовности ребёнка"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-teething",
+    "ageFromDays": 147,
+    "ageToDays": 240,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Первые зубы: чего ждать",
+    "summary": "Обычно зубы начинают резаться около 6 месяцев, но сроки у всех разные",
+    "body": "Чаще всего зубы начинают резаться около 6 месяцев, но у одних малышей раньше 4 месяцев, у других после 12. Температура может слегка подняться, но, по NHS, остаётся ниже 38 °C; жар, по данным AAP, — не признак прорезывания, связи с поносом тоже нет. Если температура 38 °C и выше или малышу совсем плохо — скорее всего, дело не в зубах: обратитесь к педиатру (пороги у NHS и AAP разные — см. ниже). Понос держится больше суток — позвоните педиатру. Иногда зуб появляется без боли или с лёгкими признаками на несколько дней, а иногда можно заметить:",
+    "points": [
+      "Дёсны болят и краснеют там, где режется зуб",
+      "Больше слюней, сыпь на лице или одна щека красная",
+      "Малыш всё грызёт и трёт ухо",
+      "Капризничает и спит хуже обычного"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Признаки прорезывания зубов",
+        "url": "https://www.nhs.uk/baby/babys-development/teething/baby-teething-symptoms/",
+        "section": "When do babies start teething?; Teething symptoms"
+      },
+      {
+        "name": "AAP — Когда начинают резаться зубы",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/teething-tooth-care/Pages/Teething-4-to-7-Months.aspx",
+        "section": "Possible signs of teething; When to call your baby's pediatrician"
+      },
+      {
+        "name": "AAP — Боль при прорезывании зубов",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/teething-tooth-care/Pages/Teething-Pain.aspx",
+        "section": "Can teething cause fever in babies?; Other false signs of teething include"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "NHS",
+        "position": "при прорезывании температура может слегка подняться, но остаётся ниже 38 °C"
+      },
+      {
+        "source": "AAP",
+        "position": "небольшой подъём — не выше 38,3 °C, выше — повод позвонить педиатру; в другой статье жар назван ложным признаком прорезывания"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-teething-soothe",
+    "ageFromDays": 147,
+    "ageToDays": 240,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Как помочь малышу, когда режутся зубы",
+    "summary": "Прорезыватель, массаж дёсен чистым пальцем, объятия и игра",
+    "body": "Каждому малышу помогает своё — попробуйте разные способы. Если слюней много, мягко вытирайте лицо — это может уберечь от сыпи. Гомеопатические средства от прорезывания NHS не рекомендует, AAP считает бесполезными и предупреждает, что в некоторых бывают вредные вещества. Насчёт гелей для дёсен источники расходятся — прежде чем их пробовать, обсудите с педиатром.",
+    "points": [
+      "Дайте прорезыватель из твёрдой резины; некоторые можно охладить в холодильнике",
+      "Не кладите прорезыватель в морозилку: замёрзшим можно повредить дёсны",
+      "Мягко помассируйте дёсны чистым пальцем",
+      "Обнимайте малыша, играйте вместе — это может отвлечь от боли",
+      "Ничего не завязывайте на шее малыша — ни прорезыватель, ни янтарные бусы"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Как помочь при прорезывании зубов",
+        "url": "https://www.nhs.uk/baby/babys-development/teething/tips-for-helping-your-teething-baby/",
+        "section": "Teething rings; Teething gels; Comforting a teething baby; Preventing teething rashes"
+      },
+      {
+        "name": "AAP — Когда начинают резаться зубы",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/teething-tooth-care/Pages/Teething-4-to-7-Months.aspx",
+        "section": "How to ease teething discomfort"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "AAP",
+        "position": "не использовать гели для обезболивания дёсен: в редких случаях они мешают крови переносить кислород"
+      },
+      {
+        "source": "NHS",
+        "position": "доказательств пользы гелей мало, сначала советуют прорезыватели; если гель — только специальный детский, из аптеки"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-milestones-6-months",
+    "ageFromDays": 161,
+    "ageToDays": 210,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Что умеют большинство малышей к 6 месяцам",
+    "summary": "Ориентиры CDC: так к 6 месяцам умеют большинство детей — 75% и больше",
+    "body": "Возрастные ориентиры — то, что умеют большинство детей (75% и больше) к определённому возрасту. Такой список не заменяет проверку развития по стандартным тестам. Если малыш чего-то из списка не делает или вас что-то тревожит, обсудите с педиатром.",
+    "points": [
+      "Узнаёт знакомых людей, смеётся, любит смотреть на себя в зеркало",
+      "Издаёт звуки по очереди с вами, взвизгивает, высовывает язык и дует «пр-р-р»",
+      "Тянется схватить игрушку, которую хочет, и тянет вещи в рот, чтобы их изучить",
+      "Переворачивается с живота на спину; на животе опирается на прямые руки",
+      "Сидя, опирается на руки; сжимает губы, когда больше не хочет есть"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Навыки к 6 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/6-months.html",
+        "section": "Ways to monitor milestones; Keep in mind; What most babies do by 6 months"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m3-solids-readiness",
+    "ageFromDays": 161,
+    "ageToDays": 210,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Признаки готовности к прикорму",
+    "summary": "По NHS: сидит и держит голову, сам берёт еду в рот и глотает, а не выплёвывает",
+    "body": "По NHS, малыш готов к первой еде, когда три признака появляются вместе — примерно с 6 месяцев. Первую еду дают вместе с грудным молоком или смесью. Союз педиатров России называет срок 4–6 месяцев и другие признаки — см. ниже.",
+    "points": [
+      "Сидит и ровно держит голову",
+      "Смотрит на еду, берёт и сам отправляет в рот",
+      "Глотает еду, а не выплёвывает обратно",
+      "Кормите только сидя: лёжа малыш может подавиться",
+      "Пока малыш ест, будьте рядом"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Первая твёрдая пища",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Signs your baby is ready for solid foods"
+      },
+      {
+        "name": "Союз педиатров России — Введение прикорма",
+        "url": "https://www.pediatr-russia.ru/parents_information/soveti-roditelyam/ratsiony-pitaniya-v-razlichnye-vozrastnye-periody/vvedenie-prikorma.php",
+        "section": "Когда необходимо начать введение прикорма?"
+      },
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Choking"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "NHS",
+        "position": "примерно с 6 месяцев, когда вместе появятся три признака: сидит и держит голову, сам берёт еду в рот, глотает, а не выплёвывает"
+      },
+      {
+        "source": "Союз педиатров России",
+        "position": "с 4–6 месяцев; признаки: пищевой интерес, сидит сам или с поддержкой, угасает рефлекс выталкивания еды изо рта"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-no-honey",
+    "ageFromDays": 182,
+    "ageToDays": 216,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Мёд — только после года",
+    "summary": "До 12 месяцев мёд может вызвать детский ботулизм — очень серьёзную болезнь",
+    "body": "Изредка в мёде бывают бактерии, которые могут выделять токсины в кишечнике малыша. Поэтому до года мёд не дают: не добавляйте мёд в еду, воду или смесь и не обмакивайте в мёд соску. После года ботулизм от мёда уже не грозит. Кормящим родителям есть мёд можно. Но мёд — это сахар, а сахар вредит зубам: NHS советует не давать детям 4 лет и младше еду и напитки с сахаром, в том числе с мёдом.",
+    "sources": [
+      {
+        "name": "NHS — Что не давать малышу",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/foods-to-avoid-giving-babies-and-young-children/",
+        "section": "Honey; Sugar and sweeteners"
+      },
+      {
+        "name": "CDC — Что исключить или ограничить",
+        "url": "https://www.cdc.gov/infant-toddler-nutrition/foods-and-drinks/foods-and-drinks-to-avoid-or-limit.html",
+        "section": "Honey before 12 months"
+      },
+      {
+        "name": "AAP — Ботулизм",
+        "url": "https://www.healthychildren.org/English/health-issues/conditions/infections/Pages/Botulism.aspx",
+        "section": "Infant botulism"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-solids-milk-variety",
+    "ageFromDays": 182,
+    "ageToDays": 223,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Прикорм: молоко пока главное, еда — разная",
+    "summary": "В начале прикорма большую часть питания малыш всё ещё получает из грудного молока или смеси",
+    "body": "Пока малыш только привыкает к новой еде, большую часть энергии и питательных веществ даёт грудное молоко или смесь. Кормить грудью можно, сколько захотите вы оба. Начинайте с небольших порций и постепенно добавляйте новые продукты, в том числе несладкие овощи: брокколи, цветную капусту, шпинат. Если малыш отказывается, предложите снова в другой раз: чтобы принять новую еду, может понадобиться 10 попыток и больше.",
+    "points": [
+      "Не добавляйте в еду малыша соль, сахар и бульонные кубики",
+      "Не заставляйте есть: если малыш отворачивается или плотно сжимает губы — хватит",
+      "Ешьте вместе: малыши повторяют за взрослыми",
+      "Во время еды — без телевизора, телефона и планшета"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Первый прикорм",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Feeding your baby: from around 6 months; First foods; How to start solid foods"
+      },
+      {
+        "name": "ВОЗ — Кормление детей грудного и раннего возраста",
+        "url": "https://www.who.int/news-room/fact-sheets/detail/infant-and-young-child-feeding",
+        "section": "Complementary feeding"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-water-cup",
+    "ageFromDays": 182,
+    "ageToDays": 230,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Вода — глотками из открытой чашки",
+    "summary": "С началом прикорма предлагайте малышу во время еды несколько глотков воды из чашки",
+    "body": "Открытая чашка или поильник со свободным потоком, без клапана, учат малыша пить глотками, а не сосать, и лучше для зубов. Сначала может быть много пролитого — наберитесь терпения, малыш постепенно научится. Главным питьём до года остаются грудное молоко или смесь. Сладкие напитки — сиропы для разведения, фруктовые и сокосодержащие напитки, газировка, ароматизированное молоко — малышам не подходят: в них сахар, и они могут вызвать кариес даже разбавленными.",
+    "sources": [
+      {
+        "name": "NHS — Напитки и чашки для малышей",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/drinks-and-cups-for-babies-and-young-children/",
+        "section": "Beakers and cups for babies; Water; Squashes, flavoured milk, 'fruit' or 'juice' drinks and fizzy drinks"
+      },
+      {
+        "name": "NHS — Первый прикорм",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Feeding your baby: from around 6 months"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-choking-food",
+    "ageFromDays": 182,
+    "ageToDays": 237,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Как готовить еду, чтобы малыш не подавился",
+    "summary": "Будьте рядом, пока малыш ест, а мелкие круглые продукты режьте на четвертинки",
+    "body": "Всегда оставайтесь рядом, пока малыш ест. Кормите сидя — в стульчике для кормления, а не лёжа, не в машине и не в коляске, спокойно и без спешки. При знакомстве с твёрдой едой у малыша могут быть рвотные позывы: так малыш учится справляться с кусочками. Это не то же самое, что подавиться. Что делать, если ребёнок всё-таки подавится, заранее узнайте у педиатра.",
+    "points": [
+      "Виноград, помидоры черри и другие мелкие круглые продукты режьте на 4 части",
+      "Не давайте твёрдое: орехи — целые и кусочками, сырую морковь, сырое яблоко",
+      "Удаляйте косточки из фруктов и кости из мяса и рыбы"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Первый прикорм",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Safety and hygiene"
+      },
+      {
+        "name": "CDC — Риск подавиться",
+        "url": "https://www.cdc.gov/infant-toddler-nutrition/foods-and-drinks/choking-hazards.html",
+        "section": "Ways to help prevent your child from choking: Meals and snacktime; Always; Be ready; Potential choking hazards for young children: Proteins to avoid, Fruits and vegetables to avoid"
+      },
+      {
+        "name": "ВОЗ — Прикорм",
+        "url": "https://www.who.int/health-topics/complementary-feeding",
+        "section": "Recommendation"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-first-teeth-brushing",
+    "ageFromDays": 189,
+    "ageToDays": 265,
+    "category": "HEALTH",
+    "kind": "TIP",
+    "title": "Чистите зубы с первого зуба",
+    "summary": "Как только прорежется первый зуб, чистите зубы дважды в день детской пастой с фтором",
+    "body": "Первый молочный зуб обычно появляется около 6 месяцев, но может и раньше, и позже. С этого момента чистите зубы два раза в день: перед сном и ещё раз в удобное время. Возьмите детскую щётку и совсем немного пасты с фтором — тонкий мазок. Полоскать рот водой после чистки не нужно, иначе смоется фтор. Если поначалу почистить удаётся совсем чуть-чуть, не переживайте: главное — чтобы чистка стала привычкой. Какую пасту выбрать, подскажет стоматолог: NHS советует показать малыша стоматологу, когда появятся первые зубы или до года.",
+    "points": [
+      "Удобнее всего усадить малыша на колени, головой к вашей груди",
+      "Следите, чтобы малыш не ел и не слизывал пасту из тюбика",
+      "Не обмакивайте соску в сахар, варенье и другое сладкое"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Зубы малыша",
+        "url": "https://www.nhs.uk/baby/babys-development/teething/looking-after-your-babys-teeth/",
+        "section": "Looking after your baby's teeth; Tooth brushing tips for babies; Sugar and tooth decay"
+      },
+      {
+        "name": "NHS — Зубы детей",
+        "url": "https://www.nhs.uk/live-well/healthy-teeth-and-gums/taking-care-of-childrens-teeth/",
+        "section": "Toothbrushing tips — Children aged up to 3 years; Taking your child to the dentist"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-hot-drinks",
+    "ageFromDays": 189,
+    "ageToDays": 364,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Горячее — подальше от рук малыша",
+    "summary": "Малыш хватает яркие предметы, например кружки, а горячий напиток может обжечь и через 15 минут",
+    "body": "Кожа малыша обжигается легче, чем кожа взрослого. Прежде чем взять малыша на руки, отставьте горячий напиток подальше, и вообще держите горячие напитки вдали от маленьких детей.",
+    "points": [
+      "Готовьте на задних конфорках, ручки кастрюль поворачивайте назад",
+      "Чайник — беспроводной или с коротким шнуром, который не свисает со стола",
+      "Утюг и выпрямитель для волос, пока остывают, убирайте подальше",
+      "Спички и зажигалки храните вне поля зрения и досягаемости малыша",
+      "Подогретую смесь взболтайте и капните на запястье: чуть тёплая, не горячая"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Burns and scalds"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-iron-foods",
+    "ageFromDays": 196,
+    "ageToDays": 265,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Добавляйте в меню продукты с железом",
+    "summary": "С началом прикорма выбирайте для малыша продукты, в которых есть железо",
+    "body": "Железо нужно для роста ребёнка, развития мозга и иммунитета. Гемовое железо, которое обычно есть в продуктах животного происхождения — мясе, птице, рыбе, — организм усваивает легче. Негемовое — в растениях и обогащённых продуктах: детских кашах с железом, бобовых, тофу, тёмно-зелёных листовых овощах — усваивается хуже; помогает сочетать их с продуктами, богатыми витамином C. Малышам на грудном молоке CDC особо советует давать достаточно продуктов с железом. Некоторым детям железа нужно больше: спросите об этом педиатра на плановом осмотре.",
+    "points": [
+      "Мясо, птица, рыба, яйца",
+      "Детские каши, обогащённые железом",
+      "Чечевица, тофу, тёмно-зелёные листовые овощи, фасоль — размятой: целой можно подавиться",
+      "Витамин C: цитрусовые, брокколи, капуста, ягоды, помидоры, батат"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Железо",
+        "url": "https://www.cdc.gov/infant-toddler-nutrition/vitamins-minerals/iron.html",
+        "section": "Iron's role; When and how much iron children need; Iron in solid foods"
+      },
+      {
+        "name": "NHS — Первый прикорм",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/babys-first-solid-foods/",
+        "section": "Feeding your baby: from 7 to 9 months"
+      },
+      {
+        "name": "CDC — Риск подавиться",
+        "url": "https://www.cdc.gov/infant-toddler-nutrition/foods-and-drinks/choking-hazards.html",
+        "section": "Proteins to avoid"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-small-objects",
+    "ageFromDays": 203,
+    "ageToDays": 272,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Ползает или скоро начнёт — уберите мелочи с пола",
+    "summary": "Малыш тянет в рот всё, до чего дотянется: проверяйте пол и прячьте опасное",
+    "body": "Пуговицей, монетой или деталью игрушки малыш может подавиться. Особенно опасны батарейки-таблетки: проглоченная батарейка может вызвать тяжёлые внутренние ожоги. Мелкие магниты из игрушек, если их проглотить, могут слипнуться в кишечнике. Лекарства храните запертыми или высоко, вне досягаемости и вне поля зрения малыша, бытовую химию — тоже повыше.",
+    "points": [
+      "Регулярно проверяйте пол, в том числе под диваном",
+      "Игрушки старших детей с мелкими деталями держите подальше от малыша",
+      "Проверьте, надёжно ли закрыты отсеки батареек в пультах и брелоках",
+      "Если химию не убрать повыше, поставьте защёлки на нижние шкафы"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Choking; Poisoning"
+      },
+      {
+        "name": "AAP — Защита дома от отравлений",
+        "url": "https://www.healthychildren.org/English/safety-prevention/at-home/Pages/Childproofing-Your-Home.aspx",
+        "section": "Childproofing Your Home for Poisons (вступление); Small objects"
+      },
+      {
+        "name": "AAP — Движение в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Movement-8-to-12-Months.aspx",
+        "section": "Encouraging your child to crawl"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-stairs-windows",
+    "ageFromDays": 217,
+    "ageToDays": 272,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Ворота на лестницу, замки на окна",
+    "summary": "Научившись ползать, малыш может забираться на диван и при любой возможности спешить к лестнице",
+    "body": "Поставьте прочные ворота сверху и снизу лестницы и всегда закрывайте их за собой. Не оставляйте малыша играть на лестнице без присмотра. Даже когда малыш научится сползать по ступенькам спиной вперёд, лестница должна оставаться закрытой воротами. Низкую мебель отодвиньте от окон.",
+    "points": [
+      "На окна — замки или ограничители, чтобы створка открывалась меньше чем на 6,5 см",
+      "Ключи от оконных замков держите там, где их при пожаре быстро найдут взрослые",
+      "Щели в перилах и балконном ограждении шире 6,5 см закройте щитами или сеткой"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Falls in babies — When your baby starts crawling"
+      },
+      {
+        "name": "AAP — Движение в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Movement-8-to-12-Months.aspx",
+        "section": "Encouraging your child to crawl"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-crawling-own-way",
+    "ageFromDays": 224,
+    "ageToDays": 272,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Ползать — каждый по-своему",
+    "summary": "Некоторые дети не ползают на четвереньках, а передвигаются иначе",
+    "body": "Некоторые дети так и не начинают ползать: вместо этого передвигаются сидя, на попе, или скользят на животе. Если малыш согласованно двигает обеими сторонами тела и одинаково работает каждой рукой и ногой, причин для беспокойства нет. Главное — малыш исследует всё вокруг и укрепляет тело перед ходьбой. Если вам кажется, что малыш двигается как-то не так, обсудите это с педиатром.",
+    "points": [
+      "Кладите игрушки на пол чуть дальше, чем малыш может дотянуться",
+      "Полосу препятствий из подушек устраивайте только под присмотром",
+      "Застряв между подушками, малыш может не выбраться и даже задохнуться"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Движение в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Movement-8-to-12-Months.aspx",
+        "section": "Crawling, scooting & slithering; Encouraging your child to crawl"
+      },
+      {
+        "name": "CDC — Milestones 9 months",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Tips and activities — What You Can Do for Your 9-month-old"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-stranger-shyness",
+    "ageFromDays": 238,
+    "ageToDays": 272,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Малыш стесняется чужих",
+    "summary": "К 9 месяцам большинство малышей стесняются или боятся незнакомых и держатся за близких",
+    "body": "Малыш начинает отличать знакомое от незнакомого, поэтому может напрячься, спрятаться или заплакать, когда подходит чужой человек, а иногда даже родственник или знакомая няня — особенно если подходят быстро. Это не оттого, что малыша «избаловали», и не от вашего воспитания: по словам AAP, такие тревоги говорят о здоровой связи малыша с вами. Со временем знакомиться с новыми людьми станет легче.",
+    "points": [
+      "Попросите родных и гостей подходить к малышу не спеша",
+      "Бабушкам и дедушкам: не принимайте на свой счёт и наберитесь терпения",
+      "Уходя, коротко и весело попрощайтесь, а не исчезайте тайком",
+      "Замечайте, как малыш реагирует на новых людей, и делайте то, что малышу приятно и спокойно"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Milestones 9 months",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Social/Emotional Milestones; More Parenting Tips and Activities"
+      },
+      {
+        "name": "AAP — Эмоции и общение в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Emotional-and-Social-Development-8-12-Months.aspx",
+        "section": "Emotional and Social Development: 8 to 12 Months"
+      },
+      {
+        "name": "AAP — Советы бабушкам и дедушкам (8–12 месяцев)",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Tips-for-Grandparents-of-8-to-12-Month-Old.aspx",
+        "section": "Tips for Grandparents of 8 to 12-Month-Old (вступление)"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "g-car-seat-rear-facing",
+    "ageFromDays": 240,
+    "ageToDays": 364,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Не спешите разворачивать автокресло по ходу",
+    "summary": "Возите малыша против хода как можно дольше — пока не достигнет предела кресла по весу или росту",
+    "body": "AAP и CDC советуют ездить против хода движения как можно дольше — пока ребёнок не достигнет предельного веса или роста, разрешённого производителем автокресла. Когда малыш вырастет из кресла-переноски, нужно кресло побольше, которое тоже ставится против хода. Большинство таких кресел позволяют ездить против хода до 2 лет и дольше.",
+    "points": [
+      "Пределы веса и роста указывает производитель автокресла",
+      "Ноги упираются в спинку сиденья — не повод разворачивать: травмы ног редки",
+      "Лямки ремней — на уровне плеч малыша или ниже"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Автокресла",
+        "url": "https://www.healthychildren.org/English/safety-prevention/on-the-go/Pages/Car-Safety-Seats-Information-for-Families.aspx",
+        "section": "3 types of rear facing seats; Common questions about rear-facing car seats → What if my child's feet touch the back of the vehicle seat?; When using a rear-facing seat, keep the following tips in mind"
+      },
+      {
+        "name": "CDC — Безопасность детей в машине",
+        "url": "https://www.cdc.gov/child-passenger-safety/about/index.html",
+        "section": "Know the stages → Rear-facing car seat"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m6-development-doctor",
+    "ageFromDays": 252,
+    "ageToDays": 272,
+    "category": "DEVELOPMENT",
+    "kind": "DOCTOR",
+    "title": "Когда обсудить развитие с педиатром",
+    "summary": "Если малыш не осваивает навыки, теряет освоенные или вас что-то тревожит, обсудите это с педиатром",
+    "body": "CDC перечисляет, что к 9 месяцам умеют большинство (75% и больше) детей, — ниже часть списка. Если к 9 месяцам малыш не делает чего-то из этого, если пропали навыки, которые уже были, или вас что-то беспокоит, не ждите: обсудите это с педиатром и спросите о скрининге развития. Вы знаете своего малыша лучше всех. AAP отдельно советует сказать педиатру, если к 9 месяцам малыш не сидит сам. Если роды были раньше срока, скажите об этом педиатру.",
+    "points": [
+      "Смотрит на вас, когда зовёте по имени",
+      "Произносит разные слоги вроде «ма-ма-ма» и «ба-ба-ба»",
+      "Поднимает руки, чтобы взяли на руки",
+      "Ищет предмет, который упал или пропал из виду",
+      "Улыбается или смеётся, когда играете в «ку-ку»"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Milestones 9 months",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Ways to monitor milestones; What most babies do by 9 months; Share with your child's doctor"
+      },
+      {
+        "name": "AAP — Движение в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Movement-8-to-12-Months.aspx",
+        "section": "Sitting up without support"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-babble-gestures",
+    "ageFromDays": 273,
+    "ageToDays": 335,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Лепет и первые жесты",
+    "summary": "К 9 месяцам большинство малышей лепечут «мамама», «бабаба» и поднимают ручки, просясь на руки",
+    "body": "Отвечайте на лепет: повторите звуки за малышом и скажите простое слово с этими звуками — на «мамама» ответьте «мамама», а потом «мама». Учите жестам: уходя, помашите и скажите «пока-пока», покажите, как качать головой «нет». Простые жесты-знаки помогут малышу показать, чего хочется, ещё до первых слов.",
+    "points": [
+      "Называйте то, на что смотрит малыш: «красный круглый мяч»",
+      "Играйте по очереди: передавайте игрушку друг другу — «мой ход, твой ход»",
+      "Играйте в «ку-ку»: накройте голову платком и посмотрите, стянет ли малыш платок",
+      "Малыш бросает вещи — превратите это в игру и подавайте предмет снова"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Вехи развития к 9 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Ways to monitor milestones; Language/Communication Milestones; What You Can Do for Your 9-month-old; More Parenting Tips and Activities"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-anchor-furniture",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "Закрепите мебель и телевизор",
+    "summary": "Малыш учится вставать у опоры — незакреплённый комод или телевизор может опрокинуться",
+    "body": "Опрокинувшаяся мебель или телевизор могут тяжело травмировать ребёнка и даже привести к гибели. Маленькие дети лезут на комоды, тумбы и стеллажи. Мебель теряет устойчивость, если на ней тяжёлые вещи, открыто сразу несколько ящиков или она стоит на ковре. Уследить за малышом каждую секунду невозможно, а крепление от опрокидывания ставится за несколько минут. Если на малыша упала мебель, сразу покажите малыша педиатру или отвезите в приёмное отделение больницы, даже если с виду всё в порядке.",
+    "points": [
+      "Прикрепите шкафы, комоды и зеркала к стене креплениями от опрокидывания",
+      "Телевизор повесьте на стену или закрепите, не ставьте его на комод",
+      "Тяжёлое кладите в нижние ящики, лёгкое — в верхние",
+      "Не держите игрушки и пульты наверху: это манит залезть",
+      "Поставьте ограничители, чтобы ящики не выдвигались до конца"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Как предотвратить опрокидывание мебели и телевизора",
+        "url": "https://www.healthychildren.org/English/safety-prevention/at-home/Pages/Preventing-Furniture-and-TV-Tip-Overs.aspx",
+        "section": "How furniture can be dangerous; How to prevent tip-overs; Remember"
+      },
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "What most babies do by 1 year → Movement/Physical Development Milestones"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-bath-never-alone",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "SAFETY",
+    "kind": "TIP",
+    "title": "В ванне — рядом каждую секунду",
+    "summary": "Малыш может утонуть даже в 5 см воды, и часто это происходит беззвучно",
+    "body": "Ванна — одно из самых частых мест, где тонут малыши и маленькие дети. Будьте рядом всё время, пока малыш в воде, и не отходите ни на миг, даже если в ванне вместе с малышом старший брат или сестра.",
+    "points": [
+      "Сиденье для купания — не средство безопасности: оставайтесь рядом всё время",
+      "Сначала наберите холодную воду, потом добавьте горячую",
+      "Перед купанием проверьте температуру воды локтем",
+      "Спустите воду сразу, как только достали малыша из ванны"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Безопасность малыша",
+        "url": "https://www.nhs.uk/baby/first-aid-and-safety/safety/baby-and-toddler-safety/",
+        "section": "Drowning; Burns and scalds"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-bottle-to-cup",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "От бутылочки к чашке",
+    "summary": "Предлагайте питьё из открытой чашки и постепенно сокращайте кормления из бутылочки",
+    "body": "Открытая чашка или поильник без клапана учат малыша делать глотки, а не сосать, и это лучше для зубов. Сначала будет много пролитого — наберитесь терпения. От бутылочки отучайте постепенно: оставьте её только к еде, а в остальное время, особенно перед сном, понемногу убирайте. Когда отказаться от бутылочки совсем, обсудите с педиатром: NHS и AAP называют разные сроки.",
+    "points": [
+      "Чашку предлагайте в основном во время еды",
+      "В бутылочку — только грудное молоко, смесь или вода, без сахара и каши",
+      "Поильник с клапаном не подходит: из него приходится сосать, как из соски",
+      "Перед сном вместо бутылочки — объятия, песенка или сказка",
+      "Если отказ от бутылочки превращается в борьбу, обсудите это с педиатром"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Напитки и чашки для малышей",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/drinks-and-cups-for-babies-and-young-children/",
+        "section": "Beakers and cups for babies; Choosing a baby beaker or cup"
+      },
+      {
+        "name": "AAP — От бутылочки к чашке",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/feeding-nutrition/Pages/Discontinuing-the-Bottle.aspx",
+        "section": "Why prolonged bottle feeding can cause health problems; Tips for a smoother transition to drinking from a cup; Issues to watch for along the way; Choosing the right cup for your child; Remember"
+      }
+    ],
+    "disagreement": [
+      {
+        "source": "NHS",
+        "position": "после года кормление из бутылочки не поощрять"
+      },
+      {
+        "source": "AAP",
+        "position": "завершить переход от бутылочки к чашке между 12 и 18 месяцами"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-lost-skills-doctor",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "DEVELOPMENT",
+    "kind": "DOCTOR",
+    "title": "Пропали навыки — обсудите с педиатром",
+    "summary": "Если у малыша пропали умения, которые уже были, не ждите и обсудите это с педиатром",
+    "body": "Вы знаете своего ребёнка лучше всех. CDC советует не ждать и поговорить с врачом, если малыш не делает одного или нескольких пунктов из списка для своего возраста, если пропали уже освоенные навыки или если вас что-то беспокоит. Спросите педиатра о скрининге развития и расскажите:",
+    "points": [
+      "что вы делаете вместе и что малыш любит делать",
+      "что малыш делает или не делает, и это вас беспокоит",
+      "пропали ли навыки, которые уже были",
+      "есть ли у малыша особые потребности по здоровью и были ли роды раньше срока"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Вехи развития к 9 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Share with your child's doctor → Things to share and consider"
+      },
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "Share with your child's doctor → Things to share and consider"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-separation-anxiety",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Плачет, когда вы уходите",
+    "summary": "Тревога при расставании — признак привязанности к вам, а не следствие «баловства»",
+    "body": "Малыш уже понимает, что вы где-то есть, но не рядом, а чувство времени ещё очень слабое: когда вы вернётесь и вернётесь ли, малыш не знает. Поэтому может плакать, даже когда вы выходите в соседнюю комнату, а ночью просыпаться и искать вас. Тревога при расставании обычно сильнее всего между 10 и 18 месяцами, а потом постепенно ослабевает.",
+    "points": [
+      "К 9 месяцам большинство малышей при незнакомых стесняются, льнут к вам или боятся",
+      "Даже родные и знакомая няня могут вызвать слёзы, особенно если подходят быстро"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Эмоциональное и социальное развитие в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Emotional-and-Social-Development-8-12-Months.aspx",
+        "section": "Emotional and Social Development: 8 to 12 Months — абзацы о тревоге перед незнакомыми и separation anxiety (подзаголовков нет)"
+      },
+      {
+        "name": "CDC — Вехи развития к 9 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "What most babies do by 9 months → Social/Emotional Milestones"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-separation-help",
+    "ageFromDays": 273,
+    "ageToDays": 364,
+    "category": "CRYING",
+    "kind": "TIP",
+    "title": "Как легче расставаться",
+    "summary": "Прощайтесь коротко и бодро, а не исчезайте тайком — так малыш учится понимать, чего ждать",
+    "body": "Слёзы стихнут через несколько минут после вашего ухода, и малыш переключится на того, кто остался рядом. Вернувшись, скажите об этом: «Папа вернулся!»",
+    "points": [
+      "Уходите после сна и еды малыша: усталость, голод и болезнь усиливают тревогу",
+      "Пусть тот, кто остаётся, отвлечёт малыша: новой игрушкой, зеркалом, купанием",
+      "Тренируйтесь дома: выходя в другую комнату, скажите, куда идёте и что вернётесь",
+      "Если малыш хнычет, откликнитесь голосом, а не бегите обратно",
+      "У новой няни сначала поиграйте с малышом; возьмите любимую игрушку или плед"
+    ],
+    "sources": [
+      {
+        "name": "AAP — Эмоциональное и социальное развитие в 8–12 месяцев",
+        "url": "https://www.healthychildren.org/English/ages-stages/baby/Pages/Emotional-and-Social-Development-8-12-Months.aspx",
+        "section": "Emotional and Social Development: 8 to 12 Months — советы после абзаца «How long should you expect this separation anxiety to last?» (подзаголовков нет)"
+      },
+      {
+        "name": "CDC — Вехи развития к 9 месяцам",
+        "url": "https://www.cdc.gov/act-early/milestones/9-months.html",
+        "section": "Tips and activities → More Parenting Tips and Activities"
+      },
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "Tips and activities → More Parenting Tips and Activities"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-first-shoes",
+    "ageFromDays": 301,
+    "ageToDays": 364,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Первые шаги: обувь подождёт",
+    "summary": "Пока малыш не ходит самостоятельно, настоящая обувь не нужна",
+    "body": "Тесная обувь или носки мешают косточкам пальцев ног выпрямляться и правильно расти. Когда малыш начнёт ходить сам, обувь поначалу можно надевать только на улицу. Обувь и носки должны быть по размеру.",
+    "points": [
+      "Ходунки не рекомендуются: пусть малыш держится за ваши руки или безопасную мебель",
+      "Для тренировки дайте толкать пустую коробку, детский стульчик или каталку",
+      "Обувь на шнурках, липучке или пряжке держит пятку, и стопа не съезжает вперёд",
+      "Если пятка выскальзывает, когда малыш встаёт на носочки, обувь велика",
+      "Лучше натуральные материалы: кожа, хлопок, парусина; носки — хлопковые"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Проблемы с ногами и стопами у детей",
+        "url": "https://www.nhs.uk/baby/health/leg-and-foot-problems-in-children/",
+        "section": "Choosing first shoes"
+      },
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "Tips and activities → More Parenting Tips and Activities"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-first-words",
+    "ageFromDays": 308,
+    "ageToDays": 364,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Помогите малышу заговорить",
+    "summary": "Когда малыш показывает пальцем, назовите предмет и радуйтесь каждой попытке сказать слово",
+    "body": "Когда малыш показывает пальцем, чтобы что-то попросить, ответьте словами: «Хочешь чашку? Вот чашка. Это твоя чашка». Если малыш пробует сказать «чашка», порадуйтесь этой попытке.",
+    "points": [
+      "Достраивайте сказанное: на «ма» — «Да, машина», на «машина» — «Да, большая синяя машина»",
+      "Рассказывайте или пойте, что делаете: «Мама моет тебе ручки»",
+      "Показывайте пальцем на машину, автобус, животных — малыш учится следить за жестом"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "What You Can Do for Your 1-year-old; More Parenting Tips and Activities"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-cows-milk",
+    "ageFromDays": 322,
+    "ageToDays": 364,
+    "category": "FEEDING",
+    "kind": "TIP",
+    "title": "Коровье молоко основным напитком — с года",
+    "summary": "До года основное молоко — грудное или смесь, а коровье основным напитком — с 12 месяцев",
+    "body": "До года основное молоко для малыша — грудное или детская смесь: в коровьем молоке нет нужного малышу баланса питательных веществ. С года основным напитком можно давать пастеризованное цельное коровье молоко.",
+    "points": [
+      "Козье и овечье молоко основным напитком — тоже только с года",
+      "Непастеризованное молоко маленьким детям не давайте: выше риск отравления",
+      "Обезжиренное молоко и молоко 1% основным напитком в год не подходят"
+    ],
+    "sources": [
+      {
+        "name": "NHS — Напитки и чашки для малышей",
+        "url": "https://www.nhs.uk/baby/weaning-and-feeding/drinks-and-cups-for-babies-and-young-children/",
+        "section": "Solid foods and milk for your baby; Cows' milk; Unpasteurised milk; Goats' and sheep's milk"
+      },
+      {
+        "name": "AAP — Напитки для детей до 5 лет",
+        "url": "https://www.healthychildren.org/English/healthy-living/nutrition/Pages/Recommended-Drinks-for-Young-Children-Ages-0-5.aspx",
+        "section": "Suggested Daily Water & Milk Intake for Infants & Young Children; When can I give my baby water? How much is ok?"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  },
+  {
+    "id": "m9-milestones-1-year",
+    "ageFromDays": 329,
+    "ageToDays": 364,
+    "category": "DEVELOPMENT",
+    "kind": "TIP",
+    "title": "Что умеет к году большинство малышей",
+    "summary": "Ориентиры CDC: «пока-пока», «мама» или «папа», шаги вдоль мебели",
+    "body": "Вехи развития — то, что к определённому возрасту умеет большинство детей (75% и больше). Ещё в списке CDC на год: играет с вами в «ладушки», ищет игрушку, которую вы спрятали под плед при малыше, кладёт кубик в чашку, пьёт из открытой чашки, которую держите вы. Если к году чего-то из списка нет или вас что-то беспокоит, обсудите с педиатром.",
+    "points": [
+      "Машет «пока-пока»",
+      "Зовёт родителя «мама», «папа» или другим особым словом",
+      "Понимает «нет»: ненадолго замирает или останавливается, когда вы это говорите",
+      "Встаёт у опоры и ходит, держась за мебель",
+      "Берёт мелкие кусочки еды большим и указательным пальцами"
+    ],
+    "sources": [
+      {
+        "name": "CDC — Вехи развития к 1 году",
+        "url": "https://www.cdc.gov/act-early/milestones/1-year.html",
+        "section": "Ways to monitor milestones; What most babies do by 1 year; Share with your child's doctor"
+      }
+    ],
+    "reviewedAt": "2026-10-20"
+  }
+]

@@ -46,6 +46,7 @@ class DailyStatsTest {
             assertEquals("мл ${day.date}", summary.bottleMl, day.bottleMl)
             assertEquals("подгузники ${day.date}", summary.diapers, day.diapers)
             assertEquals("сон ${day.date}", summary.sleepMillis, day.sleepMillis)
+            assertEquals("ночь и день ${day.date}", day.sleepMillis, day.nightSleepMillis + day.daySleepMillis)
         }
     }
 
@@ -121,5 +122,33 @@ class DailyStatsTest {
         assertEquals(120, day.bottleMl)
         assertEquals(listOf(at(today, 7), at(today, 10)), day.feedingStarts)
         assertEquals(15 * minute, day.breastMillis)
+    }
+
+    @Test
+    fun `sleep is split into night and day`() {
+        // Ночь — с 19:00 до 7:00 (ADR-0036); сон через границу делится
+        val events = listOf(
+            Sleep(1, 1, at(yesterday, 13), end = at(yesterday, 15)),
+            Sleep(2, 1, at(yesterday, 18, 30), end = at(yesterday, 20)), // 30 мин днём, 1 ч ночью
+            Sleep(3, 1, at(yesterday, 21), end = at(today, 2)),
+            Sleep(4, 1, at(today, 2, 30), end = at(today, 6, 30)),
+            Sleep(5, 1, at(today, 6, 45), end = at(today, 8)), // 15 мин ночью, 1 ч днём
+            Sleep(6, 1, at(today, 10)), // идёт
+        )
+        val (before, after) = dailyStats(events, yesterday, today, now, zone)
+        assertEquals(4 * hour, before.nightSleepMillis)
+        assertEquals(150 * minute, before.daySleepMillis)
+        assertEquals(6 * hour + 15 * minute, after.nightSleepMillis)
+        assertEquals(140 * minute, after.daySleepMillis)
+    }
+
+    @Test
+    fun `night boundaries follow the clock change`() {
+        // В Берлине 29 марта 2026 в 02:00 часы переводят на 03:00: ночь с 19:00 до 7:00 — 11 часов
+        val berlin = ZoneId.of("Europe/Berlin")
+        val change = LocalDate.of(2026, 3, 29)
+        val (night, day) = splitByNight(at(change.minusDays(1), 18, zone = berlin), at(change, 8, zone = berlin), berlin)
+        assertEquals(listOf(at(change.minusDays(1), 19, zone = berlin) to at(change, 7, zone = berlin)), night)
+        assertEquals(2 * hour, day.sumOf { (from, to) -> to - from })
     }
 }

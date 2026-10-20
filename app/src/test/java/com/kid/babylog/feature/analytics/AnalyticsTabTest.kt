@@ -13,11 +13,13 @@ import androidx.test.espresso.Espresso
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
-import com.kid.babylog.feature.diary.DiaryTab
+import com.kid.babylog.feature.diary.DiaryView
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.diary.MainSection
 import com.kid.babylog.testing.ComponentActivityRule
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
+import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -55,7 +57,7 @@ class AnalyticsTabTest {
         val viewModel = DiaryViewModel(sampleRepository(clock), FakeSelectedChildStore(), FakeDocumentStore(), clock)
         compose.setContent {
             BabyLogTheme(clock = clock, darkTheme = false) {
-                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, initialTab = DiaryTab.ANALYTICS)
+                DiaryScreen(viewModel, ThemeChoice(), onThemeChange = {}, development = testDevelopment(), initialSection = MainSection.ANALYTICS)
             }
         }
     }
@@ -101,5 +103,13 @@ class AnalyticsTabTest {
         compose.onNodeWithText("Ритм дня").performClick()
         compose.onAllNodes(hasClickAction() and hasContentDescription("пт, 16 окт.: сон", substring = true)).onFirst().performClick()
         compose.onNodeWithText("16 октября, пятница").assertIsDisplayed()
+    }
+
+    @Test
+    fun `question mark explains night and day sleep`() {
+        compose.onNodeWithText("Сон").performClick()
+        compose.onNodeWithContentDescription("Как считается: сон").performClick()
+        compose.onNodeWithText("Сон ночью и днём").assertIsDisplayed()
+        compose.onNodeWithText("Ночью — сон с 19:00 до 7:00", substring = true).assertIsDisplayed()
     }
 }
