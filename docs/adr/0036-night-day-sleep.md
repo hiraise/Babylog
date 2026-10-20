@@ -1,6 +1,6 @@
 # ADR-0036: Ночь — с 19:00 до 7:00: сон делится на ночной и дневной по часам, без настройки
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-20
 - **Затрагивает:** `splitByNight`, `NIGHT_START_HOUR`, `NIGHT_END_HOUR` (`feature/analytics/NightSleep.kt`), `DayStats.nightSleepMillis`, `Series.NIGHT_SLEEP`, `Series.DAY_SLEEP`, `ChartColors.daySleep`, `SleepHelp.kt`
 
