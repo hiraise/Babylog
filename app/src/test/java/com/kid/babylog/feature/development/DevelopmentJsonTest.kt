@@ -56,7 +56,9 @@ class DevelopmentJsonTest {
         assertTrue(isAllowedSourceUrl("https://cdn.who.int/media/a.pdf"))
         assertTrue(isAllowedSourceUrl("https://www.healthychildren.org/English/a.aspx"))
         assertTrue(isAllowedSourceUrl("https://doi.org/10.1542/peds.113.6.e570"))
+        assertTrue(isAllowedSourceUrl("http://publication.pravo.gov.ru/Document/View/0001202112200070"))
         assertFalse(isAllowedSourceUrl("http://www.nhs.uk/"))
+        assertFalse(isAllowedSourceUrl("ftp://publication.pravo.gov.ru/"))
         assertFalse(isAllowedSourceUrl("https://notwho.int/"))
         assertFalse(isAllowedSourceUrl("не ссылка"))
     }

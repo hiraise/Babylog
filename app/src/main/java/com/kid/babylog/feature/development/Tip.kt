@@ -60,9 +60,20 @@ val ALLOWED_SOURCE_HOSTS = listOf(
     "doi.org",
 )
 
-/** Ссылка по `https` на сайт из [ALLOWED_SOURCE_HOSTS]. */
+/**
+ * Сайты из [ALLOWED_SOURCE_HOSTS], которые открываются только по `http`: портал официального опубликования
+ * правовых актов `publication.pravo.gov.ru` по `https` не отвечает, а приказы Минздрава — на нём.
+ */
+val HTTP_ONLY_SOURCE_HOSTS = listOf("pravo.gov.ru")
+
+/** Ссылка на сайт из [ALLOWED_SOURCE_HOSTS] — по `https`, а на сайт из [HTTP_ONLY_SOURCE_HOSTS] — и по `http`. */
 fun isAllowedSourceUrl(url: String): Boolean {
     val uri = runCatching { URI(url) }.getOrNull() ?: return false
     val host = uri.host?.lowercase() ?: return false
-    return uri.scheme == "https" && ALLOWED_SOURCE_HOSTS.any { host == it || host.endsWith(".$it") }
+    fun List<String>.has() = any { host == it || host.endsWith(".$it") }
+    return when (uri.scheme) {
+        "https" -> ALLOWED_SOURCE_HOSTS.has()
+        "http" -> HTTP_ONLY_SOURCE_HOSTS.has()
+        else -> false
+    }
 }

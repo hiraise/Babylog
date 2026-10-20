@@ -55,6 +55,16 @@ class TipsContentTest {
     }
 
     @Test
+    fun `source positions continue the line after the source name`() {
+        // Экран склеивает «NHS — позиция»: позиция — со строчной, кроме аббревиатуры в начале («ВОЗ советует…»)
+        val capitalized = tips.flatMap { tip -> tip.disagreement.map { tip.id to it.position } }.filter { (_, position) ->
+            val first = position.substringBefore(' ')
+            position.first().isUpperCase() && !(first.length > 1 && first.all { !it.isLetter() || it.isUpperCase() })
+        }
+        assertTrue("позиции с заглавной: $capitalized", capitalized.isEmpty())
+    }
+
+    @Test
     fun `every tip and the milestone table were reviewed within two years`() {
         val stale = tips.filter { !it.reviewedAt.isFresh() }.map { it.id }
         assertTrue("перепроверить: $stale", stale.isEmpty())
