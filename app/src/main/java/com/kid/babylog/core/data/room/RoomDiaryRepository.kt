@@ -13,6 +13,7 @@ import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -79,6 +80,11 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
         if (dao.countActive(childId, EventRecord.CRYING) > 0) return@withTransaction null
         finishActive(childId, EventRecord.SLEEP, at = start)
         addEvent(Crying(childId = childId, start = start))
+    }
+
+    override suspend fun startIllness(illness: Illness): Long? = db.withTransaction {
+        if (dao.countActive(illness.childId, EventRecord.ILLNESS) > 0) return@withTransaction null
+        addEvent(illness.copy(end = null))
     }
 
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean = db.withTransaction {

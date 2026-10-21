@@ -135,7 +135,7 @@ internal fun CryingCard(
 /**
  * Ряд под сном и кормлением: плач ([CryingCard]) и «Заметка» — пятая плитка быстрой записи
  * ([ActionTile], без пояснения). Заметка — рядом с плачем, а не в ряду [QuickActions]: там на 360 dp
- * «Подгузник» и «Лекарство» уже впритык, а метки у плача и заметок общие (ADR-0031).
+ * «Подгузник» и «Здоровье» уже впритык, а метки у плача и заметок общие (ADR-0031).
  *
  * «Заметка» шириной в плитку ряда [QuickActions] под ней, плач — в остальные три: края плиток двух
  * рядов на одной линии. Поэтому ширина считается от ширины ряда, а не весами: с одним промежутком
@@ -198,6 +198,9 @@ private const val SINCE_LAST_LIMIT_MS = 24 * 60 * 60 * 1000L
  * пояснение выделено. Под «Вес» и «Рост» — дата последнего замера ([measuredCaption]); сам вес и рост —
  * в шапке под именем. Это только на плитках: сводка дня их не повторяет — одно и то же в двух местах
  * с разным расчётом расходится.
+ *
+ * «Здоровье» (ADR-0040) — на месте «Лекарства»: лист «Лекарство · Температура · Заболел(а)» ([onHealth]).
+ * Пока ребёнок болеет, под ней — день болезни ([illnessDay]).
  */
 @Composable
 internal fun QuickActions(
@@ -207,6 +210,8 @@ internal fun QuickActions(
     sleeping: Boolean,
     now: Long,
     onAdd: (NewEventKind) -> Unit,
+    onHealth: () -> Unit,
+    illnessDay: Int? = null,
 ) {
     // IntrinsicSize.Min: плитки одной высоты, даже когда пояснение есть не у всех
     Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.s)) {
@@ -219,7 +224,7 @@ internal fun QuickActions(
             caption = diaperCaption(lastDiaper, now),
             highlight = diaperOverdue(lastDiaper, sleeping, now),
         )
-        ActionTile(R.drawable.ic_medicine, "Лекарство", { onAdd(NewEventKind.MEDICINE) }, tile)
+        ActionTile(R.drawable.ic_first_aid, "Здоровье", onHealth, tile, caption = illnessDay?.let { "$it-й день" })
         ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile, caption = measuredCaption(lastWeight, now))
         ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile, caption = measuredCaption(lastHeight, now))
     }

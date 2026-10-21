@@ -9,6 +9,10 @@ import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.PeakHours
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessName
+import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Temperature
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -104,5 +108,33 @@ class NotesTest {
         assertEquals(4, summary.days.count { it.future })
         assertEquals(0, summary.cryings)
         assertEquals(1, summary.notes)
+    }
+
+    @Test
+    fun `illnesses are listed newest first, the going one on top`() {
+        val past = Illness(id = 1, childId = 1, start = at(today.minusDays(11), 19, 30), end = at(today.minusDays(4), 20), names = listOf(IllnessName("ОРВИ"), IllnessName("Отит", today.minusDays(8))))
+        val going = Illness(id = 2, childId = 1, start = at(today.minusDays(2), 8))
+        val events = listOf(
+            past, going,
+            Temperature(id = 3, childId = 1, start = at(today.minusDays(8), 3), tenths = 392),
+            Temperature(id = 4, childId = 1, start = at(today.minusDays(9), 3), tenths = 386),
+            Medicine(id = 5, childId = 1, start = at(today.minusDays(10), 9), name = "Ибупрофен"),
+            Medicine(id = 6, childId = 1, start = at(today.minusDays(8), 12), name = "Амоксициллин"),
+        )
+        val entries = illnessEntries(events, now, zone)
+        assertEquals(listOf(2L, 1L), entries.map { it.illness.id })
+        assertEquals(3, entries[0].days)
+        assertEquals("с 16 окт.", entries[0].range)
+        val ended = entries[1]
+        assertEquals("ОРВИ, Отит", ended.title)
+        assertEquals("7–14 окт.", ended.range)
+        assertEquals(8, ended.days)
+        assertEquals(392, ended.maxTenths)
+        assertEquals(listOf("Ибупрофен", "Амоксициллин"), ended.medicines)
+    }
+
+    @Test
+    fun `illnesses filter shows no feed records`() {
+        assertFalse(NotesFilter.Illnesses.matches(Note(id = 1, childId = 1, start = now, note = "сыпь")))
     }
 }

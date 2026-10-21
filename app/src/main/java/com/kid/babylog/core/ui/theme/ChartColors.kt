@@ -25,6 +25,10 @@ import androidx.compose.ui.graphics.Color
  * Окна навыков ВОЗ (ADR-0037): окно, в котором ребёнок сейчас, — [milestone], остальные — [milestoneOther].
  * Это соседи на одном графике, их различает и светлота: зелёный против серого.
  *
+ * Температура (ADR-0041) — линия на экране болезни, янтарная: рядом с ней только нейтральные точки
+ * лекарств, а красный значил бы «опасно» — оценок приложение не даёт. Полоса дней болезни за столбиками —
+ * не ряд, её цвет берётся из палитры (`illnessBand`).
+ *
  * Новый ряд — новое поле здесь и во всех трёх наборах, а не литерал в экране (ADR-0010).
  */
 @Immutable
@@ -45,6 +49,8 @@ class ChartColors(
     val milestone: Color,
     /** Окна навыков, до которых ребёнок не дорос или которые прошли: серый той же заметности. */
     val milestoneOther: Color,
+    /** Линия температуры на экране болезни (ADR-0041). */
+    val temperature: Color,
 )
 
 internal val LightChartColors = ChartColors(
@@ -59,6 +65,7 @@ internal val LightChartColors = ChartColors(
     crying = Color(0xFFB5338A),
     milestone = Color(0xFF348333),
     milestoneOther = Color(0xFF8C8C8C),
+    temperature = Color(0xFFA46A00),
 )
 
 /**
@@ -77,6 +84,7 @@ internal val ClassicDarkChartColors = ChartColors(
     crying = Color(0xFFE05A9C),
     milestone = Color(0xFF3F9E3E),
     milestoneOther = Color(0xFF9AA3AD),
+    temperature = Color(0xFFE3A13B),
 )
 
 /**
@@ -98,6 +106,7 @@ internal val CalmDarkChartColors = ChartColors(
     crying = Color(0xFFBE4673),
     milestone = Color(0xFF5FA350),
     milestoneOther = Color(0xFF9AA2AA),
+    temperature = Color(0xFFD9A441),
 )
 
 val LocalChartColors = staticCompositionLocalOf { LightChartColors }

@@ -6,9 +6,11 @@ import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.RU
 import com.kid.babylog.core.ui.formatDuration
@@ -101,7 +103,8 @@ private fun rhythmDay(events: List<BabyEvent>, day: DayStats, now: Long, zone: Z
             is Diaper -> instant(event.start)?.let(diapers::add)
             is Crying -> span(event.start, event.end ?: now)?.let(cryings::add)
             is Note -> instant(event.start)?.let(notes::add)
-            is Medicine, is Weight, is Height -> Unit
+            // Болезнь — полоса дней на графиках, а не отметка в ритме суток (ADR-0040)
+            is Medicine, is Weight, is Height, is Illness, is Temperature -> Unit
         }
     }
     val name = if (day.complete) day.date.format(DAY_NAME) else "сегодня"

@@ -40,9 +40,12 @@ data class BarPart(val value: Float, val color: Color)
 /**
  * Столбик [BarChart]: [parts] снизу вверх, [label] — подпись под ним (пустая — без подписи),
  * [description] — что прочитает TalkBack. [partial] — сутки или неделя ещё идут: столбик заштрихован.
+ * [band] — сутки болезни (ADR-0040): за столбиком полоса цвета `bandColor` во всю высоту слота;
+ * соседние полосы сливаются в одну — видно, сколько дней болел. Сам столбик на полосе — в кайме цвета
+ * карточки: светлые ряды (дневной сон) сохраняют свой контраст 3:1, как на карточке.
  */
 @Immutable
-data class ChartBar(val parts: List<BarPart>, val label: String, val description: String, val partial: Boolean = false)
+data class ChartBar(val parts: List<BarPart>, val label: String, val description: String, val partial: Boolean = false, val band: Boolean = false)
 
 private val ChartHeight = 112.dp
 private val MaxBarWidth = 24.dp
@@ -51,6 +54,7 @@ private val BarGap = 2.dp
 private val HatchStep = 5.dp
 private val HatchWidth = 1.5.dp
 private val LineWidth = 1.dp
+private val HaloWidth = 1.5.dp
 
 /** Доля ширины слота под столбик: остальное — воздух между столбиками. */
 private const val BAR_SHARE = 0.62f
@@ -64,7 +68,8 @@ private const val PARTIAL_FILL = 0.18f
  * - незаконченные сутки или неделя ([ChartBar.partial]) — штриховка вместо заливки;
  * - сетка — линии верха шкалы и её середины с подписями [maxLabel], [midLabel] справа;
  * - касание столбика выбирает его ([onSelect] с номером), остальные бледнеют; касание выбранного
- *   снимает выбор (`null`). Что показать о выбранном, решает экран.
+ *   снимает выбор (`null`). Что показать о выбранном, решает экран;
+ * - за столбиками болезни ([ChartBar.band]) — полоса [bandColor] во всю высоту слота.
  */
 @Composable
 fun BarChart(
@@ -75,6 +80,7 @@ fun BarChart(
     selected: Int?,
     onSelect: (Int?) -> Unit,
     modifier: Modifier = Modifier,
+    bandColor: Color = Color.Transparent,
 ) {
     val colors = MaterialTheme.colorScheme
     val spacing = BabyLogTheme.spacing
@@ -107,7 +113,8 @@ fun BarChart(
                             }
                             .semantics { contentDescription = bar.description },
                     ) {
-                        drawBar(bar, maxValue, topInset = spacing.s.toPx())
+                        if (bar.band) drawRect(bandColor)
+                        drawBar(bar, maxValue, topInset = spacing.s.toPx(), halo = colors.surfaceContainerLow.takeIf { bar.band })
                     }
                 }
             }
@@ -133,6 +140,7 @@ fun BarChart(
 /**
  * Столбик [bar] в слоте шириной `size.width`: не толще [maxWidth], верх скруглён на [cornerRadius].
  * Тот же рисунок у мини-графика плитки ([SparkBars]) — там столбик тоньше и скругление меньше.
+ * [halo] — кайма вокруг столбика цвета карточки: на полосе болезни столбик отделён от неё, как от карточки.
  */
 internal fun DrawScope.drawBar(
     bar: ChartBar,
@@ -140,6 +148,7 @@ internal fun DrawScope.drawBar(
     topInset: Float,
     maxWidth: Dp = MaxBarWidth,
     cornerRadius: Dp = BarRadius,
+    halo: Color? = null,
 ) {
     if (maxValue <= 0f) return
     val width = minOf(maxWidth.toPx(), size.width * BAR_SHARE)
@@ -147,6 +156,24 @@ internal fun DrawScope.drawBar(
     val plot = size.height - topInset
     val radius = CornerRadius(cornerRadius.toPx())
     val visible = bar.parts.filter { it.value > 0f }
+    if (halo != null && visible.isNotEmpty()) {
+        val heights = visible.map { maxOf(it.value / maxValue * plot, LineWidth.toPx()) }
+        val top = size.height - heights.sum() - BarGap.toPx() * (visible.size - 1)
+        val ring = HaloWidth.toPx()
+        val haloRadius = CornerRadius(cornerRadius.toPx() + ring)
+        drawPath(
+            Path().apply {
+                addRoundRect(
+                    RoundRect(
+                        left - ring, top - ring, left + width + ring, size.height,
+                        topLeftCornerRadius = haloRadius, topRightCornerRadius = haloRadius,
+                        bottomRightCornerRadius = CornerRadius.Zero, bottomLeftCornerRadius = CornerRadius.Zero,
+                    ),
+                )
+            },
+            halo,
+        )
+    }
     var bottom = size.height
     visible.forEachIndexed { index, part ->
         val top = bottom - maxOf(part.value / maxValue * plot, LineWidth.toPx())

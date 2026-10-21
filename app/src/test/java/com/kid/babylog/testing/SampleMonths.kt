@@ -8,6 +8,10 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessName
+import com.kid.babylog.core.model.Temperature
+import com.kid.babylog.core.model.TemperatureMethod
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Milk
@@ -99,6 +103,13 @@ fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days:
     val nurofen = today.minusDays(4).atStartOfDay(zone).plusHours(22).toInstant().toEpochMilli()
     events += Medicine(id++, childId, nurofen, "Нурофен", note = "2,5 мл")
     events += Medicine(id++, childId, nurofen + 86_400_000L, "Нурофен", note = "2,5 мл")
+    // ОРВИ (ADR-0040) вокруг нурофена: с вечера 5 дней назад по утро позавчера, замеры температуры (ADR-0041)
+    fun hoursAfter(daysAgo: Int, hours: Double) =
+        today.minusDays(daysAgo.toLong()).atStartOfDay(zone).toInstant().toEpochMilli() + (hours * 3_600_000).toLong()
+    events += Illness(id++, childId, hoursAfter(5, 18.0), end = hoursAfter(2, 10.0), names = listOf(IllnessName("ОРВИ")))
+    listOf(5 to 18.5 to 382, 4 to 21.8 to 386, 3 to 21.7 to 381, 2 to 8.0 to 372).forEach { (time, tenths) ->
+        events += Temperature(id++, childId, hoursAfter(time.first, time.second), tenths, TemperatureMethod.ARMPIT)
+    }
     // Плач по вечерам, между вечерним сном и ночью (ADR-0030). Свой генератор: остальные записи от него не сдвигаются
     val crying = Random(seed + 7)
     val reasons = listOf(listOf("колики"), listOf("усталость"), listOf("колики", "живот"), listOf("перевозбуждение"), emptyList())

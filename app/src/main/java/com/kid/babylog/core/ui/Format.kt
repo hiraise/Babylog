@@ -8,12 +8,16 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
+import com.kid.babylog.core.model.TemperatureMethod
 import com.kid.babylog.core.model.Weight
+import com.kid.babylog.core.model.title
 import java.time.Instant
 import java.time.LocalDate
 import java.time.Period
@@ -168,6 +172,9 @@ fun eventTitle(event: BabyEvent, sex: Sex?): String = when (event) {
         .filterNotNull().joinToString(" · ")
     // Текст заметки — строкой комментария под заголовком, метки — в заголовке, как причины плача
     is Note -> listOf("Заметка", event.tags.joinToString(", ").ifEmpty { null }).filterNotNull().joinToString(" · ")
+    // Названия — в заголовке, как причины плача: по ним болезнь ищут глазами (ADR-0040)
+    is Illness -> listOf("Болезнь", event.title(), "идёт".takeIf { event.isActive }).filterNotNull().joinToString(" · ")
+    is Temperature -> "Температура · ${formatTemperature(event.tenths)}"
 }
 
 fun eventTimeLine(event: BabyEvent): String = when (event) {
@@ -176,7 +183,23 @@ fun eventTimeLine(event: BabyEvent): String = when (event) {
     is Feeding -> if (event.end == event.start) formatClock(event.start) else timeRange(event.start, event.end)
     is Crying -> timeRange(event.start, event.end) +
         (event.helped.takeIf { it.isNotEmpty() }?.let { " · помогло: ${it.joinToString(", ")}" } ?: "")
+    // Болезнь длится днями: конец — датой, а не часами
+    is Illness -> event.end?.let { "с ${formatClock(event.start)} по ${it.toLocalDate().format(SHORT_DATE)}" } ?: "с ${formatClock(event.start)}"
+    is Temperature -> formatClock(event.start) + (event.method?.let { " · ${temperatureMethodLabel(it)}" } ?: "")
     is Bottle, is Diaper, is Medicine, is Weight, is Height, is Note -> formatClock(event.start)
+}
+
+/** «38,4 °C»: между числом и градусами — неразрывный пробел, в узкой строке они не расходятся (ADR-0041). */
+fun formatTemperature(tenths: Int): String = "${tenths / 10},${tenths % 10}\u00A0°C"
+
+/** Температура без единиц — «38,4»: так её вводят в листе температуры и пишут в сводке. */
+fun temperatureValue(tenths: Int): String = "${tenths / 10},${tenths % 10}"
+
+fun temperatureMethodLabel(method: TemperatureMethod): String = when (method) {
+    TemperatureMethod.ARMPIT -> "подмышкой"
+    TemperatureMethod.EAR -> "в ухе"
+    TemperatureMethod.RECTAL -> "ректально"
+    TemperatureMethod.FOREHEAD -> "на лбу"
 }
 
 /**
@@ -190,6 +213,25 @@ fun milkLabel(milk: Milk): String = when (milk) {
     Milk.FORMULA -> "смесь"
     Milk.BREAST_MILK -> "сцеженное молоко"
 }
+
+/** «7–14 окт.», через месяц — «28 сен.–3 окт.», один день — «7 окт.» (болезнь, ADR-0040). */
+fun formatDayRange(first: LocalDate, last: LocalDate): String = when {
+    first == last -> first.format(SHORT_DATE)
+    first.month == last.month && first.year == last.year -> "${first.dayOfMonth}–${last.format(SHORT_DATE)}"
+    else -> "${first.format(SHORT_DATE)}–${last.format(SHORT_DATE)}"
+}
+
+/** «сегодня, 10 окт.», «вчера, 9 окт.», «7 окт.» — день в чипах листов болезни (ADR-0040). */
+fun formatChipDay(date: LocalDate, today: LocalDate): String = when (date) {
+    today -> "сегодня, ${date.format(SHORT_DATE)}"
+    today.minusDays(1) -> "вчера, ${date.format(SHORT_DATE)}"
+    else -> date.format(SHORT_DATE)
+}
+
+/** «ср, 7 окт.» — начало болезни на её карточке и экране. */
+fun formatWeekdayDay(date: LocalDate): String = date.format(WEEKDAY_DATE)
+
+private val WEEKDAY_DATE = DateTimeFormatter.ofPattern("EE, d MMM", RU)
 
 /** «13:40–15:05 · 1 ч 25 мин»; идущий таймер — «с 13:40». */
 private fun timeRange(start: Long, end: Long?): String = end?.let {

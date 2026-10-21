@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class EventRecordTest {
 
@@ -23,6 +24,10 @@ class EventRecordTest {
         Crying(id = 13, childId = 7, start = 13_000, end = 13_500, helped = listOf("грудь")),
         Note(id = 14, childId = 7, start = 14_000, tags = listOf("зубки", "питание мамы"), note = "Тёрла ушко, отказывалась от груди"),
         Note(id = 15, childId = 7, start = 15_000, note = "Первый раз перевернулась"),
+        Illness(id = 16, childId = 7, start = 16_000, end = 17_000, names = listOf(IllnessName("ОРВИ"), IllnessName("Отит", LocalDate.of(2026, 10, 10))), note = "садик"),
+        Illness(id = 17, childId = 7, start = 18_000),
+        Temperature(id = 18, childId = 7, start = 19_000, tenths = 384, method = TemperatureMethod.ARMPIT, note = "после сна"),
+        Temperature(id = 19, childId = 7, start = 20_000, tenths = 366),
     )
 
     @Test
@@ -120,5 +125,39 @@ class EventRecordTest {
         listOf("0", "501", "abc", "120:JUICE", "120:FORMULA:x", "").forEach {
             assertNull(it, EventRecord(EventRecord.BOTTLE, 1_000, null, it, "").toEvent(childId = 1))
         }
+    }
+
+    @Test
+    fun `illness detail lists names with optional since day`() {
+        val illness = Illness(childId = 1, start = 1_000, names = listOf(IllnessName("ОРВИ"), IllnessName("Отит", LocalDate.of(2026, 10, 10))))
+        assertEquals("ОРВИ;Отит:2026-10-10", illness.toRecord().detail)
+        assertEquals(emptyList<IllnessName>(), (EventRecord(EventRecord.ILLNESS, 1, null, "", "").toEvent(childId = 1) as Illness).names)
+    }
+
+    @Test
+    fun `illness names are normalized and deduplicated without case`() {
+        val illness = EventRecord(EventRecord.ILLNESS, 1, 2, " орви  ;ОРВИ; ;отит :2026-10-10", "").toEvent(childId = 1) as Illness
+        assertEquals(listOf(IllnessName("орви"), IllnessName("отит", LocalDate.of(2026, 10, 10))), illness.names)
+        assertEquals(2L, illness.end)
+    }
+
+    @Test
+    fun `invalid illness and temperature records are rejected`() {
+        assertNull(EventRecord(EventRecord.ILLNESS, 1, null, "ОРВИ:вчера", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.ILLNESS, 1, null, "ОРВИ:2026-10-10:x", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.TEMPERATURE, 1, null, "38,4", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.TEMPERATURE, 1, null, "339", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.TEMPERATURE, 1, null, "431", "").toEvent(childId = 1))
+        assertNull(EventRecord(EventRecord.TEMPERATURE, 1, null, "384:MOUTH", "").toEvent(childId = 1))
+        assertEquals(TemperatureMethod.EAR, (EventRecord("temperature", 1, 5, "384:ear", "").toEvent(childId = 1) as Temperature).method)
+    }
+
+    @Test
+    fun `illness name normalization keeps case and drops separators`() {
+        assertEquals("ОРВИ", normalizeIllnessName("  ОРВИ "))
+        assertEquals("кишечная инфекция", normalizeIllnessName("кишечная;инфекция"))
+        assertEquals("отит слева", normalizeIllnessName("отит:слева"))
+        assertNull(normalizeIllnessName(" ;: "))
+        assertEquals(MAX_ILLNESS_NAME_LENGTH, normalizeIllnessName("а".repeat(60))!!.length)
     }
 }

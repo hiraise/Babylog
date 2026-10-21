@@ -10,6 +10,8 @@ import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.feature.summary.summarizeDay
 import com.kid.babylog.testing.sampleMonths
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.Temperature
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -150,5 +152,18 @@ class DailyStatsTest {
         val (night, day) = splitByNight(at(change.minusDays(1), 18, zone = berlin), at(change, 8, zone = berlin), berlin)
         assertEquals(listOf(at(change.minusDays(1), 19, zone = berlin) to at(change, 7, zone = berlin)), night)
         assertEquals(2 * hour, day.sumOf { (from, to) -> to - from })
+    }
+
+    @Test
+    fun `days of illness are marked from start to end, going one to today`() {
+        val events = listOf(
+            Illness(id = 1, childId = 1, start = at(today.minusDays(6), 19, 30), end = at(today.minusDays(4), 9)),
+            Illness(id = 2, childId = 1, start = at(yesterday, 23), end = null),
+            Temperature(id = 3, childId = 1, start = at(yesterday, 23, 10), tenths = 384),
+        )
+        val stats = dailyStats(events, today.minusDays(7), today, now, zone)
+        assertEquals(listOf(false, true, true, true, false, false, true, true), stats.map { it.ill })
+        // Болезнь и температура режим дня не описывают: сутки только с ними — «дневник не вели»
+        assertFalse(stats.any { it.tracked })
     }
 }

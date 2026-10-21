@@ -101,6 +101,11 @@ fun BirthDateSheet(initial: Long?, onDismiss: () -> Unit, onSave: (Long) -> Unit
     ) { date -> onSave(date.atStartOfDay(zone).toInstant().toEpochMilli()) }
 }
 
+/** Выбор дня не позже сегодняшнего: «с какого дня» название болезни, когда выздоровел (ADR-0040). */
+@Composable
+fun DayPickSheet(initial: LocalDate?, onDismiss: () -> Unit, onPick: (LocalDate) -> Unit) =
+    DateSheet(initial = initial, confirmLabel = "ОК", onDismiss = onDismiss, onPick = onPick)
+
 /**
  * Календарь Material 3 в нижнем листе. Лист — во всю ширину, без своего заголовка: у календаря
  * есть свой («Выберите дату» и выбранная дата), а шириной он не меньше 360 dp.

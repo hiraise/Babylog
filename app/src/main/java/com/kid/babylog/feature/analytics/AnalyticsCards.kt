@@ -39,6 +39,7 @@ import com.kid.babylog.core.ui.components.chart.TimelineRow
 import com.kid.babylog.core.ui.components.chart.TimelineTick
 import com.kid.babylog.core.ui.diaperIcon
 import com.kid.babylog.core.ui.theme.BabyLogTheme
+import com.kid.babylog.core.ui.theme.illnessBand
 import com.kid.babylog.core.ui.theme.ChartColors
 import java.time.LocalDate
 
@@ -168,9 +169,11 @@ internal fun MetricCard(
                         label = column.label,
                         description = column.caption,
                         partial = column.partial,
+                        band = column.ill,
                     )
                 },
                 maxValue = model.maxValue,
+                bandColor = MaterialTheme.colorScheme.illnessBand,
                 maxLabel = model.maxLabel,
                 midLabel = model.midLabel,
                 selected = selected,

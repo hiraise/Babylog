@@ -14,9 +14,11 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.ItemRow
@@ -43,6 +45,8 @@ fun eventIcon(event: BabyEvent): Int = when (event) {
     is Height -> R.drawable.ic_height
     is Crying -> R.drawable.ic_crying
     is Note -> R.drawable.ic_note
+    is Illness -> R.drawable.ic_illness
+    is Temperature -> R.drawable.ic_thermometer
 }
 
 /**
