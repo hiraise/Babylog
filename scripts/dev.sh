@@ -186,6 +186,12 @@ check_adr_rules() {
     report "ADR-0033: fallbackToDestructiveMigration не включается — неудачная миграция не должна стирать дневник" "$hits" || failed=1
     hits="$(grep -rnHE '(Primary|Secondary|Scrollable|Primary.*Scrollable)?TabRow\(' "$code/feature/diary" || true)"
     report "ADR-0035: разделы главного экрана переключает нижняя панель — вкладок на главном экране нет" "$hits" || failed=1
+    # Новое разрешение появляется только вместе со своим ADR — тогда добавь его и сюда
+    hits="$(grep -oE 'uses-permission[^>]*android:name="[^"]*"' "$main/AndroidManifest.xml" | sed 's/.*android:name="//; s/"$//' |
+        grep -vxE 'android\.permission\.(POST_NOTIFICATIONS|RECEIVE_BOOT_COMPLETED)' || true)"
+    report "ADR-0042: разрешения в манифесте — только POST_NOTIFICATIONS и RECEIVE_BOOT_COMPLETED для уведомления в шторке" "$hits" || failed=1
+    hits="$(grep -A2 'android:name=".ShadeActionReceiver"' "$main/AndroidManifest.xml" | grep -L 'android:exported="false"' || true)"
+    report "ADR-0042: приёмник кнопок ShadeActionReceiver не экспортируется — иначе таймеры запустит чужое приложение" "${hits:+$main/AndroidManifest.xml}" || failed=1
     return "$failed"
 }
 

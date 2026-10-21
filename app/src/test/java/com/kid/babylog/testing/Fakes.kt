@@ -5,6 +5,8 @@ import com.kid.babylog.core.data.DevelopmentSeenStore
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.data.SelectedChildStore
+import com.kid.babylog.core.data.ShadeMemo
+import com.kid.babylog.core.data.ShadeStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
@@ -161,6 +163,19 @@ class FakeSelectedChildStore(initial: Long? = null) : SelectedChildStore {
 }
 
 /** «Файлы» по uri в памяти. */
+class FakeShadeStore(enabled: Boolean = true, memo: ShadeMemo = ShadeMemo()) : ShadeStore {
+    override val enabled = MutableStateFlow(enabled)
+    override val memo = MutableStateFlow(memo)
+
+    override fun setEnabled(enabled: Boolean) {
+        this.enabled.value = enabled
+    }
+
+    override fun updateMemo(transform: (ShadeMemo) -> ShadeMemo) {
+        memo.value = transform(memo.value)
+    }
+}
+
 class FakeDocumentStore(val files: MutableMap<String, String> = mutableMapOf()) : DocumentStore {
     override suspend fun read(uri: String): String = files[uri] ?: error("Нет файла $uri")
 

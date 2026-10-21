@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Свёрнутое уведомление в шторке (ADR-0042): две короткие строки — идущий таймер («Сон» / «40:12»)
+    или «Не спит» / «с 14:05» — и те же три кнопки иконками. Кнопки есть и здесь: на экране блокировки
+    уведомление часто показано свёрнутым. Названия кнопок для озвучки задаёт ShadeViews.kt.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:baselineAligned="false"
+    android:minHeight="48dp"
+    android:orientation="horizontal"
+    tools:ignore="ContentDescription">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/collapsed_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title" />
+
+        <TextView
+            android:id="@+id/collapsed_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Compat.Notification" />
+
+        <Chronometer
+            android:id="@+id/collapsed_clock"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFeatureSettings="tnum"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Compat.Notification" />
+    </LinearLayout>
+
+    <FrameLayout style="@style/ShadeRoundButtonFrame">
+
+        <ImageView
+            android:id="@+id/c_sleep_start"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round"
+            android:src="@drawable/ic_sleep"
+            android:tint="@color/shade_on_container" />
+
+        <ImageView
+            android:id="@+id/c_sleep_stop"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round_running"
+            android:src="@drawable/ic_sleep"
+            android:tint="@color/shade_on_primary" />
+    </FrameLayout>
+
+    <FrameLayout style="@style/ShadeRoundButtonFrame">
+
+        <ImageView
+            android:id="@+id/c_feeding_start"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round"
+            android:src="@drawable/ic_feeding"
+            android:tint="@color/shade_on_container" />
+
+        <ImageView
+            android:id="@+id/c_feeding_stop"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round_running"
+            android:src="@drawable/ic_feeding"
+            android:tint="@color/shade_on_primary" />
+    </FrameLayout>
+
+    <FrameLayout style="@style/ShadeRoundButtonFrame">
+
+        <ImageView
+            android:id="@+id/c_crying_start"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round"
+            android:src="@drawable/ic_crying"
+            android:tint="@color/shade_on_container" />
+
+        <ImageView
+            android:id="@+id/c_crying_stop"
+            style="@style/ShadeRoundButton"
+            android:background="@drawable/shade_round_running"
+            android:src="@drawable/ic_crying"
+            android:tint="@color/shade_on_primary" />
+    </FrameLayout>
+</LinearLayout>

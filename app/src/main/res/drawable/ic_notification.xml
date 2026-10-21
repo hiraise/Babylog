@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Своя иконка BabyLog (ADR-0014): значок приложения для строки состояния и уведомления в шторке
+    (ADR-0042), пока таймеры не идут. Те же контуры, что в ic_launcher_foreground.xml, одним цветом —
+    система закрашивает всё непрозрачное; холст 72 × 72 — видимая середина значка 108 × 108.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <group
+        android:translateX="-18"
+        android:translateY="-18">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M60.473,58.663 A28,28 0 1,0 72.493,76.693 A11.25,11.25 0 0,1 60.473,58.663 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M28.5,38 A5,5 0 1,0 38.5,38 A5,5 0 1,0 28.5,38 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M34,36 A13,13 0 1,0 60,36 A13,13 0 1,0 34,36 Z M49.82,40.41 Q54,41.79 58.18,40.41 Q54,46.19 49.82,40.41 Z" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M60.25,66 A8.75,8.75 0 1,0 77.75,66 A8.75,8.75 0 1,0 60.25,66 Z M61.93,65.43 Q64.5,66.01 67.07,65.43 Q64.5,70.01 61.93,65.43 Z" />
+        <path
+            android:pathData="M69.5,57 C69,52 74,50.5 75.5,53.5"
+            android:strokeWidth="2.5"
+            android:strokeColor="#FFFFFFFF"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

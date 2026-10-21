@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Никаких permissions: приложение не ходит в интернет и работает только с локальными данными -->
+    <!-- Приложение не ходит в интернет и работает только с локальными данными (ADR-0002). Разрешения —
+         только для уведомления с кнопками в шторке, которое включают в меню (ADR-0042): показать его
+         (Android 13+ спрашивает пользователя) и вернуть после перезагрузки телефона -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- allowBackup=false: база не уходит в облачный автобэкап Google. Перенос между телефонами средствами
          Android 12+ (D2D) этот флаг не выключает — и не нужно: дневник переносится вместе с фото, а копии
@@ -25,6 +29,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- Кнопки уведомления в шторке (ADR-0042): не экспортирован — нажать их может только система
+             по нашему PendingIntent -->
+        <receiver
+            android:name=".ShadeActionReceiver"
+            android:exported="false" />
+        <!-- Возвращает уведомление в шторке после перезагрузки и обновления приложения (ADR-0042) -->
+        <receiver
+            android:name=".ShadeBootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <!-- Файл, куда системная камера кладёт снимок для фото ребёнка: приложению не нужно разрешение
              CAMERA, а камера получает доступ только к этому файлу (ADR-0023) -->
         <provider
