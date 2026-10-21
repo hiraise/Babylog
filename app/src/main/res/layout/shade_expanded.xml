@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Развёрнутое уведомление в шторке (ADR-0042) под шапкой системы. Тексты и видимость задаёт
+    ShadeViews.kt; цвета — ресурсы shade_* (values/colors.xml), текст без акцента — стили уведомления
+    системы, чтобы читаться и в светлой, и в тёмной шторке. Сверху вниз: «Не спит с …» или идущие
+    таймеры (main — сон или кормление, crying — плач: он идёт вместе с кормлением), строки «Отменить»
+    и «Отметить», три кнопки на постоянных местах — сон, кормление, плач. У каждой кнопки два вида:
+    старт (тон акцента) и идущий таймер (заливка); видим один. RemoteViews: только FrameLayout,
+    LinearLayout, TextView, ImageView, Chronometer, и id без повторов — без include.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingBottom="4dp">
+
+    <LinearLayout
+        android:id="@+id/idle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/idle_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title" />
+
+        <TextView
+            android:id="@+id/idle_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Compat.Notification" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/main_row"
+        style="@style/ShadeTimerRow">
+
+        <LinearLayout style="@style/ShadeTimerTexts">
+
+            <TextView
+                android:id="@+id/main_title"
+                style="@style/ShadeTimerTitle" />
+
+            <TextView
+                android:id="@+id/main_text"
+                style="@style/ShadeTimerText" />
+
+            <TextView
+                android:id="@+id/main_link"
+                style="@style/ShadeTimerLink" />
+        </LinearLayout>
+
+        <Chronometer
+            android:id="@+id/main_clock"
+            style="@style/ShadeTimerClock" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/crying_row"
+        style="@style/ShadeTimerRow">
+
+        <LinearLayout style="@style/ShadeTimerTexts">
+
+            <TextView
+                android:id="@+id/crying_title"
+                style="@style/ShadeTimerTitle" />
+
+            <TextView
+                android:id="@+id/crying_text"
+                style="@style/ShadeTimerText" />
+
+            <TextView
+                android:id="@+id/crying_link"
+                style="@style/ShadeTimerLink" />
+        </LinearLayout>
+
+        <Chronometer
+            android:id="@+id/crying_clock"
+            style="@style/ShadeTimerClock" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/stopped_row"
+        style="@style/ShadeRow">
+
+        <TextView
+            android:id="@+id/stopped_text"
+            style="@style/ShadeRowText" />
+
+        <TextView
+            android:id="@+id/stopped_button"
+            style="@style/ShadeRowButton" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/done_row"
+        style="@style/ShadeRow">
+
+        <TextView
+            android:id="@+id/done_text"
+            style="@style/ShadeRowText" />
+
+        <TextView
+            android:id="@+id/done_button"
+            style="@style/ShadeRowButton" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginTop="8dp"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:id="@+id/sleep_start"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_sleep"
+                    android:tint="@color/shade_on_container" />
+
+                <TextView
+                    android:id="@+id/sleep_start_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_container" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/sleep_stop"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button_running">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_sleep"
+                    android:tint="@color/shade_on_primary" />
+
+                <TextView
+                    android:id="@+id/sleep_stop_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_primary" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:id="@+id/feeding_start"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_feeding"
+                    android:tint="@color/shade_on_container" />
+
+                <TextView
+                    android:id="@+id/feeding_start_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_container" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/feeding_stop"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button_running">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_feeding"
+                    android:tint="@color/shade_on_primary" />
+
+                <TextView
+                    android:id="@+id/feeding_stop_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_primary" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1">
+
+            <LinearLayout
+                android:id="@+id/crying_start"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_crying"
+                    android:tint="@color/shade_on_container" />
+
+                <TextView
+                    android:id="@+id/crying_start_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_container" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/crying_stop"
+                style="@style/ShadeButton"
+                android:background="@drawable/shade_button_running">
+
+                <ImageView
+                    style="@style/ShadeButtonIcon"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_crying"
+                    android:tint="@color/shade_on_primary" />
+
+                <TextView
+                    android:id="@+id/crying_stop_label"
+                    style="@style/ShadeButtonLabel"
+                    android:textColor="@color/shade_on_primary" />
+            </LinearLayout>
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>

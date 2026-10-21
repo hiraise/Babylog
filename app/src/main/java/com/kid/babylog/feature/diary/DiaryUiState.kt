@@ -8,8 +8,13 @@ import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
+import com.kid.babylog.core.model.activeIllness
+import com.kid.babylog.core.model.illnessNameChoices
 import com.kid.babylog.feature.editor.CryingChoices
 import com.kid.babylog.feature.editor.PastMedicine
 import com.kid.babylog.feature.editor.TagChoices
@@ -48,6 +53,14 @@ data class DiaryUiState(
     val lastHeight: Height? = null,
     /** Лекарства из записей ребёнка, недавние первыми: подсказки в листе лекарства. */
     val pastMedicines: List<PastMedicine> = emptyList(),
+    /** Идущая болезнь (ADR-0040): её карточка на «Сегодня», день на плитке «Здоровье». */
+    val activeIllness: Illness? = null,
+    /** Последний замер температуры (ADR-0041): с его значения и места начинается следующий. */
+    val lastTemperature: Temperature? = null,
+    /** Последнее лекарство — подпись в листе «Здоровье». */
+    val lastMedicine: Medicine? = null,
+    /** Названия для листов болезни: из прошлых болезней ребёнка, затем частые. */
+    val illnessNames: List<String> = emptyList(),
     /** Сколько фото у записей: id записи → число, для отметки в истории (ADR-0024). */
     val photoCounts: Map<Long, Int> = emptyMap(),
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
@@ -73,6 +86,10 @@ data class DiaryUiState(
             lastWeight = events.firstNotNullOfOrNull { it as? Weight },
             lastHeight = events.firstNotNullOfOrNull { it as? Height },
             pastMedicines = pastMedicines(events),
+            activeIllness = events.activeIllness(),
+            lastTemperature = events.firstNotNullOfOrNull { it as? Temperature },
+            lastMedicine = events.firstNotNullOfOrNull { it as? Medicine },
+            illnessNames = events.illnessNameChoices(),
             photoCounts = photoCounts,
         )
     }

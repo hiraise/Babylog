@@ -7,9 +7,11 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.feature.summary.feedingSessions
 import java.time.Instant
@@ -56,6 +58,8 @@ data class DayStats(
     val cryingStartMinutes: List<Int> = emptyList(),
     /** Плач внутри суток, как сон: через полночь делится, идущий — до `now`. */
     val cryingMillis: Long = 0,
+    /** В эти сутки ребёнок болел (ADR-0040): их столбик на графиках — на полосе болезни. В средние входят как есть. */
+    val ill: Boolean = false,
 ) {
     val feedings: Int get() = breastFeedings + bottles
     val sleeps: Int get() = sleepStarts.size
@@ -82,6 +86,7 @@ private class DayAccumulator {
     var cryings = 0
     val cryingStartMinutes = mutableListOf<Int>()
     var cryingMillis = 0L
+    var ill = false
 }
 
 /**
@@ -150,8 +155,18 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
                 }
                 spread(event.start, event.end ?: now) { cryingMillis += it }
             }
-            // Вес, лекарства и заметки в суточные итоги не входят: у них свои карточки (у заметок — «Метки», ADR-0031)
-            is Medicine, is Weight, is Height, is Note -> Unit
+            // Болезнь захватывает сутки целиком: с дня начала по день конца, идущая — по сегодня (ADR-0040)
+            is Illness -> {
+                var date = maxOf(dateOf(event.start), from)
+                val last = minOf(dateOf(event.end ?: now), to)
+                while (date <= last) {
+                    days.getValue(date).ill = true
+                    date = date.plusDays(1)
+                }
+            }
+            // Вес, лекарства, заметки и температура в суточные итоги не входят: у них свои карточки
+            // (у заметок — «Метки», ADR-0031; у температуры — экран болезни, ADR-0041)
+            is Medicine, is Weight, is Height, is Note, is Temperature -> Unit
         }
     }
     return days.map { (date, day) ->
@@ -172,6 +187,7 @@ fun dailyStats(events: List<BabyEvent>, from: LocalDate, to: LocalDate, now: Lon
             cryings = day.cryings,
             cryingStartMinutes = day.cryingStartMinutes.sorted(),
             cryingMillis = day.cryingMillis,
+            ill = day.ill,
         )
     }
 }

@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory
  * Окно до первой отрисовки Compose красится цветом `window_background` (фон окна, строка состояния
  * и навигационная панель). Он повторяет `background` темы: иначе при запуске мелькнёт другой цвет,
  * а системные панели разойдутся с экраном. Фон значка `ic_launcher_background` — `primary` светлой темы.
+ * Цвета уведомления в шторке `shade_*` (ADR-0042) — роли акцента светлой темы и тёмной палитры по умолчанию.
  */
 class ThemeWindowTest {
 
@@ -30,6 +31,21 @@ class ThemeWindowTest {
             darkColors(DarkPalette.DEFAULT).background.hex(),
             resColor("values-night", "window_background"),
         )
+    }
+
+    @Test
+    fun `shade notification colors match theme accent roles`() {
+        val dark = darkColors(DarkPalette.DEFAULT)
+        val roles = listOf(
+            Triple("shade_primary", LightColors.primary, dark.primary),
+            Triple("shade_on_primary", LightColors.onPrimary, dark.onPrimary),
+            Triple("shade_container", LightColors.primaryContainer, dark.primaryContainer),
+            Triple("shade_on_container", LightColors.onPrimaryContainer, dark.onPrimaryContainer),
+        )
+        for ((name, light, night) in roles) {
+            assertEquals("res/values/colors.xml: $name — роль светлой темы", light.hex(), resColor("values", name))
+            assertEquals("res/values-night/colors.xml: $name — роль тёмной палитры по умолчанию", night.hex(), resColor("values-night", name))
+        }
     }
 
     @Test

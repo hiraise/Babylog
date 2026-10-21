@@ -12,12 +12,17 @@ import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessName
+import com.kid.babylog.core.model.Temperature
+import com.kid.babylog.core.model.TemperatureMethod
 import com.kid.babylog.testing.FakeDiaryRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class CsvImportTest {
 
@@ -234,5 +239,36 @@ class CsvImportTest {
         assertEquals(1, result.errors)
         assertEquals(1, result.added)
         assertTrue(repo.events.value.single() is Diaper)
+    }
+
+    @Test
+    fun `illness and temperature rows keep names, days and method`() = runTest {
+        val repo = FakeDiaryRepository()
+        val csv = "type,start,end,detail,note,child\n" +
+            "ILLNESS,2026-10-07 19:30:00,2026-10-14 20:00:00,ОРВИ;Отит:2026-10-10,из сада,Малыш\n" +
+            "TEMPERATURE,2026-10-10 03:10:00,,392:ARMPIT,,Малыш\n" +
+            "TEMPERATURE,2026-10-10 07:30,,381,,Малыш\n"
+        assertEquals(3, importCsv(repo, csv, defaultChildId = 1).added)
+        val illness = repo.events.value.filterIsInstance<Illness>().single()
+        assertEquals(listOf(IllnessName("ОРВИ"), IllnessName("Отит", LocalDate.of(2026, 10, 10))), illness.names)
+        assertEquals(ms("2026-10-14 20:00:00"), illness.end)
+        assertEquals("из сада", illness.note)
+        val temperatures = repo.events.value.filterIsInstance<Temperature>().sortedBy { it.start }
+        assertEquals(listOf(392, 381), temperatures.map { it.tenths })
+        assertEquals(listOf(TemperatureMethod.ARMPIT, null), temperatures.map { it.method })
+    }
+
+    @Test
+    fun `going illness moves to a new phone, but not as a second going one`() = runTest {
+        val going = "type,start,end,detail,note,child\nILLNESS,2026-10-18 08:00:00,,,,Малыш\n"
+        val repo = FakeDiaryRepository()
+        assertEquals(1, importCsv(repo, going, defaultChildId = 1).added)
+        // Тот же файл ещё раз — дубликат, а не «вторая идущая»
+        assertEquals(1, importCsv(repo, going, defaultChildId = 1).duplicates)
+        val other = "type,start,end,detail,note,child\nILLNESS,2026-10-19 08:00:00,,ОРВИ,,Малыш\n"
+        val result = importCsv(repo, other, defaultChildId = 1)
+        assertEquals(0, result.added)
+        assertEquals(1, result.skippedActiveIllness)
+        assertEquals(1, repo.events.value.filterIsInstance<Illness>().size)
     }
 }

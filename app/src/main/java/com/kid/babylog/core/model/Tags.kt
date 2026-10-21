@@ -28,5 +28,5 @@ val BabyEvent.eventTags: List<String>
     get() = when (this) {
         is Crying -> reasons
         is Note -> tags
-        is Feeding, is Bottle, is Diaper, is Sleep, is Medicine, is Weight, is Height -> emptyList()
+        is Feeding, is Bottle, is Diaper, is Sleep, is Medicine, is Weight, is Height, is Illness, is Temperature -> emptyList()
     }

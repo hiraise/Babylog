@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.SelectedChildStore
+import com.kid.babylog.core.data.Timers
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
@@ -11,10 +12,13 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessName
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.ui.formatDuration
@@ -49,6 +53,9 @@ class DiaryViewModel(
     private val documents: DocumentStore,
     private val clock: Clock,
 ) : ViewModel() {
+
+    /** Правила таймеров — общие с уведомлением в шторке (ADR-0042). */
+    private val timers = Timers(repository, clock)
 
     private val message = MutableStateFlow<String?>(null)
 
@@ -120,10 +127,9 @@ class DiaryViewModel(
     }
 
     fun endSleep() = write {
-        val sleep = state.value.activeSleep ?: return@write
-        val end = maxOf(clock.millis(), sleep.start)
-        repository.updateEvent(sleep.copy(end = end))
-        show("Сон: ${formatDuration(end - sleep.start)}", MessageAction.ResumeTimer(sleep))
+        val child = state.value.child ?: return@write
+        val sleep = timers.endSleep(child.id) ?: return@write
+        show("Сон: ${formatDuration((sleep.end ?: sleep.start) - sleep.start)}", MessageAction.ResumeTimer(sleep.copy(end = null)))
     }
 
     /**
@@ -133,9 +139,11 @@ class DiaryViewModel(
      */
     fun startCrying() = write {
         val child = state.value.child ?: return@write
-        val sleep = state.value.activeSleep
-        val id = repository.startCrying(child.id, clock.millis()) ?: return@write
-        show(if (sleep != null) "Плач начат, сон закончен" else "Плач начат", MessageAction.CancelCrying(id, sleep))
+        val started = timers.startCrying(child.id) ?: return@write
+        show(
+            if (started.sleep != null) "Плач начат, сон закончен" else "Плач начат",
+            MessageAction.CancelCrying(started.cryingId, started.sleep),
+        )
     }
 
     /**
@@ -143,9 +151,10 @@ class DiaryViewModel(
      * «Отменить» начала плача после этого не нужен — его заменяет «Ещё плачет» в листе.
      */
     fun endCrying() = write {
-        val crying = state.value.activeCrying ?: return@write
-        if ((action.value as? MessageAction.CancelCrying)?.cryingId == crying.id) consumeMessage()
-        repository.updateEvent(crying.copy(end = maxOf(clock.millis(), crying.start)))
+        val child = state.value.child ?: return@write
+        val crying = state.value.activeCrying
+        if (crying != null && (action.value as? MessageAction.CancelCrying)?.cryingId == crying.id) consumeMessage()
+        timers.endCrying(child.id)
     }
 
     /**
@@ -165,9 +174,63 @@ class DiaryViewModel(
         if (state.value.activeCrying == null) repository.updateEvent(crying.copy(end = null))
     }
 
+    /**
+     * Болезнь началась (ADR-0040): [names] — с начала болезни, [temperatureTenths] — замер «сейчас» с местом
+     * прошлого замера. Идущая болезнь уже есть — ничего: она у ребёнка одна.
+     */
+    fun startIllness(start: Long, names: List<String>, note: String, temperatureTenths: Int?) = write {
+        val child = state.value.child ?: return@write
+        val method = state.value.lastTemperature?.method
+        repository.inTransaction {
+            val illness = Illness(childId = child.id, start = start, names = names.map { IllnessName(it) }, note = note)
+            repository.startIllness(illness) ?: return@inTransaction
+            if (temperatureTenths != null) {
+                repository.addEvent(Temperature(childId = child.id, start = maxOf(clock.millis(), start), tenths = temperatureTenths, method = method))
+            }
+        }
+    }
+
+    /** «Прошлая вернулась» или «Ещё болеет»: у болезни снова нет конца — если другой идущей нет. */
+    fun resumeIllness(illness: Illness) = write {
+        if (state.value.activeIllness == null) repository.updateEvent(current(illness).copy(end = null))
+    }
+
+    /** «Выздоровел(а)»: болезнь заканчивается в [end], но не раньше начала. */
+    fun recoverIllness(illness: Illness, end: Long) = write {
+        val fresh = current(illness)
+        repository.updateEvent(fresh.copy(end = maxOf(end, fresh.start)))
+    }
+
+    /** Новое название болезни ([old] = null) или правка: названия без повторов без учёта регистра. */
+    fun saveIllnessName(illness: Illness, old: IllnessName?, name: IllnessName) = write {
+        val fresh = current(illness)
+        val names = if (old == null) fresh.names + name else fresh.names.map { if (it == old) name else it }
+        repository.updateEvent(fresh.copy(names = names.distinctBy { it.name.lowercase() }))
+    }
+
+    fun removeIllnessName(illness: Illness, name: IllnessName) = write {
+        val fresh = current(illness)
+        repository.updateEvent(fresh.copy(names = fresh.names - name))
+    }
+
+    /**
+     * Замер температуры (ADR-0041), новый или правка; [startIllness] — «Заболел(а)» в листе: болезнь начинается
+     * с этого замера, если идущей ещё нет.
+     */
+    fun saveTemperature(temperature: Temperature, startIllness: Boolean) = write {
+        val child = state.value.child ?: return@write
+        repository.inTransaction {
+            if (temperature.id == 0L) repository.addEvent(temperature.copy(childId = child.id)) else repository.updateEvent(temperature)
+            if (startIllness) repository.startIllness(Illness(childId = child.id, start = temperature.start))
+        }
+    }
+
+    /** Свежая запись болезни: лист мог открыться до того, как в ней что-то поменялось. */
+    private fun current(illness: Illness): Illness = state.value.events.firstNotNullOfOrNull { (it as? Illness)?.takeIf { found -> found.id == illness.id } } ?: illness
+
     fun startFeeding(start: Long, breast: Breast) = write {
         val child = state.value.child ?: return@write
-        repository.startFeeding(child.id, start, breast)
+        timers.startFeeding(child.id, breast, start)
     }
 
     /** Бутылочка выбранному ребёнку (ADR-0025): разовая запись, идущий сон заканчивается (ADR-0020). */
@@ -178,19 +241,14 @@ class DiaryViewModel(
 
     /** Смена груди: идущее кормление заканчивается, с той же секунды начинается кормление другой грудью. */
     fun switchBreast() = write {
-        val feeding = state.value.activeFeeding ?: return@write
-        val now = maxOf(clock.millis(), feeding.start)
-        repository.inTransaction {
-            repository.updateEvent(feeding.copy(end = now))
-            repository.startFeeding(feeding.childId, now, feeding.breast.opposite)
-        }
+        val child = state.value.child ?: return@write
+        timers.switchBreast(child.id)
     }
 
     fun endFeeding() = write {
-        val feeding = state.value.activeFeeding ?: return@write
-        val end = maxOf(clock.millis(), feeding.start)
-        repository.updateEvent(feeding.copy(end = end))
-        show("Кормление: ${formatDuration(end - feeding.start)}", MessageAction.ResumeTimer(feeding))
+        val child = state.value.child ?: return@write
+        val feeding = timers.endFeeding(child.id) ?: return@write
+        show("Кормление: ${formatDuration((feeding.end ?: feeding.start) - feeding.start)}", MessageAction.ResumeTimer(feeding.copy(end = null)))
     }
 
     fun exportTo(uri: String) = viewModelScope.launch {
@@ -225,14 +283,10 @@ class DiaryViewModel(
         message.value = null
         if (!performed) return
         when (button) {
-            is MessageAction.ResumeTimer -> write {
-                val current = state.value
-                if (current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.timer)
-            }
+            is MessageAction.ResumeTimer -> write { timers.resume(button.timer) }
             is MessageAction.CancelCrying -> write {
-                state.value.events.find { it.id == button.cryingId }?.let { repository.deleteEvent(it) }
-                val current = state.value
-                if (button.sleep != null && current.activeSleep == null && current.activeFeeding == null) repository.updateEvent(button.sleep)
+                val child = state.value.child ?: return@write
+                timers.cancelCrying(child.id, button.cryingId, button.sleep)
             }
             null -> Unit
         }

@@ -32,6 +32,7 @@ import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.diaperIcon
 import com.kid.babylog.core.ui.diaperLabel
 import com.kid.babylog.core.ui.formatDuration
+import com.kid.babylog.core.ui.temperatureValue
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import java.time.LocalDate
 import java.time.ZoneId
@@ -114,7 +115,10 @@ internal data class SummaryPart(@DrawableRes val icon: Int, val count: Int, val 
     val inlineId: String get() = "part_$icon"
 }
 
-/** Строки карточки: кормления, подгузники, сон, лекарства и — в дни, когда он был, — плач (ADR-0030). */
+/**
+ * Строки карточки: кормления, подгузники, сон, лекарства и — в дни, когда они были, — плач (ADR-0030)
+ * и температура (ADR-0041): одна — значением, несколько — «до 39,2 (3 раза)».
+ */
 internal fun DaySummary.lines(sex: Sex?): List<SummaryLine> {
     // Разбивка кормлений — только когда были бутылочки: «5 (грудь×3 · бутылочка×2, 210 мл)»;
     // одной грудью разбивать нечего. Неразрывный пробел: число и «мл» не расходятся по строкам
@@ -153,6 +157,13 @@ internal fun DaySummary.lines(sex: Sex?): List<SummaryLine> {
             "Плач:",
             if (cryings > 0) "$cryings ${timesWord(cryings)}, ${formatDuration(cryingMillis)}" else formatDuration(cryingMillis),
         ).takeIf { cryings > 0 || cryingMillis > 0 },
+        maxTemperatureTenths?.let { max ->
+            SummaryLine(
+                R.drawable.ic_thermometer,
+                "Температура:",
+                if (temperatures == 1) temperatureValue(max) else "до ${temperatureValue(max)} ($temperatures ${timesWord(temperatures)})",
+            )
+        },
     )
 }
 

@@ -31,6 +31,8 @@ import com.kid.babylog.R
 import com.kid.babylog.core.data.DatabaseRecovery
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Crying
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.illnessMedicines
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.AppSheet
@@ -61,6 +63,8 @@ import com.kid.babylog.feature.notes.CryingWeek
 import com.kid.babylog.feature.notes.NotesContent
 import com.kid.babylog.feature.notes.NotesFilter
 import com.kid.babylog.feature.notes.NotesFilterSaver
+import com.kid.babylog.feature.shade.ShadeMenuItem
+import com.kid.babylog.feature.shade.rememberShadeToggle
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.ZoneId
@@ -73,7 +77,8 @@ private const val NONE = -1L
  * Главный экран (ADR-0035): шапка с ребёнком, нижняя панель разделов и нижние листы (ADR-0018).
  * Подключает [DiaryViewModel] и [DevelopmentViewModel] (ADR-0037). Тему применяет `MainActivity`
  * (ADR-0017): экран только показывает выбор и сообщает о новом. Системная «Назад» сначала закрывает
- * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня».
+ * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня». Уведомление в шторке
+ * (ADR-0042) включается в меню ([shadeEnabled]); его «Отметить» открывает лист плача [cryingDetailsId].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,6 +91,10 @@ fun DiaryScreen(
     initialDiaryView: DiaryView = DiaryView.DAYS,
     recovery: DatabaseRecovery? = null,
     onRecoverySeen: () -> Unit = {},
+    shadeEnabled: Boolean = false,
+    onShadeChange: (Boolean) -> Unit = {},
+    cryingDetailsId: Long? = null,
+    onCryingDetailsShown: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
@@ -100,6 +109,14 @@ fun DiaryScreen(
     // (ADR-0030). После засыпания лист открывается сам, а не кнопкой в снекбаре: снекбар гаснет через
     // 10 секунд, пока укладывают ребёнка. «Ещё плачет» в нём нет, пока идёт сон: спящий не плачет
     var finishedCryingId by rememberSaveable { mutableLongStateOf(NONE) }
+    // «Отметить» в уведомлении в шторке: плач остановили там, причины спрашивает тот же лист
+    LaunchedEffect(cryingDetailsId) {
+        if (cryingDetailsId != null) {
+            finishedCryingId = cryingDetailsId
+            onCryingDetailsShown()
+        }
+    }
+    val shadeToggle = rememberShadeToggle(shadeEnabled, onShadeChange)
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let { text ->
@@ -140,12 +157,17 @@ fun DiaryScreen(
     var notesFilter by rememberSaveable(child?.id, stateSaver = NotesFilterSaver) { mutableStateOf<NotesFilter>(NotesFilter.All) }
     // Раздел, с которого откроется «Аналитика»: карточка плача на «Заметках» ведёт сразу в «Плач»
     var analyticsStart by rememberSaveable { mutableStateOf<AnalyticsSection?>(null) }
+    // Экран болезни (ADR-0040) — внутри раздела «Сегодня» или «Дневник»; листы здоровья — в HealthSheetsHost
+    var openIllnessId by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
+    val healthSheets = rememberHealthSheets()
+    val openIllness = state.events.firstNotNullOfOrNull { (it as? Illness)?.takeIf { illness -> illness.id == openIllnessId } }
     val today = now.toLocalDate()
     val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
     val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
     val openSection = { target: MainSection ->
         section = target
         analyticsStart = null
+        openIllnessId = NONE
     }
 
     // «Развитие» (ADR-0037): неделя ребёнка, точка на панели и «новые» на полосе, пока неделю не открывали
@@ -162,6 +184,8 @@ fun DiaryScreen(
     }
     // Объявлен раньше «Назад» внутри разделов, поэтому срабатывает после них
     BackHandler(enabled = section != MainSection.TODAY) { openSection(MainSection.TODAY) }
+    // Экран болезни закрывается раньше раздела: он открыт внутри него
+    BackHandler(enabled = openIllness != null) { openIllnessId = NONE }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -213,12 +237,29 @@ fun DiaryScreen(
                     viewModel.endCrying()
                 },
                 onAdd = { newEvent = it },
-                onEditEvent = { editingId = it.id },
+                // Болезнь из «Дневника» открывается своим экраном: даты правят там, карандашом
+                onEditEvent = { if (it is Illness) openIllnessId = it.id else editingId = it.id },
                 onDeleteEvent = { deletingId = it.id },
                 onSelectDate = selectDay,
                 onPickDate = { showDaySelector = true },
+                onHealth = { healthSheets.menu = true },
+                onTemperature = { healthSheets.temperature = true },
+                onOpenIllness = { openIllnessId = it.id },
             )
-            when (section) {
+            if (openIllness != null && (section == MainSection.TODAY || section == MainSection.DIARY)) {
+                IllnessScreen(
+                    illness = openIllness,
+                    state = state,
+                    child = child,
+                    now = now,
+                    sheets = healthSheets,
+                    viewModel = viewModel,
+                    onBack = { openIllnessId = NONE },
+                    onEditRecord = { editingId = it.id },
+                    onAddMedicine = { newEvent = NewEventKind.MEDICINE },
+                    modifier = Modifier.padding(padding),
+                )
+            } else when (section) {
                 MainSection.TODAY -> TodayContent(
                     state = state,
                     child = child,
@@ -252,6 +293,7 @@ fun DiaryScreen(
                                 onAddNote = { newEvent = NewEventKind.NOTE },
                                 onEdit = { editingId = it.id },
                                 onDelete = { deletingId = it.id },
+                                onOpenIllness = { openIllnessId = it.id },
                             )
                         }
                     }
@@ -290,6 +332,8 @@ fun DiaryScreen(
             // Пункт закрывает меню и только потом открывает следующий лист или выбор файла
             val pick = { action: () -> Unit -> closer.close { menuOpen = false; action() } }
             SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
+            // Переключатель меню не закрывает: видно, что включилось, а разрешение спросит система
+            ShadeMenuItem(shadeToggle)
             SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
                 pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
             })
@@ -315,6 +359,9 @@ fun DiaryScreen(
     if (child == null) return
 
     newEvent?.let { kind ->
+        val illnessMedicines = remember(state.events, state.activeIllness, now / 60_000) {
+            state.activeIllness?.let { state.events.illnessMedicines(it, now) }.orEmpty()
+        }
         NewEventSheet(
             kind = kind,
             child = child,
@@ -325,8 +372,19 @@ fun DiaryScreen(
                 viewModel.saveEvent(event, photos)
                 newEvent = null
             },
+            illnessMedicines = illnessMedicines,
         )
     }
+
+    HealthSheetsHost(
+        sheets = healthSheets,
+        state = state,
+        child = child,
+        now = now,
+        viewModel = viewModel,
+        onAddMedicine = { newEvent = NewEventKind.MEDICINE },
+        onOpenIllness = { openIllnessId = it.id },
+    )
 
     if (startingSleep) {
         SleepStartSheet(

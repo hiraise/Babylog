@@ -26,6 +26,7 @@ import com.kid.babylog.core.ui.components.chart.SparkBars
 import com.kid.babylog.core.ui.components.chart.SparkLine
 import com.kid.babylog.core.ui.plural
 import com.kid.babylog.core.ui.theme.BabyLogTheme
+import com.kid.babylog.core.ui.theme.illnessBand
 
 /** Сколько последних суток «Ритма дня» видно на обзоре; вся неделя — на экране раздела. */
 private const val RHYTHM_PREVIEW_DAYS = 3
@@ -71,7 +72,7 @@ internal fun AnalyticsOverview(
         contentPadding = analyticsListPadding(),
         verticalArrangement = Arrangement.spacedBy(spacing.m),
     ) {
-        item(key = "period") { PeriodPicker(period, onPeriod) }
+        item(key = "period") { PeriodPicker(period, onPeriod, model.illnessNote) }
         if (!model.hasRecords) {
             item(key = "empty") {
                 HintCard("Графики появятся, когда в дневнике будут записи.\nОтмечайте сон, кормления и подгузники на вкладке «Сегодня».")
@@ -118,9 +119,11 @@ private fun TileView(tile: Tile, onOpen: (AnalyticsSection) -> Unit, modifier: M
                             label = "",
                             description = column.caption,
                             partial = column.partial,
+                            band = column.ill,
                         )
                     },
                     maxValue = metric.maxValue,
+                    bandColor = MaterialTheme.colorScheme.illnessBand,
                 )
             }
         }

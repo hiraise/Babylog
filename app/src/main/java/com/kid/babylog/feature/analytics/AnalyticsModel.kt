@@ -6,10 +6,12 @@ import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
 import java.time.Instant
 import java.time.ZoneId
@@ -32,6 +34,10 @@ data class AnalyticsModel(
     val crying: CryingModel? = null,
     /** Метки плача и заметок (ADR-0031); null — меток и заметок у ребёнка нет: плитки нет. */
     val tags: TagsModel? = null,
+    /** «Болела: 7–14 окт.» под выбором периода (ADR-0040); null — в периоде не болел(а). */
+    val illnessNote: String? = null,
+    /** Сон в дни болезни и без — в разделе «Сон»; null — сравнивать не с чем. */
+    val illnessSleep: IllnessSleep? = null,
 )
 
 /**
@@ -74,6 +80,8 @@ fun analyticsModel(events: List<BabyEvent>, period: AnalyticsPeriod, now: Long, 
         medicines = medicineLines(events, since, now, zone),
         crying = if (cries) cryingModel(events, periodStart, now + 1) else null,
         tags = tagsModel(events, days, byWeeks = length == null, zone),
+        illnessNote = illnessNote(events, days.first().date, days.last().date, today, sex, zone),
+        illnessSleep = illnessSleep(days, sex),
     )
 }
 
@@ -82,5 +90,5 @@ private val BabyEvent.isRoutine: Boolean
     get() = when (this) {
         is Feeding, is Bottle, is Sleep, is Diaper -> true
         // Плач и заметки без сна и кормлений режим дня не описывают (ADR-0030, ADR-0031)
-        is Medicine, is Weight, is Height, is Crying, is Note -> false
+        is Medicine, is Weight, is Height, is Crying, is Note, is Illness, is Temperature -> false
     }

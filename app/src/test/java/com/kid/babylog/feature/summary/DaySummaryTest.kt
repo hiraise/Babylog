@@ -11,6 +11,7 @@ import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.LocalDate
@@ -173,5 +174,21 @@ class DaySummaryTest {
         // Только бутылочки — без части «грудью»
         val bottlesOnly = summarizeDay(events.drop(1), today, now, zone).lines(null).first()
         assertEquals("Кормлений: 2 (бутылочкой×2, 210\u00A0мл)", bottlesOnly.shown())
+    }
+
+    @Test
+    fun `temperature line shows the highest of the day`() {
+        val one = summarizeDay(listOf(Temperature(id = 1, childId = 1, start = at(today, 3, 10), tenths = 392)), today, now, zone)
+        assertEquals(SummaryLine(R.drawable.ic_thermometer, "Температура:", "39,2"), one.lines(Sex.GIRL).last())
+        val many = summarizeDay(
+            listOf(
+                Temperature(id = 1, childId = 1, start = at(today, 3, 10), tenths = 392),
+                Temperature(id = 2, childId = 1, start = at(today, 7, 30), tenths = 381),
+                Temperature(id = 3, childId = 1, start = at(yesterday, 22), tenths = 399),
+            ),
+            today, now, zone,
+        )
+        assertEquals(SummaryLine(R.drawable.ic_thermometer, "Температура:", "до 39,2 (2 раза)"), many.lines(Sex.GIRL).last())
+        assertEquals(4, summarizeDay(emptyList(), today, now, zone).lines(Sex.GIRL).size)
     }
 }

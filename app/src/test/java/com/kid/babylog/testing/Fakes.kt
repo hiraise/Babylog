@@ -5,6 +5,8 @@ import com.kid.babylog.core.data.DevelopmentSeenStore
 import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.data.SelectedChildStore
+import com.kid.babylog.core.data.ShadeMemo
+import com.kid.babylog.core.data.ShadeStore
 import com.kid.babylog.core.data.truncatedToSecond
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
@@ -14,6 +16,7 @@ import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -122,6 +125,11 @@ class FakeDiaryRepository(
         return addEvent(Crying(childId = childId, start = start))
     }
 
+    override suspend fun startIllness(illness: Illness): Long? {
+        if (events.value.any { it.childId == illness.childId && it is Illness && it.isActive }) return null
+        return addEvent(illness.copy(end = null))
+    }
+
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {
         if (events.value.any { it.childId == childId && it is Feeding && it.isActive }) return false
         events.value.filterIsInstance<Sleep>().filter { it.childId == childId && it.isActive }
@@ -155,6 +163,19 @@ class FakeSelectedChildStore(initial: Long? = null) : SelectedChildStore {
 }
 
 /** «Файлы» по uri в памяти. */
+class FakeShadeStore(enabled: Boolean = true, memo: ShadeMemo = ShadeMemo()) : ShadeStore {
+    override val enabled = MutableStateFlow(enabled)
+    override val memo = MutableStateFlow(memo)
+
+    override fun setEnabled(enabled: Boolean) {
+        this.enabled.value = enabled
+    }
+
+    override fun updateMemo(transform: (ShadeMemo) -> ShadeMemo) {
+        memo.value = transform(memo.value)
+    }
+}
+
 class FakeDocumentStore(val files: MutableMap<String, String> = mutableMapOf()) : DocumentStore {
     override suspend fun read(uri: String): String = files[uri] ?: error("Нет файла $uri")
 
