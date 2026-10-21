@@ -1,6 +1,6 @@
 # ADR-0041: Температура — запись `Temperature` (тип `TEMPERATURE`) в десятых градуса, место измерения по желанию
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-21
 - **Затрагивает:** `core/model/` (`Temperature`, `TemperatureMethod`), `EventRecord.kt` (`TEMPERATURE`), `TemperatureSheet`, `parseTemperature`, сводка в `feature/summary/`, `TemperatureChart`, `ChartColors.temperature`, `feature/transfer/`, README «Формат CSV»
 
