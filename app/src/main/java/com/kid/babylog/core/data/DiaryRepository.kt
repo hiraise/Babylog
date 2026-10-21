@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Breast
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import kotlinx.coroutines.flow.Flow
@@ -54,6 +55,12 @@ interface DiaryRepository {
      * Идущий сон заканчивается в момент начала плача: плачет — значит, не спит. Кормлению плач не мешает.
      */
     suspend fun startCrying(childId: Long, start: Long): Long?
+
+    /**
+     * Начинает болезнь [illness] (ADR-0040) и возвращает id записи; null — у ребёнка уже идёт болезнь:
+     * она одна. Таймеры сна и кормления болезнь не трогает.
+     */
+    suspend fun startIllness(illness: Illness): Long?
 
     /**
      * Начинает кормление ребёнка грудью [breast], если он ещё не ест; false — кормление уже идёт.

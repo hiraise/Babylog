@@ -14,6 +14,7 @@ import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
@@ -120,6 +121,11 @@ class FakeDiaryRepository(
         events.value.filterIsInstance<Sleep>().filter { it.childId == childId && it.isActive }
             .forEach { updateEvent(it.copy(end = maxOf(it.start, start))) }
         return addEvent(Crying(childId = childId, start = start))
+    }
+
+    override suspend fun startIllness(illness: Illness): Long? {
+        if (events.value.any { it.childId == illness.childId && it is Illness && it.isActive }) return null
+        return addEvent(illness.copy(end = null))
     }
 
     override suspend fun startFeeding(childId: Long, start: Long, breast: Breast): Boolean {

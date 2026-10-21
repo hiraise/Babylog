@@ -31,6 +31,8 @@ import com.kid.babylog.R
 import com.kid.babylog.core.data.DatabaseRecovery
 import com.kid.babylog.core.data.ThemeChoice
 import com.kid.babylog.core.model.Crying
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.illnessMedicines
 import com.kid.babylog.core.ui.LocalClock
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.AppSheet
@@ -140,12 +142,17 @@ fun DiaryScreen(
     var notesFilter by rememberSaveable(child?.id, stateSaver = NotesFilterSaver) { mutableStateOf<NotesFilter>(NotesFilter.All) }
     // Раздел, с которого откроется «Аналитика»: карточка плача на «Заметках» ведёт сразу в «Плач»
     var analyticsStart by rememberSaveable { mutableStateOf<AnalyticsSection?>(null) }
+    // Экран болезни (ADR-0040) — внутри раздела «Сегодня» или «Дневник»; листы здоровья — в HealthSheetsHost
+    var openIllnessId by rememberSaveable(child?.id) { mutableLongStateOf(NONE) }
+    val healthSheets = rememberHealthSheets()
+    val openIllness = state.events.firstNotNullOfOrNull { (it as? Illness)?.takeIf { illness -> illness.id == openIllnessId } }
     val today = now.toLocalDate()
     val selectedDate = if (selectedEpochDay == NONE) today else LocalDate.ofEpochDay(selectedEpochDay)
     val selectDay = { day: LocalDate -> selectedEpochDay = if (day == today) NONE else day.toEpochDay() }
     val openSection = { target: MainSection ->
         section = target
         analyticsStart = null
+        openIllnessId = NONE
     }
 
     // «Развитие» (ADR-0037): неделя ребёнка, точка на панели и «новые» на полосе, пока неделю не открывали
@@ -162,6 +169,8 @@ fun DiaryScreen(
     }
     // Объявлен раньше «Назад» внутри разделов, поэтому срабатывает после них
     BackHandler(enabled = section != MainSection.TODAY) { openSection(MainSection.TODAY) }
+    // Экран болезни закрывается раньше раздела: он открыт внутри него
+    BackHandler(enabled = openIllness != null) { openIllnessId = NONE }
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("text/csv")
@@ -213,12 +222,29 @@ fun DiaryScreen(
                     viewModel.endCrying()
                 },
                 onAdd = { newEvent = it },
-                onEditEvent = { editingId = it.id },
+                // Болезнь из «Дневника» открывается своим экраном: даты правят там, карандашом
+                onEditEvent = { if (it is Illness) openIllnessId = it.id else editingId = it.id },
                 onDeleteEvent = { deletingId = it.id },
                 onSelectDate = selectDay,
                 onPickDate = { showDaySelector = true },
+                onHealth = { healthSheets.menu = true },
+                onTemperature = { healthSheets.temperature = true },
+                onOpenIllness = { openIllnessId = it.id },
             )
-            when (section) {
+            if (openIllness != null && (section == MainSection.TODAY || section == MainSection.DIARY)) {
+                IllnessScreen(
+                    illness = openIllness,
+                    state = state,
+                    child = child,
+                    now = now,
+                    sheets = healthSheets,
+                    viewModel = viewModel,
+                    onBack = { openIllnessId = NONE },
+                    onEditRecord = { editingId = it.id },
+                    onAddMedicine = { newEvent = NewEventKind.MEDICINE },
+                    modifier = Modifier.padding(padding),
+                )
+            } else when (section) {
                 MainSection.TODAY -> TodayContent(
                     state = state,
                     child = child,
@@ -252,6 +278,7 @@ fun DiaryScreen(
                                 onAddNote = { newEvent = NewEventKind.NOTE },
                                 onEdit = { editingId = it.id },
                                 onDelete = { deletingId = it.id },
+                                onOpenIllness = { openIllnessId = it.id },
                             )
                         }
                     }
@@ -315,6 +342,9 @@ fun DiaryScreen(
     if (child == null) return
 
     newEvent?.let { kind ->
+        val illnessMedicines = remember(state.events, state.activeIllness, now / 60_000) {
+            state.activeIllness?.let { state.events.illnessMedicines(it, now) }.orEmpty()
+        }
         NewEventSheet(
             kind = kind,
             child = child,
@@ -325,8 +355,19 @@ fun DiaryScreen(
                 viewModel.saveEvent(event, photos)
                 newEvent = null
             },
+            illnessMedicines = illnessMedicines,
         )
     }
+
+    HealthSheetsHost(
+        sheets = healthSheets,
+        state = state,
+        child = child,
+        now = now,
+        viewModel = viewModel,
+        onAddMedicine = { newEvent = NewEventKind.MEDICINE },
+        onOpenIllness = { openIllnessId = it.id },
+    )
 
     if (startingSleep) {
         SleepStartSheet(

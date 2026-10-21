@@ -3,6 +3,7 @@ package com.kid.babylog.feature.analytics
 import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.ui.RU
+import com.kid.babylog.core.ui.bySex
 import com.kid.babylog.core.ui.diaperLabel
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.plural
@@ -37,7 +38,8 @@ enum class Series { FEEDING, NIGHT_SLEEP, DAY_SLEEP, DIAPER_WET, DIAPER_MIXED, D
 /**
  * Столбик графика: части снизу вверх. [partial] — сутки или неделя ещё идут; [date] — день,
  * который откроет «В историю» (у недельного столбика null); [caption] — итоги столбика словами,
- * их показывает выбранный столбик и читает TalkBack.
+ * их показывает выбранный столбик и читает TalkBack. [ill] — в эти сутки (неделю) болел: столбик
+ * на полосе болезни (ADR-0040).
  */
 data class ChartColumn(
     val parts: List<Pair<Series, Float>>,
@@ -45,6 +47,7 @@ data class ChartColumn(
     val partial: Boolean,
     val date: LocalDate?,
     val caption: String,
+    val ill: Boolean = false,
 )
 
 /**
@@ -82,8 +85,11 @@ private val DIAPER_SERIES = listOf(
     DiaperKind.DIRTY to Series.DIAPER_DIRTY,
 )
 
-/** Будущий столбик: сутки (одни [days] или пусто, если дневник не вели) или неделя (её полные сутки с записями). */
-private class Bucket(val days: List<DayStats>, val label: String, val partial: Boolean, val date: LocalDate?, val name: String)
+/**
+ * Будущий столбик: сутки (одни [days] или пусто, если дневник не вели) или неделя (её полные сутки с записями).
+ * [ill] — болел в эти сутки или хотя бы в одни сутки недели.
+ */
+private class Bucket(val days: List<DayStats>, val label: String, val partial: Boolean, val date: LocalDate?, val name: String, val ill: Boolean)
 
 /** По столбику на сутки периода [days]; сутки без записей — пустой столбик. */
 private fun dayBuckets(days: List<DayStats>, period: AnalyticsPeriod): List<Bucket> {
@@ -107,6 +113,7 @@ private fun dayBuckets(days: List<DayStats>, period: AnalyticsPeriod): List<Buck
             partial = !day.complete,
             date = day.date,
             name = if (day.complete) day.date.format(DAY_NAME) else "сегодня",
+            ill = day.ill,
         )
     }
 }
@@ -124,6 +131,7 @@ private fun weekBuckets(days: List<DayStats>): List<Bucket> {
             partial = week.size < 7 || !week.last().complete,
             date = null,
             name = "неделя с ${start.format(DAY_MONTH)}",
+            ill = week.any { it.ill },
         )
     }
 }
@@ -192,7 +200,7 @@ internal fun metricModel(metric: Metric, period: AnalyticsPeriod, days: List<Day
     val byWeeks = period == AnalyticsPeriod.ALL
     val buckets = if (byWeeks) weekBuckets(days) else dayBuckets(days, period)
     val columns = buckets.map { bucket ->
-        ChartColumn(parts(metric, bucket.days), bucket.label, bucket.partial, bucket.date, caption(metric, bucket, byWeeks, sex))
+        ChartColumn(parts(metric, bucket.days), bucket.label, bucket.partial, bucket.date, caption(metric, bucket, byWeeks, sex), bucket.ill)
     }
     val top = scaleTop(metric, columns.maxOfOrNull { column -> column.parts.sumOf { it.second.toDouble() }.toFloat() } ?: 0f)
     val countable = days.filter { it.countable }
@@ -301,6 +309,10 @@ private fun caption(metric: Metric, bucket: Bucket, byWeeks: Boolean, sex: Sex?)
         !bucket.partial -> ""
         byWeeks -> " (неделя идёт)"
         else -> " (день идёт)"
+    } + when {
+        !bucket.ill -> ""
+        byWeeks -> " · были дни болезни"
+        else -> " · " + bySex(sex, "болел", "болела")
     }
     if (bucket.days.isEmpty()) return "${bucket.name}: записей нет$suffix"
     if (byWeeks) {

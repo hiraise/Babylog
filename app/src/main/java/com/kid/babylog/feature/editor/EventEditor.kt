@@ -9,10 +9,13 @@ import com.kid.babylog.core.model.Diaper
 import com.kid.babylog.core.model.EventPhoto
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Height
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessMedicine
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.Weight
 
 /**
@@ -23,8 +26,9 @@ enum class NewEventKind { DIAPER, MEDICINE, WEIGHT, HEIGHT, NOTE }
 
 /**
  * Лист новой записи для ребёнка [child]. [pastMedicines] — подсказки в листе лекарства, [noteTags] —
- * метки в листе заметки ([noteTagChoices]). [onSave] получает запись и её фото (ADR-0024); null —
- * у этого типа записей фото нет.
+ * метки в листе заметки ([noteTagChoices]), [illnessMedicines] — лекарства идущей болезни в листе
+ * лекарства (ADR-0040). [onSave] получает запись и её фото (ADR-0024); null — у этого типа записей фото нет.
+ * Температуру и болезнь начинают свои листы: [TemperatureSheet], [IllnessStartSheet].
  */
 @Composable
 fun NewEventSheet(
@@ -34,13 +38,14 @@ fun NewEventSheet(
     noteTags: TagChoices,
     onDismiss: () -> Unit,
     onSave: (BabyEvent, PhotoEdit?) -> Unit,
+    illnessMedicines: List<IllnessMedicine> = emptyList(),
 ) {
     val childId = child.id
     when (kind) {
         NewEventKind.DIAPER -> DiaperSheet(null, child, emptyList(), onDismiss) { diaperKind, time, note, photos ->
             onSave(Diaper(childId = childId, start = time, kind = diaperKind, note = note), photos)
         }
-        NewEventKind.MEDICINE -> MedicineSheet(null, pastMedicines, onDismiss) { name, time, note ->
+        NewEventKind.MEDICINE -> MedicineSheet(null, pastMedicines, onDismiss, illnessMedicines) { name, time, note ->
             onSave(Medicine(childId = childId, start = time, name = name, note = note), null)
         }
         NewEventKind.WEIGHT -> WeightSheet(null, onDismiss) { grams, time, note ->
@@ -100,6 +105,12 @@ fun EditEventSheet(
         }
         is Note -> NoteSheet(event, noteTags, photos, onDismiss) { text, tags, time, edit ->
             onSave(event.copy(note = text, tags = tags, start = time), edit)
+        }
+        is Temperature -> TemperatureSheet(event, last = null, sex = sex, offerIllness = false, onDismiss = onDismiss, onSave = { tenths, method, time, note, _ ->
+            save(event.copy(tenths = tenths, method = method, start = time, note = note))
+        })
+        is Illness -> IllnessEditSheet(event, onDismiss) { start, end, note ->
+            save(event.copy(start = start, end = end, note = note))
         }
     }
 }

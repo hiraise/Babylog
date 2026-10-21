@@ -9,6 +9,7 @@ import com.kid.babylog.core.model.DiaperKind
 import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -31,6 +32,9 @@ data class DaySummary(
     /** Плач (ADR-0030), начатый в этот день, и его время внутри суток; идущий — до `now`, как сон. */
     val cryings: Int = 0,
     val cryingMillis: Long = 0,
+    /** Замеры температуры этого дня (ADR-0041): сколько и самая высокая в десятых градуса; null — не мерили. */
+    val temperatures: Int = 0,
+    val maxTemperatureTenths: Int? = null,
 ) {
     /** Все кормления дня: грудью и бутылочкой. */
     val feedings: Int get() = breastFeedings + bottles
@@ -86,6 +90,8 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
         .values
         .map { group -> group.first().name.trim() to group.size }
 
+    val temperatures = dayEvents.filterIsInstance<Temperature>()
+
     return DaySummary(
         breastFeedings = feedings.count { it.start in dayStart until dayEnd },
         bottles = dayBottles.size,
@@ -95,5 +101,7 @@ fun summarizeDay(events: List<BabyEvent>, date: LocalDate, now: Long, zone: Zone
         medicines = medicines,
         cryings = cryings.count { it.start in dayStart until dayEnd },
         cryingMillis = cryingMillis,
+        temperatures = temperatures.size,
+        maxTemperatureTenths = temperatures.maxOfOrNull { it.tenths },
     )
 }

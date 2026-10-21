@@ -28,11 +28,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.editor.NewEventKind
+import com.kid.babylog.feature.illness.IllnessCard
+import com.kid.babylog.feature.illness.illnessCardModel
 import com.kid.babylog.feature.summary.DaySummaryCard
 import java.time.LocalDate
+import java.time.ZoneId
 
 /** Действия пользователя на главном экране. */
 internal class DiaryActions(
@@ -48,12 +52,17 @@ internal class DiaryActions(
     val onDeleteEvent: (BabyEvent) -> Unit,
     val onSelectDate: (LocalDate) -> Unit,
     val onPickDate: () -> Unit,
+    /** Плитка «Здоровье», «Температура» на карточке болезни и её заголовок (ADR-0040). */
+    val onHealth: () -> Unit = {},
+    val onTemperature: () -> Unit = {},
+    val onOpenIllness: (Illness) -> Unit = {},
 )
 
 /**
  * Раздел «Сегодня» (ADR-0035): плитки сна и кормления в ряд, под ними широкая плитка плача (ADR-0030)
  * с «Заметкой» рядом, плитки быстрых записей, сводка за сегодня и под ней — полоса советов недели
- * [tipsBanner] (ADR-0037), если советы есть. Ребёнок — в шапке.
+ * [tipsBanner] (ADR-0037), если советы есть. Ребёнок — в шапке. Пока ребёнок болеет, над таймерами —
+ * карточка болезни ([IllnessCard], ADR-0040): ночью за ней и открывают «Сегодня».
  */
 @Composable
 internal fun TodayContent(
@@ -65,7 +74,25 @@ internal fun TodayContent(
     tipsBanner: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BabyLogTheme.spacing
+    val illness = state.activeIllness
+    // Пересчитываем раз в минуту, а не на каждый тик секундного таймера экрана
+    val minuteNow = now / 60_000
+    val illnessCard = remember(state.events, illness, minuteNow) {
+        illness?.let { illnessCardModel(state.events, it, now, ZoneId.systemDefault()) }
+    }
     DiaryList(modifier) {
+        if (illnessCard != null) {
+            item(key = "illness") {
+                IllnessCard(
+                    model = illnessCard,
+                    now = now,
+                    onOpen = { actions.onOpenIllness(illnessCard.illness) },
+                    onTemperature = actions.onTemperature,
+                    onMedicine = { actions.onAdd(NewEventKind.MEDICINE) },
+                    onNote = { actions.onAdd(NewEventKind.NOTE) },
+                )
+            }
+        }
         item(key = "timers") {
             // Таймеры — одна группа: плач под сном и кормлением на шаге внутри ряда, а не между карточками
             Column(verticalArrangement = Arrangement.spacedBy(spacing.s)) {
@@ -101,6 +128,8 @@ internal fun TodayContent(
                 sleeping = state.activeSleep != null,
                 now = now,
                 onAdd = actions.onAdd,
+                onHealth = actions.onHealth,
+                illnessDay = illnessCard?.day,
             )
         }
         item(key = "summary") {

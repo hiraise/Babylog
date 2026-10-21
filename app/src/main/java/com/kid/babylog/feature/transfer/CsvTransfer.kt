@@ -6,6 +6,7 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventRecord
 import com.kid.babylog.core.model.Feeding
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.isValidChildName
@@ -22,6 +23,8 @@ data class ImportResult(
     val skippedActiveSleep: Int = 0,
     /** Незавершённый плач (ADR-0030) не импортируется: он стал бы «фантомным» таймером, как сон. */
     val skippedActiveCrying: Int = 0,
+    /** Идущая болезнь из файла, когда у ребёнка уже идёт своя (ADR-0040): идущая у ребёнка одна. */
+    val skippedActiveIllness: Int = 0,
     val childrenAdded: Int = 0,
     val birthDatesSet: Int = 0,
     val birthDateConflicts: Int = 0,
@@ -130,6 +133,12 @@ private class CsvImporter(
         }
         val child = findChild(name) ?: createChild(name, birthDate = null, sex = null)
         val parsed = record.toEvent(childId = child.id) ?: return
+        // Идущая болезнь переносится (перенос на новый телефон посреди болезни), но вторая идущая — нет (ADR-0040)
+        val ownActiveIllness = known.any { (id, other) -> id == child.id && other.type == EventRecord.ILLNESS && other.end == null }
+        if (parsed is Illness && parsed.isActive && ownActiveIllness && (child.id to parsed.toRecord()) !in known) {
+            result = result.copy(skippedActiveIllness = result.skippedActiveIllness + 1)
+            return
+        }
         val event = parsed.withLegacyFeedingEnd()
         // Идущее кормление из собственного экспорта уже есть в базе — без конца, как в файле
         if ((child.id to parsed.toRecord()) in known || !known.add(child.id to event.toRecord())) {
@@ -168,6 +177,7 @@ fun ImportResult.describe(): String = buildString {
     if (errors > 0) append(", ошибок $errors")
     if (skippedActiveSleep > 0) append(", пропущено незавершённых снов $skippedActiveSleep")
     if (skippedActiveCrying > 0) append(", пропущено незавершённого плача $skippedActiveCrying")
+    if (skippedActiveIllness > 0) append(", пропущено идущих болезней $skippedActiveIllness — у ребёнка уже идёт болезнь")
     if (childrenAdded > 0) append(", новых детей $childrenAdded")
     if (birthDatesSet > 0) append(", дат рождения импортировано $birthDatesSet")
     if (birthDateConflicts > 0) append(", дата рождения в файле отличается — оставлена текущая")

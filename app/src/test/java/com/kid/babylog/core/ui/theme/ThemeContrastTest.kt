@@ -118,8 +118,14 @@ private typealias ChartSeries = KProperty1<ChartColors, Color>
 private val CHART_SERIES: List<ChartSeries> = listOf(
     ChartColors::sleep, ChartColors::daySleep, ChartColors::feeding, ChartColors::diaperWet, ChartColors::diaperMixed,
     ChartColors::diaperDirty, ChartColors::weight, ChartColors::height, ChartColors::crying,
-    ChartColors::milestone, ChartColors::milestoneOther,
+    ChartColors::milestone, ChartColors::milestoneOther, ChartColors::temperature,
 )
+
+/**
+ * Полоса болезни заметно отличается от карточки, но остаётся фоном. Столбики на ней — в кайме цвета карточки
+ * (`drawBar`), поэтому их контраст к полосе не проверяем: он тот же, что к карточке.
+ */
+private const val BAND_MINIMUM = 1.08
 
 /**
  * Ряды, которые стоят рядом (KDoc `ChartColors`): сон, кормление и плач — в полосе «Ритма дня»,
@@ -291,6 +297,23 @@ class ThemeContrastTest {
             emptySet<String>(),
             schemeRoles - listed.toSet(),
         )
+    }
+
+    @Test
+    fun `illness colors keep text and bars readable`() {
+        val failures = CHARTS.flatMap { (name, scheme, _) ->
+            val container = scheme.illnessContainer
+            val band = scheme.illnessBand
+            val checks = listOf(
+                Triple("onTertiaryContainer на фоне болезни", contrast(scheme.onTertiaryContainer, container), TEXT_MINIMUM),
+                Triple("tertiary на фоне болезни", contrast(scheme.tertiary, container), TEXT_MINIMUM),
+                Triple("полоса болезни к карточке", contrast(band, scheme.surfaceContainerLow), BAND_MINIMUM),
+            )
+            checks.mapNotNull { (what, ratio, minimum) ->
+                if (ratio >= minimum) null else "$name: $what — ${"%.2f".format(RU, ratio)}:1, нужно ${"%.2f".format(RU, minimum)}"
+            }
+        }
+        assertTrue("Цвета болезни:\n" + failures.joinToString("\n"), failures.isEmpty())
     }
 }
 

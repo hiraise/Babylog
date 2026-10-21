@@ -39,7 +39,8 @@ internal fun String.unpacked() = split(';').filter { it.isNotEmpty() }
 /**
  * Чипы, из которых выбирают несколько ([ChoiceChip] `multiple`); у выбранного — галочка. Выбранное,
  * но не входящее в [options], тоже показано. «+ своя метка» открывает поле: набранное приводится
- * к общему виду ([normalizeTag]) и сразу выбирается. Над полем — подсказки из [other] (метки записей
+ * к общему виду ([normalize], у меток — [normalizeTag]) и сразу выбирается. Названия болезней
+ * (ADR-0040) приводятся своим правилом: регистр у «ОРВИ» важен. Над полем — подсказки из [other] (метки записей
  * другого типа, ADR-0031) с подписью [otherTitle]: с набранного начинается метка или слово в ней, без
  * набранного — первые. Без подписи подсказки не отличить от чипов выше.
  */
@@ -53,12 +54,14 @@ internal fun TagPicker(
     addLabel: String,
     other: List<String> = emptyList(),
     otherTitle: String = "",
+    normalize: (String) -> String? = ::normalizeTag,
+    maxLength: Int = MAX_TAG_LENGTH,
 ) {
     val spacing = BabyLogTheme.spacing
     var adding by rememberSaveable(title) { mutableStateOf(false) }
     var draft by rememberSaveable(title) { mutableStateOf("") }
     val add = {
-        normalizeTag(draft)?.let { tag -> if (tag !in selected) onChange(selected + tag) }
+        normalize(draft)?.let { tag -> if (selected.none { it.equals(tag, ignoreCase = true) }) onChange(selected + tag) }
         draft = ""
         adding = false
     }
@@ -100,7 +103,7 @@ internal fun TagPicker(
             val focus = remember { FocusRequester() }
             OutlinedTextField(
                 value = draft,
-                onValueChange = { draft = it.take(MAX_TAG_LENGTH) },
+                onValueChange = { draft = it.take(maxLength) },
                 label = { Text(addLabel.replaceFirstChar(Char::titlecase)) },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),

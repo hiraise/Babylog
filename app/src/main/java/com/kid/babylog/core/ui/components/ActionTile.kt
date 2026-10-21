@@ -112,7 +112,7 @@ private fun ActionTilePreview() = LightDarkPreview {
                 caption = if (highlight) "3 ч 20 мин назад" else "25 мин назад",
                 highlight = highlight,
             )
-            ActionTile(R.drawable.ic_medicine, "Лекарство", onClick = {}, modifier = tile)
+            ActionTile(R.drawable.ic_first_aid, "Здоровье", onClick = {}, modifier = tile)
             ActionTile(R.drawable.ic_weight, "Вес", onClick = {}, modifier = tile, caption = "вчера")
             ActionTile(R.drawable.ic_height, "Рост", onClick = {}, modifier = tile, caption = "15 окт.")
         }

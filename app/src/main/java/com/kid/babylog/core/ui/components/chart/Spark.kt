@@ -26,16 +26,19 @@ private val SparkRing = 1.5.dp
  * Мини-график плитки обзора «Аналитики» (ADR-0029): те же столбики, что у [BarChart], — части,
  * зазоры между ними, штриховка идущих суток, — но без сетки, подписей и касаний. Высота шкалы —
  * [maxValue], как у большого графика, поэтому столбики плитки и экрана раздела одной формы.
- * TalkBack его не читает: число на плитке говорит то же.
+ * TalkBack его не читает: число на плитке говорит то же. Сутки болезни ([ChartBar.band]) — на полосе
+ * [bandColor], как на большом графике (ADR-0040).
  */
 @Composable
-fun SparkBars(bars: List<ChartBar>, maxValue: Float, modifier: Modifier = Modifier) {
+fun SparkBars(bars: List<ChartBar>, maxValue: Float, modifier: Modifier = Modifier, bandColor: Color = Color.Transparent) {
+    val halo = MaterialTheme.colorScheme.surfaceContainerLow
     Canvas(modifier.fillMaxWidth().height(SparkHeight)) {
         if (bars.isEmpty()) return@Canvas
         val slot = size.width / bars.size
         bars.forEachIndexed { index, bar ->
             inset(left = index * slot, top = 0f, right = size.width - (index + 1) * slot, bottom = 0f) {
-                drawBar(bar, maxValue, topInset = 0f, maxWidth = SparkBarWidth, cornerRadius = SparkBarRadius)
+                if (bar.band) drawRect(bandColor)
+                drawBar(bar, maxValue, topInset = 0f, maxWidth = SparkBarWidth, cornerRadius = SparkBarRadius, halo = halo.takeIf { bar.band })
             }
         }
     }

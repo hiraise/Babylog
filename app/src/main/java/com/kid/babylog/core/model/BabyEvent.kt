@@ -1,5 +1,7 @@
 package com.kid.babylog.core.model
 
+import java.time.LocalDate
+
 /**
  * Запись дневника. Время — epoch millis с точностью до секунды (ADR-0008).
  *
@@ -128,6 +130,50 @@ data class Height(
         val RANGE = 200..1500
     }
 }
+
+/**
+ * Болезнь (ADR-0040) — период, как сон: [end] = null — болеет сейчас (у ребёнка не больше одной идущей).
+ * [names] — названия с днём, с которого каждое стоит: ОРВИ с начала, отит — с 4-го дня. Без названий —
+ * тоже болезнь: диагноз ставят не сразу. Температура, лекарства и заметки относятся к болезни по времени
+ * ([illnessRecords]), а не тегами.
+ */
+data class Illness(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val end: Long? = null,
+    val names: List<IllnessName> = emptyList(),
+    override val note: String = "",
+) : BabyEvent {
+    val isActive: Boolean get() = end == null
+}
+
+/**
+ * Название болезни ([normalizeIllnessName]) и день, с которого оно стоит; null — с начала болезни.
+ * Конец у всех названий общий — конец болезни.
+ */
+data class IllnessName(val name: String, val since: LocalDate? = null)
+
+/**
+ * Температура (ADR-0041) в десятых градуса: `384` — 38,4 °C. [method] — где мерили; null — не отмечено.
+ * Разовая запись: приложение значение не оценивает, только показывает.
+ */
+data class Temperature(
+    override val id: Long = 0,
+    override val childId: Long,
+    override val start: Long,
+    val tenths: Int,
+    val method: TemperatureMethod? = null,
+    override val note: String = "",
+) : BabyEvent {
+    companion object {
+        /** Допустимая температура, 34,0–43,0 °C (защита от опечаток). */
+        val RANGE = 340..430
+    }
+}
+
+/** Где мерили температуру. Код в базе и CSV — [name]. */
+enum class TemperatureMethod { ARMPIT, EAR, RECTAL, FOREHEAD }
 
 enum class Breast {
     LEFT,

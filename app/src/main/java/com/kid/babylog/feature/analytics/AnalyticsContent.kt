@@ -93,9 +93,9 @@ internal fun analyticsListPadding(): PaddingValues {
     return PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = spacing.xl)
 }
 
-/** Чипы периода и пояснение к штриховке. */
+/** Чипы периода, пояснение к штриховке и — если в периоде болел — когда ([IllnessLegend], ADR-0040). */
 @Composable
-internal fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) -> Unit) {
+internal fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) -> Unit, illnessNote: String? = null) {
     val spacing = BabyLogTheme.spacing
     Column {
         Row(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(spacing.s)) {
@@ -112,6 +112,7 @@ internal fun PeriodPicker(period: AnalyticsPeriod, onSelect: (AnalyticsPeriod) -
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        illnessNote?.let { IllnessLegend(it) }
     }
 }
 

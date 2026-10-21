@@ -58,7 +58,7 @@ internal fun AnalyticsDetail(
     ) {
         item(key = "header") { DetailHeader(section.title, onBack) }
         if (section.usesPeriod) {
-            item(key = "period") { PeriodPicker(period, onPeriod) }
+            item(key = "period") { PeriodPicker(period, onPeriod, model.illnessNote) }
         }
         when (section) {
             AnalyticsSection.RHYTHM -> {
@@ -86,6 +86,10 @@ internal fun AnalyticsDetail(
                             onHelp = if (metric.metric == Metric.SLEEP) ({ sleepHelp = true }) else null,
                         )
                     }
+                }
+                // Сон в дни болезни и без (ADR-0040) — рядом с графиком, средние не меняются
+                if (section == AnalyticsSection.SLEEP) {
+                    model.illnessSleep?.let { sleep -> item(key = "illness") { IllnessSleepCard(sleep) } }
                 }
                 // Плач (ADR-0030): что было перед ним и почему — под графиком минут
                 if (section == AnalyticsSection.CRYING) {

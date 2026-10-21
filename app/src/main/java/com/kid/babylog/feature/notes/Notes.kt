@@ -2,16 +2,25 @@ package com.kid.babylog.feature.notes
 
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Crying
+import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.LONGER_THAN_USUAL
 import com.kid.babylog.core.model.MAX_AWAKE_MILLIS
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.PeakHours
+import com.kid.babylog.core.model.Temperature
+import com.kid.babylog.core.model.days
+import com.kid.babylog.core.model.illnessMedicines
+import com.kid.babylog.core.model.illnessRecords
+import com.kid.babylog.core.model.lastDate
+import com.kid.babylog.core.model.startDate
+import com.kid.babylog.core.model.title
 import com.kid.babylog.core.model.eventTags
 import com.kid.babylog.core.model.lastFeedingEndBefore
 import com.kid.babylog.core.model.lastSleepEndBefore
 import com.kid.babylog.core.model.median
 import com.kid.babylog.core.model.peakHours
 import com.kid.babylog.core.model.usualAwakeBefore
+import com.kid.babylog.core.ui.formatDayRange
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -25,7 +34,10 @@ const val TAG_WEEKS = 4
 /** «Что помогало» и «Часто вместе» — не больше стольких: дальше единичные случаи. */
 private const val TOP_ITEMS = 6
 
-/** Что показывает лента «Заметок» (ADR-0031): всё, только плач, только заметки или записи с меткой — тогда над лентой сводка метки. */
+/**
+ * Что показывает лента «Заметок» (ADR-0031): всё, только плач, только заметки или записи с меткой — тогда
+ * над лентой сводка метки. [Illnesses] — вместо ленты болезни карточками (ADR-0040).
+ */
 sealed interface NotesFilter {
     data object All : NotesFilter
 
@@ -33,15 +45,48 @@ sealed interface NotesFilter {
 
     data object NotesOnly : NotesFilter
 
+    data object Illnesses : NotesFilter
+
     data class Tag(val tag: String) : NotesFilter
 }
 
-/** Запись подходит под фильтр: в ленте только плач и заметки. */
+/** Запись подходит под фильтр: в ленте только плач и заметки; у «Болезней» ленты нет — там карточки ([illnessEntries]). */
 fun NotesFilter.matches(event: BabyEvent): Boolean = (event is Crying || event is Note) && when (this) {
     NotesFilter.All -> true
     NotesFilter.CryingOnly -> event is Crying
     NotesFilter.NotesOnly -> event is Note
+    NotesFilter.Illnesses -> false
     is NotesFilter.Tag -> tag in event.eventTags
+}
+
+/**
+ * Болезнь карточкой в «Заметках» (ADR-0040): названия ([title], null — без названия), дни ([range] —
+ * «7–14 окт.», идущая — «с 18 окт.»), сколько дней, самая высокая температура и чем лечили.
+ */
+data class IllnessEntry(
+    val illness: Illness,
+    val title: String?,
+    val range: String,
+    val days: Int,
+    val maxTenths: Int?,
+    val medicines: List<String>,
+)
+
+/** Болезни ребёнка, свежие сверху: идущая первой. */
+fun illnessEntries(events: List<BabyEvent>, now: Long, zone: ZoneId): List<IllnessEntry> {
+    val today = dateOf(now, zone)
+    return events.filterIsInstance<Illness>().sortedByDescending { it.start }.map { illness ->
+        val records = events.illnessRecords(illness, now)
+        val first = illness.startDate(zone)
+        IllnessEntry(
+            illness = illness,
+            title = illness.title(),
+            range = if (illness.isActive) "с ${formatDayRange(first, first)}" else formatDayRange(first, illness.lastDate(today, zone)),
+            days = illness.days(today, zone),
+            maxTenths = records.filterIsInstance<Temperature>().maxOfOrNull { it.tenths },
+            medicines = events.illnessMedicines(illness, now).sortedBy { it.times.first() }.map { it.name },
+        )
+    }.sortedByDescending { it.illness.isActive }
 }
 
 /** Записи ленты за один день, свежие сверху. */

@@ -59,10 +59,10 @@ class QuickActionsScreenshotTest {
                             CryingNoteRow(null, null, now, {}, {}, {})
                             val lastCrying = Crying(childId = 1, start = now - 145 * minute, end = now - 80 * minute)
                             CryingNoteRow(null, lastCrying, now, {}, {}, {})
-                            QuickActions(now - 25 * minute, lastWeight = now - day, lastHeight = now - 14 * day, sleeping = false, now = now, onAdd = {})
-                            QuickActions(now - 200 * minute, lastWeight = now, lastHeight = now - 400 * day, sleeping = false, now = now, onAdd = {})
-                            QuickActions(now - 200 * minute, lastWeight = null, lastHeight = null, sleeping = true, now = now, onAdd = {})
-                            QuickActions(lastDiaper = null, lastWeight = null, lastHeight = null, sleeping = false, now = now, onAdd = {})
+                            QuickActions(now - 25 * minute, lastWeight = now - day, lastHeight = now - 14 * day, sleeping = false, now = now, onAdd = {}, onHealth = {})
+                            QuickActions(now - 200 * minute, lastWeight = now, lastHeight = now - 400 * day, sleeping = false, now = now, onAdd = {}, onHealth = {}, illnessDay = 3)
+                            QuickActions(now - 200 * minute, lastWeight = null, lastHeight = null, sleeping = true, now = now, onAdd = {}, onHealth = {})
+                            QuickActions(lastDiaper = null, lastWeight = null, lastHeight = null, sleeping = false, now = now, onAdd = {}, onHealth = {})
                         }
                     }
                 }

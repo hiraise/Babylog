@@ -11,10 +11,13 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.ChildPhoto
 import com.kid.babylog.core.model.Crying
 import com.kid.babylog.core.model.EventPhoto
+import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.model.IllnessName
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.PhotoEdit
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
+import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.isNameTaken
 import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.ui.formatDuration
@@ -164,6 +167,60 @@ class DiaryViewModel(
     fun resumeCrying(crying: Crying) = write {
         if (state.value.activeCrying == null) repository.updateEvent(crying.copy(end = null))
     }
+
+    /**
+     * Болезнь началась (ADR-0040): [names] — с начала болезни, [temperatureTenths] — замер «сейчас» с местом
+     * прошлого замера. Идущая болезнь уже есть — ничего: она у ребёнка одна.
+     */
+    fun startIllness(start: Long, names: List<String>, note: String, temperatureTenths: Int?) = write {
+        val child = state.value.child ?: return@write
+        val method = state.value.lastTemperature?.method
+        repository.inTransaction {
+            val illness = Illness(childId = child.id, start = start, names = names.map { IllnessName(it) }, note = note)
+            repository.startIllness(illness) ?: return@inTransaction
+            if (temperatureTenths != null) {
+                repository.addEvent(Temperature(childId = child.id, start = maxOf(clock.millis(), start), tenths = temperatureTenths, method = method))
+            }
+        }
+    }
+
+    /** «Прошлая вернулась» или «Ещё болеет»: у болезни снова нет конца — если другой идущей нет. */
+    fun resumeIllness(illness: Illness) = write {
+        if (state.value.activeIllness == null) repository.updateEvent(current(illness).copy(end = null))
+    }
+
+    /** «Выздоровел(а)»: болезнь заканчивается в [end], но не раньше начала. */
+    fun recoverIllness(illness: Illness, end: Long) = write {
+        val fresh = current(illness)
+        repository.updateEvent(fresh.copy(end = maxOf(end, fresh.start)))
+    }
+
+    /** Новое название болезни ([old] = null) или правка: названия без повторов без учёта регистра. */
+    fun saveIllnessName(illness: Illness, old: IllnessName?, name: IllnessName) = write {
+        val fresh = current(illness)
+        val names = if (old == null) fresh.names + name else fresh.names.map { if (it == old) name else it }
+        repository.updateEvent(fresh.copy(names = names.distinctBy { it.name.lowercase() }))
+    }
+
+    fun removeIllnessName(illness: Illness, name: IllnessName) = write {
+        val fresh = current(illness)
+        repository.updateEvent(fresh.copy(names = fresh.names - name))
+    }
+
+    /**
+     * Замер температуры (ADR-0041), новый или правка; [startIllness] — «Заболел(а)» в листе: болезнь начинается
+     * с этого замера, если идущей ещё нет.
+     */
+    fun saveTemperature(temperature: Temperature, startIllness: Boolean) = write {
+        val child = state.value.child ?: return@write
+        repository.inTransaction {
+            if (temperature.id == 0L) repository.addEvent(temperature.copy(childId = child.id)) else repository.updateEvent(temperature)
+            if (startIllness) repository.startIllness(Illness(childId = child.id, start = temperature.start))
+        }
+    }
+
+    /** Свежая запись болезни: лист мог открыться до того, как в ней что-то поменялось. */
+    private fun current(illness: Illness): Illness = state.value.events.firstNotNullOfOrNull { (it as? Illness)?.takeIf { found -> found.id == illness.id } } ?: illness
 
     fun startFeeding(start: Long, breast: Breast) = write {
         val child = state.value.child ?: return@write
