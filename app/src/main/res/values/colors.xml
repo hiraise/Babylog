@@ -9,4 +9,15 @@
         совпадение проверяет ThemeWindowTest. Тёмный вариант — values-night/colors.xml.
     -->
     <color name="window_background">#F9FAFB</color>
+
+    <!--
+        Уведомление с кнопками в шторке (ADR-0042) рисует система, без Compose, поэтому его цвета —
+        ресурсы. Они повторяют роли светлой темы: shade_primary — primary (залитая кнопка идущего
+        таймера и текстовые кнопки), shade_container — primaryContainer (кнопки старта и строки
+        «Отменить»), shade_on_* — текст и иконки на них. Совпадение проверяет ThemeWindowTest.
+    -->
+    <color name="shade_primary">#348333</color>
+    <color name="shade_on_primary">#FFFFFF</color>
+    <color name="shade_container">#D5EFD1</color>
+    <color name="shade_on_container">#0B3A0B</color>
 </resources>

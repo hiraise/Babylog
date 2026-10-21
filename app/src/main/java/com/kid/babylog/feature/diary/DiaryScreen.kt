@@ -63,6 +63,8 @@ import com.kid.babylog.feature.notes.CryingWeek
 import com.kid.babylog.feature.notes.NotesContent
 import com.kid.babylog.feature.notes.NotesFilter
 import com.kid.babylog.feature.notes.NotesFilterSaver
+import com.kid.babylog.feature.shade.ShadeMenuItem
+import com.kid.babylog.feature.shade.rememberShadeToggle
 import kotlinx.coroutines.delay
 import java.time.LocalDate
 import java.time.ZoneId
@@ -75,7 +77,8 @@ private const val NONE = -1L
  * Главный экран (ADR-0035): шапка с ребёнком, нижняя панель разделов и нижние листы (ADR-0018).
  * Подключает [DiaryViewModel] и [DevelopmentViewModel] (ADR-0037). Тему применяет `MainActivity`
  * (ADR-0017): экран только показывает выбор и сообщает о новом. Системная «Назад» сначала закрывает
- * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня».
+ * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня». Уведомление в шторке
+ * (ADR-0042) включается в меню ([shadeEnabled]); его «Отметить» открывает лист плача [cryingDetailsId].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,6 +91,10 @@ fun DiaryScreen(
     initialDiaryView: DiaryView = DiaryView.DAYS,
     recovery: DatabaseRecovery? = null,
     onRecoverySeen: () -> Unit = {},
+    shadeEnabled: Boolean = false,
+    onShadeChange: (Boolean) -> Unit = {},
+    cryingDetailsId: Long? = null,
+    onCryingDetailsShown: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
@@ -102,6 +109,14 @@ fun DiaryScreen(
     // (ADR-0030). После засыпания лист открывается сам, а не кнопкой в снекбаре: снекбар гаснет через
     // 10 секунд, пока укладывают ребёнка. «Ещё плачет» в нём нет, пока идёт сон: спящий не плачет
     var finishedCryingId by rememberSaveable { mutableLongStateOf(NONE) }
+    // «Отметить» в уведомлении в шторке: плач остановили там, причины спрашивает тот же лист
+    LaunchedEffect(cryingDetailsId) {
+        if (cryingDetailsId != null) {
+            finishedCryingId = cryingDetailsId
+            onCryingDetailsShown()
+        }
+    }
+    val shadeToggle = rememberShadeToggle(shadeEnabled, onShadeChange)
     val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(state.message) {
         state.message?.let { text ->
@@ -317,6 +332,8 @@ fun DiaryScreen(
             // Пункт закрывает меню и только потом открывает следующий лист или выбор файла
             val pick = { action: () -> Unit -> closer.close { menuOpen = false; action() } }
             SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
+            // Переключатель меню не закрывает: видно, что включилось, а разрешение спросит система
+            ShadeMenuItem(shadeToggle)
             SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
                 pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
             })

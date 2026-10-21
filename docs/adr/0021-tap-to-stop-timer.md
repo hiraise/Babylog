@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `feature/diary/` (`DiaryCards.kt`; отмена остановки — `DiaryViewModel.kt`)
+- **Затрагивает:** `core/ui/components/TimerCard.kt` (`TimerTile`), `feature/diary/` (`DiaryCards.kt`), отмена остановки — `Timers.resume` в `core/data/Timers.kt`
 
 ## Контекст
 
@@ -27,7 +27,7 @@
   времени пропадал бы скачком. Пока время исчезает, на нём последнее значение, не «00:00».
 - Грудь меняет иконка ⇄ (`ic_swap`, `TimerCornerButton`) в углу идущего кормления.
 - После остановки касанием — снекбар «Сон: 1 ч 25 мин» с «Отменить» (`SnackbarDuration.Long`):
-  `DiaryViewModel.consumeMessage(undo = true)` возвращает таймеру `end = null`, если за это время
+  `DiaryViewModel.consumeMessage(undo = true)` через `Timers.resume` возвращает таймеру `end = null`, если за это время
   не начался другой ([ADR-0020](0020-sleep-feeding-exclusive.md)).
 
 ## Последствия

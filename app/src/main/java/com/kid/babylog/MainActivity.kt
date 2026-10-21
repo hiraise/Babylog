@@ -1,6 +1,7 @@
 package com.kid.babylog
 
 import android.app.UiModeManager
+import android.content.Intent
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
@@ -19,6 +20,8 @@ import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.data.isDark
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
+import com.kid.babylog.feature.shade.ShadeIntents
+import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * Единственный экран приложения. Смена темы окно не пересоздаёт (ADR-0017): в манифесте
@@ -29,12 +32,21 @@ class MainActivity : ComponentActivity() {
 
     private val container get() = (application as App).container
 
+    /** Плач, о котором «Отметить» в уведомлении в шторке просит открыть лист с причинами (ADR-0042). */
+    private val cryingDetails = MutableStateFlow<Long?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         syncSystemNightMode(container.themeMode.choice.value.mode)
+        // Пока экран открыт, уведомление в шторке следует за дневником и выбором ребёнка
+        container.shade.start()
+        // После поворота Activity создаётся с тем же намерением — лист уже открывали
+        if (savedInstanceState == null) readShadeIntent(intent)
         setContent {
             val theme by container.themeMode.choice.collectAsStateWithLifecycle()
             val recovery by container.recoveryNotices.pending.collectAsStateWithLifecycle()
+            val shadeEnabled by container.shadeStore.enabled.collectAsStateWithLifecycle()
+            val cryingDetailsId by cryingDetails.collectAsStateWithLifecycle()
             // На API 31+ конфигурация уже несёт выбранную тему (setApplicationNightMode), до 31 — системную
             val dark = theme.mode.isDark(systemDark = isSystemInDarkTheme())
             BabyLogTheme(clock = container.clock, darkTheme = dark, darkPalette = theme.darkPalette) {
@@ -47,9 +59,32 @@ class MainActivity : ComponentActivity() {
                     development = viewModel(factory = container.developmentViewModelFactory),
                     recovery = recovery,
                     onRecoverySeen = container.recoveryNotices::dismiss,
+                    shadeEnabled = shadeEnabled,
+                    onShadeChange = container.shadeStore::setEnabled,
+                    cryingDetailsId = cryingDetailsId,
+                    onCryingDetailsShown = { cryingDetails.value = null },
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        readShadeIntent(intent)
+    }
+
+    /** Вернулись в приложение: в настройках телефона могли включить уведомления — показать его, если включено в меню. */
+    override fun onResume() {
+        super.onResume()
+        container.shade.refresh()
+    }
+
+    private fun readShadeIntent(intent: Intent?) {
+        val cryingId = ShadeIntents.cryingDetails(intent) ?: return
+        intent?.let(ShadeIntents::clearCryingDetails)
+        cryingDetails.value = cryingId
+        container.shade.cryingDetailsOpened()
     }
 
     private fun changeTheme(choice: ThemeChoice) {

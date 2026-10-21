@@ -9,9 +9,11 @@ import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.data.PrefsDevelopmentSeenStore
 import com.kid.babylog.core.data.PrefsRecoveryNotices
 import com.kid.babylog.core.data.PrefsSelectedChildStore
+import com.kid.babylog.core.data.PrefsShadeStore
 import com.kid.babylog.core.data.PrefsThemeModeStore
 import com.kid.babylog.core.data.RecoveryNotices
 import com.kid.babylog.core.data.SelectedChildStore
+import com.kid.babylog.core.data.ShadeStore
 import com.kid.babylog.core.data.ThemeModeStore
 import com.kid.babylog.core.data.room.AppDatabase
 import com.kid.babylog.core.data.room.RoomDiaryRepository
@@ -20,6 +22,7 @@ import com.kid.babylog.feature.development.AssetTipsSource
 import com.kid.babylog.feature.development.DevelopmentViewModel
 import com.kid.babylog.feature.development.TipsSource
 import com.kid.babylog.feature.diary.DiaryViewModel
+import com.kid.babylog.feature.shade.ShadeController
 import com.kid.babylog.feature.transfer.ContentResolverDocumentStore
 import com.kid.babylog.feature.transfer.DocumentStore
 import java.time.Clock
@@ -56,6 +59,11 @@ class AppContainer(context: Context) {
     val tips: TipsSource = AssetTipsSource(context)
 
     val developmentSeen: DevelopmentSeenStore = PrefsDevelopmentSeenStore(context)
+
+    /** Уведомление с кнопками в шторке (ADR-0042): включено ли и что помнит между нажатиями. */
+    val shadeStore: ShadeStore = PrefsShadeStore(context)
+
+    val shade = ShadeController(context, repository, selectedChild, shadeStore, clock, ShadeActionReceiver::class.java)
 
     val diaryViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
         initializer { DiaryViewModel(repository, selectedChild, documents, clock) }
