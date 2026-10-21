@@ -1,6 +1,6 @@
 # ADR-0042: Кнопки в шторке — одно постоянное уведомление с таймерами сна, кормления и плача
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-21
 - **Затрагивает:** `feature/shade/`, `core/data/Timers.kt`, `core/data/ShadeStore.kt`, таймеры в `DiaryViewModel`, `ShadeReceivers.kt`, `AndroidManifest.xml` (разрешения, приёмники), `res/layout/shade_*.xml`, цвета `shade_*` в `res/values*/colors.xml`
 
