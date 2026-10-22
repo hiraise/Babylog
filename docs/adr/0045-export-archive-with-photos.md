@@ -1,6 +1,6 @@
 # ADR-0045: Экспорт — архив .zip с CSV и фото; импорт принимает архив и CSV и только добавляет
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-22
 - **Затрагивает:** `feature/transfer/` (`DiaryArchive.kt`, `CsvTransfer.kt`, `CsvCodec.kt`, `DocumentStore`), `DiaryRepository` (`photoIds`, `photoJpeg`, `addEventPhoto`), пункты меню ⋮ и выбор файла в `DiaryScreen.kt`, `DatabaseRecoveredSheet`, `docs/development.md` «Формат экспорта»
 - **Заменяет:** пункт [ADR-0009](0009-csv-with-children.md) об экспорте в CSV, пункт [ADR-0024](0024-event-photos.md) о том, что фото не входят в CSV; пункт ADR-0023 о том же — в сводном [ADR-0046](0046-child-photo.md)
