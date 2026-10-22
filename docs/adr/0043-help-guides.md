@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-22
-- **Затрагивает:** `feature/help/` (`HelpTopics.kt`, `GuideController`, `sampleMonths`), `core/ui/guide/` (`GuideTarget`, `Modifier.guideTarget`, `LocalGuide`), подсказка шага в `AppSheet`, меню ⋮ и `example` в `DiaryScreen.kt`, `GuideSandbox.kt`, `AppDatabase.inMemory`, `HelpStore`, README, CLAUDE.md «Где что описано»
+- **Затрагивает:** `feature/help/` (`HelpTopics*.kt`, `GuideController`, `sampleMonths`), `core/ui/guide/` (`GuideTarget`, `Modifier.guideTarget`, `LocalGuide`, `LocalSheetTarget`), цели `guideTarget` и листы в `GuideSheet` на экранах `feature/*/`, подсказка шага в `AppSheet`, меню ⋮ и `example` в `DiaryScreen.kt`, `GuideSandbox.kt`, `AppDatabase.inMemory`, `HelpStore`, README, CLAUDE.md «Где что описано»
 
 ## Контекст
 

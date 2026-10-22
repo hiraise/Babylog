@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.kid.babylog.R
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /** Разделы главного экрана (ADR-0035); переключает их нижняя панель [MainNavigationBar]. */
@@ -28,6 +30,15 @@ enum class MainSection(val title: String, @DrawableRes val icon: Int) {
     DEVELOPMENT("Развитие", R.drawable.ic_development),
     ANALYTICS("Аналитика", R.drawable.ic_analytics),
 }
+
+/** Пункт панели как цель гайда справки (ADR-0043): гайды учат открывать разделы. */
+private val MainSection.guide: GuideTarget?
+    get() = when (this) {
+        MainSection.TODAY -> null
+        MainSection.DIARY -> GuideTarget.NAV_DIARY
+        MainSection.DEVELOPMENT -> GuideTarget.NAV_DEVELOPMENT
+        MainSection.ANALYTICS -> GuideTarget.NAV_ANALYTICS
+    }
 
 /** Вид «Дневника» (ADR-0035): записи по дням или плач и заметки (ADR-0031). */
 enum class DiaryView(val title: String) { DAYS("По дням"), NOTES("Заметки") }
@@ -52,6 +63,7 @@ internal fun MainNavigationBar(selected: MainSection, onSelect: (MainSection) ->
                     }
                 },
                 label = { Text(section.title, maxLines = 1, softWrap = false) },
+                modifier = section.guide?.let { Modifier.guideTarget(it) } ?: Modifier,
             )
         }
     }
@@ -81,6 +93,7 @@ internal fun DiarySection(
                     onClick = { onView(item) },
                     shape = SegmentedButtonDefaults.itemShape(index, DiaryView.entries.size),
                     label = { Text(item.title) },
+                    modifier = if (item == DiaryView.NOTES) Modifier.guideTarget(GuideTarget.NOTES_BUTTON) else Modifier,
                 )
             }
         }

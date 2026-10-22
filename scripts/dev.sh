@@ -196,7 +196,7 @@ check_adr_rules() {
     hits=""
     while IFS= read -r id; do
         grep -rqF --include='*GuideTest.kt' "\"$id\"" "$ROOT/app/src/test/java/com/kid/babylog/feature/help" || hits+="$id"$'\n'
-    done < <(sed -n 's/^ *id = "\([a-z0-9-]*\)",$/\1/p' "$code/feature/help/HelpTopics.kt")
+    done < <(sed -n 's/^ *id = "\([a-z0-9-]*\)",$/\1/p' "$code"/feature/help/HelpTopics*.kt)
     report "ADR-0043: у темы справки нет UI-теста гайда (feature/help/*GuideTest.kt с её id)" "${hits%$'\n'}" || failed=1
     return "$failed"
 }

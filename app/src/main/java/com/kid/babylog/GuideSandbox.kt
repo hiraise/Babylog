@@ -72,6 +72,7 @@ class GuideSandbox(
             val childId = fillSampleDiary(repository, clock.millis(), clock.zone)
             selection.select(childId)
             ready = true
+            launch { repository.observeChildren().collect(controller::onChildren) }
             repository.observeEvents(childId).collect(controller::onEvents)
         }
     }

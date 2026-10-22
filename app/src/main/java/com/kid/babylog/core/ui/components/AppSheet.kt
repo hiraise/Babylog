@@ -34,6 +34,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.ui.guide.GuideSheetHint
+import com.kid.babylog.core.ui.guide.LocalSheetTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -109,8 +111,10 @@ fun AppSheet(
             }
         }
         // weight(fill = false): длинное содержимое прокручивается, а кнопки остаются видны над ним
+        val guide = LocalSheetTarget.current
         Column(
             modifier = Modifier
+                .then(if (guide != null) Modifier.guideTarget(guide) else Modifier)
                 .weight(1f, fill = false)
                 .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .then(if (edgeToEdge) Modifier else Modifier.padding(horizontal = spacing.l)),
@@ -158,10 +162,11 @@ fun SheetMenuItem(
     onClick: () -> Unit,
     tint: Color = MaterialTheme.colorScheme.primary,
     badge: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     val spacing = BabyLogTheme.spacing
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onClick)

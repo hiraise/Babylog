@@ -132,7 +132,7 @@ internal fun CryingCard(
         stopLabel = "закончить плач",
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.CRYING_TILE),
         idleCaption = cryingCaption(lastCrying, now),
     )
 }
@@ -161,7 +161,7 @@ internal fun CryingNoteRow(
         // IntrinsicSize.Min: плитки одной высоты — у плача она постоянна (WideTimerTile)
         Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
             CryingCard(activeCrying, lastCrying, now, onStartCrying, onEndCrying, Modifier.weight(1f).fillMaxHeight())
-            ActionTile(R.drawable.ic_note, "Заметка", onAddNote, Modifier.width(noteWidth).fillMaxHeight())
+            ActionTile(R.drawable.ic_note, "Заметка", onAddNote, Modifier.width(noteWidth).fillMaxHeight().guideTarget(GuideTarget.NOTE_TILE))
         }
     }
 }
@@ -225,13 +225,13 @@ internal fun QuickActions(
             R.drawable.ic_diaper,
             "Подгузник",
             { onAdd(NewEventKind.DIAPER) },
-            tile,
+            tile.guideTarget(GuideTarget.DIAPER_TILE),
             caption = diaperCaption(lastDiaper, now),
             highlight = diaperOverdue(lastDiaper, sleeping, now),
         )
-        ActionTile(R.drawable.ic_first_aid, "Здоровье", onHealth, tile, caption = illnessDay?.let { "$it-й день" })
-        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile, caption = measuredCaption(lastWeight, now))
-        ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile, caption = measuredCaption(lastHeight, now))
+        ActionTile(R.drawable.ic_first_aid, "Здоровье", onHealth, tile.guideTarget(GuideTarget.HEALTH_TILE), caption = illnessDay?.let { "$it-й день" })
+        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile.guideTarget(GuideTarget.WEIGHT_TILE), caption = measuredCaption(lastWeight, now))
+        ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile.guideTarget(GuideTarget.HEIGHT_TILE), caption = measuredCaption(lastHeight, now))
     }
 }
 

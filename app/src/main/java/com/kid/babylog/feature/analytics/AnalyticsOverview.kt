@@ -24,6 +24,8 @@ import com.kid.babylog.core.ui.components.chart.ChartBar
 import com.kid.babylog.core.ui.components.chart.DayTimeline
 import com.kid.babylog.core.ui.components.chart.SparkBars
 import com.kid.babylog.core.ui.components.chart.SparkLine
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.plural
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.theme.illnessBand
@@ -67,7 +69,7 @@ internal fun AnalyticsOverview(
     val spacing = BabyLogTheme.spacing
     val tiles = tiles(model)
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().guideTarget(GuideTarget.ANALYTICS_OVERVIEW),
         state = listState,
         contentPadding = analyticsListPadding(),
         verticalArrangement = Arrangement.spacedBy(spacing.m),
@@ -110,7 +112,7 @@ private fun TileView(tile: Tile, onOpen: (AnalyticsSection) -> Unit, modifier: M
                 unit = metric.unit,
                 note = metric.delta,
                 onClick = { onOpen(metric.metric.section) },
-                modifier = modifier,
+                modifier = if (metric.metric.section == AnalyticsSection.SLEEP) modifier.guideTarget(GuideTarget.ANALYTICS_SLEEP_TILE) else modifier,
             ) {
                 SparkBars(
                     bars = metric.columns.takeLast(SPARK_COLUMNS).map { column ->

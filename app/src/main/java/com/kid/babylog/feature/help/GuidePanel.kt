@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,6 +81,11 @@ fun GuidePanel(
                 )
                 if (step.done == StepDone.Next) {
                     Button(onClick = controller::press) { Text(step.button ?: "Далее") }
+                } else {
+                    // Шаг ждёт действия в примере; не выходит — гайд не застревает
+                    TextButton(onClick = controller::skip, colors = ButtonDefaults.textButtonColors(contentColor = colors.onPrimaryContainer)) {
+                        Text("Пропустить шаг")
+                    }
                 }
             } else {
                 Text(
