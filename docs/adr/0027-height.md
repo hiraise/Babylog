@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-18
-- **Затрагивает:** `core/model/BabyEvent.kt` (`Height`), `EventRecord.kt` (`HEIGHT`), `HeightSheet`, `QuickActions` в `DiaryCards.kt`, `childInfo` в `ChildSelector.kt`, `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/BabyEvent.kt` (`Height`), `EventRecord.kt` (`HEIGHT`), `HeightSheet`, `QuickActions` в `DiaryCards.kt`, `childInfo` в `ChildSelector.kt`, `feature/transfer/`, `docs/development.md` «Формат CSV»
 - **Заменяет:** пункты [ADR-0019](0019-diary-tabs.md) о том, что под именем в шапке и какие плитки на «Сегодня»
 
 ## Контекст

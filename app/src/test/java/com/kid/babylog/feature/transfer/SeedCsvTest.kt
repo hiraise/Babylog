@@ -6,8 +6,10 @@ import com.kid.babylog.core.model.Feeding
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.toRecord
+import com.kid.babylog.feature.help.SAMPLE_AGE_DAYS
+import com.kid.babylog.feature.help.SAMPLE_CHILD_NAME
+import com.kid.babylog.feature.help.sampleMonths
 import com.kid.babylog.testing.FakeDiaryRepository
-import com.kid.babylog.testing.sampleMonths
 import java.io.File
 import java.lang.reflect.Modifier
 import java.time.Instant
@@ -29,10 +31,10 @@ class SeedCsvTest {
     fun `seed diary covers every record type and imports without errors`() = runTest {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
-        val birth = today.minusDays(AGE_DAYS)
-        val child = Child(1, NAME, birth.atStartOfDay(zone).toInstant().toEpochMilli(), Sex.GIRL)
+        val birth = today.minusDays(SAMPLE_AGE_DAYS)
+        val child = Child(1, SAMPLE_CHILD_NAME, birth.atStartOfDay(zone).toInstant().toEpochMilli(), Sex.GIRL)
         // Идущие таймеры не берём: незавершённый сон импорт пропустит, а кормление станет записью без длительности
-        val events = sampleMonths(child.id, today, Instant.now().toEpochMilli(), zone, days = AGE_DAYS.toInt())
+        val events = sampleMonths(child.id, today, Instant.now().toEpochMilli(), zone, days = SAMPLE_AGE_DAYS.toInt())
             .filterNot { it is Sleep && it.end == null || it is Feeding && it.end == null }
             .sortedBy { it.start }
 
@@ -56,10 +58,6 @@ class SeedCsvTest {
         .toSet()
 
     private companion object {
-        const val NAME = "Соня"
         const val FILE_NAME = "babylog-seed.csv"
-
-        /** Возраст как в [sampleMonths]: вес и рост там отсчитаны от рождения 148 дней назад. */
-        const val AGE_DAYS = 148L
     }
 }

@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-19
-- **Затрагивает:** `core/model/` (`Note`, `eventTags`, `DEFAULT_NOTE_TAGS`, `Routine.kt`), `EventRecord.kt` (`NOTE`), `DiaryTab`, `DiaryTabs`, `feature/notes/`, `NoteSheet`, `TagPicker`, `PhotosField`, `cryingChoices`, `noteTagChoices`, `feature/analytics/` (`Tags.kt`, `TagsCards.kt`, булавки на «Ритме дня»), `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/` (`Note`, `eventTags`, `DEFAULT_NOTE_TAGS`, `Routine.kt`), `EventRecord.kt` (`NOTE`), `DiaryTab`, `DiaryTabs`, `feature/notes/`, `NoteSheet`, `TagPicker`, `PhotosField`, `cryingChoices`, `noteTagChoices`, `feature/analytics/` (`Tags.kt`, `TagsCards.kt`, булавки на «Ритме дня»), `feature/transfer/`, `docs/development.md` «Формат CSV»
 - **Заменяет:** пункт [ADR-0019](0019-diary-tabs.md) «Посмотреть или исправить запись — только на «Истории»» — для плача и заметок
 
 ## Контекст

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import com.kid.babylog.core.ui.formatAgo
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.formatShortDay
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.editor.NewEventKind
@@ -64,7 +67,7 @@ internal fun SleepCard(
         stopLabel = bySex(child.sex, "проснулся", "проснулась"),
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.SLEEP_TILE),
         idleCaption = awakeCaption(lastSleepEnd, now),
     )
 }
@@ -97,10 +100,12 @@ internal fun FeedingCard(
         stopLabel = "закончить кормление",
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.FEEDING_TILE),
         runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
         idleCaption = afterFeedingCaption(lastFeeding, now),
-        corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
+        corner = {
+            TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast, Modifier.guideTarget(GuideTarget.SWITCH_BREAST, CircleShape))
+        },
     )
 }
 
@@ -127,7 +132,7 @@ internal fun CryingCard(
         stopLabel = "закончить плач",
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.CRYING_TILE),
         idleCaption = cryingCaption(lastCrying, now),
     )
 }
@@ -156,7 +161,7 @@ internal fun CryingNoteRow(
         // IntrinsicSize.Min: плитки одной высоты — у плача она постоянна (WideTimerTile)
         Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(gap)) {
             CryingCard(activeCrying, lastCrying, now, onStartCrying, onEndCrying, Modifier.weight(1f).fillMaxHeight())
-            ActionTile(R.drawable.ic_note, "Заметка", onAddNote, Modifier.width(noteWidth).fillMaxHeight())
+            ActionTile(R.drawable.ic_note, "Заметка", onAddNote, Modifier.width(noteWidth).fillMaxHeight().guideTarget(GuideTarget.NOTE_TILE))
         }
     }
 }
@@ -220,13 +225,13 @@ internal fun QuickActions(
             R.drawable.ic_diaper,
             "Подгузник",
             { onAdd(NewEventKind.DIAPER) },
-            tile,
+            tile.guideTarget(GuideTarget.DIAPER_TILE),
             caption = diaperCaption(lastDiaper, now),
             highlight = diaperOverdue(lastDiaper, sleeping, now),
         )
-        ActionTile(R.drawable.ic_first_aid, "Здоровье", onHealth, tile, caption = illnessDay?.let { "$it-й день" })
-        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile, caption = measuredCaption(lastWeight, now))
-        ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile, caption = measuredCaption(lastHeight, now))
+        ActionTile(R.drawable.ic_first_aid, "Здоровье", onHealth, tile.guideTarget(GuideTarget.HEALTH_TILE), caption = illnessDay?.let { "$it-й день" })
+        ActionTile(R.drawable.ic_weight, "Вес", { onAdd(NewEventKind.WEIGHT) }, tile.guideTarget(GuideTarget.WEIGHT_TILE), caption = measuredCaption(lastWeight, now))
+        ActionTile(R.drawable.ic_height, "Рост", { onAdd(NewEventKind.HEIGHT) }, tile.guideTarget(GuideTarget.HEIGHT_TILE), caption = measuredCaption(lastHeight, now))
     }
 }
 

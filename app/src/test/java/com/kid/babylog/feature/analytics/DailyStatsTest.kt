@@ -9,7 +9,7 @@ import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
 import com.kid.babylog.feature.summary.summarizeDay
-import com.kid.babylog.testing.sampleMonths
+import com.kid.babylog.feature.help.sampleMonths
 import com.kid.babylog.core.model.Illness
 import com.kid.babylog.core.model.Temperature
 import org.junit.Assert.assertEquals

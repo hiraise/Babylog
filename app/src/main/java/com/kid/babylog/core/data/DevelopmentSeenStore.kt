@@ -36,3 +36,12 @@ class PrefsDevelopmentSeenStore(context: Context) : DevelopmentSeenStore {
         const val KEY_PREFIX = "development_seen_week_"
     }
 }
+
+/** «Развитие» в примере дневника (ADR-0043): открытые там недели не гасят точку в настоящем дневнике. */
+class MemoryDevelopmentSeenStore : DevelopmentSeenStore {
+    override val seenWeeks = MutableStateFlow<Map<Long, Int>>(emptyMap())
+
+    override fun markSeen(childId: Long, week: Int) {
+        seenWeeks.value += childId to week
+    }
+}

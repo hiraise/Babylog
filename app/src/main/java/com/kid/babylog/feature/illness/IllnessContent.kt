@@ -40,6 +40,8 @@ import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDayHeader
 import com.kid.babylog.core.ui.formatDayRange
 import com.kid.babylog.core.ui.formatWeekdayDay
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.plural
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.theme.illnessContainer
@@ -69,7 +71,7 @@ class IllnessActions(
 fun IllnessContent(model: IllnessScreenModel, sex: Sex?, now: Long, actions: IllnessActions, modifier: Modifier = Modifier) {
     val spacing = BabyLogTheme.spacing
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().guideTarget(GuideTarget.ILLNESS_SCREEN),
         contentPadding = PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = spacing.xl),
         verticalArrangement = Arrangement.spacedBy(spacing.m),
     ) {
@@ -144,7 +146,9 @@ private fun SummaryCard(model: IllnessScreenModel, sex: Sex?, actions: IllnessAc
                     Text("Для врача")
                 }
                 if (illness.isActive) {
-                    Button(onClick = actions.onRecover, modifier = Modifier.weight(1f)) { Text(bySex(sex, "Выздоровел", "Выздоровела")) }
+                    Button(onClick = actions.onRecover, modifier = Modifier.weight(1f).guideTarget(GuideTarget.RECOVER_BUTTON, ButtonDefaults.shape)) {
+                        Text(bySex(sex, "Выздоровел", "Выздоровела"))
+                    }
                 } else {
                     actions.onResume?.let { resume ->
                         TextButton(onClick = resume, modifier = Modifier.weight(1f)) { Text("Ещё болеет") }

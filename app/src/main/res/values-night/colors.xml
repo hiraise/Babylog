@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Совпадает с background тёмной палитры по умолчанию («Сумерки», DarkPalette.DEFAULT,
-        core/ui/theme/DarkPalettes.kt), проверяет ThemeWindowTest; зачем — в values/colors.xml.
-        У других палитр заставка холодного запуска мелькнёт этим цветом (ADR-0032).
+        Совпадает с background тёмной палитры по умолчанию («Классика», DarkPalette.DEFAULT,
+        ClassicDarkColors в core/ui/theme/Color.kt, ADR-0044), проверяет ThemeWindowTest; зачем —
+        в values/colors.xml. У других палитр заставка холодного запуска мелькнёт этим цветом (ADR-0032).
     -->
-    <color name="window_background">#14141E</color>
+    <color name="window_background">#22272C</color>
 
     <!--
         Уведомление в шторке (ADR-0042) — те же роли тёмной палитры по умолчанию: шторку красит
         система по своей теме, палитру, выбранную в приложении, она не знает. Проверяет ThemeWindowTest.
     -->
-    <color name="shade_primary">#AC9DF0</color>
-    <color name="shade_on_primary">#1B172C</color>
-    <color name="shade_container">#5D4C97</color>
-    <color name="shade_on_container">#F5F4FE</color>
+    <color name="shade_primary">#49B848</color>
+    <color name="shade_on_primary">#0C1F0C</color>
+    <color name="shade_container">#1F4A1E</color>
+    <color name="shade_on_container">#C6EFC2</color>
 </resources>

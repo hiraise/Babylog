@@ -26,6 +26,8 @@ import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.components.AppSheet
 import com.kid.babylog.core.ui.formatDayHeader
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
@@ -57,7 +59,7 @@ internal fun DayNavRow(
         }
         TextButton(
             onClick = onPick,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).guideTarget(GuideTarget.DAY_PICKER),
         ) {
             AppIcon(
                 R.drawable.ic_calendar,

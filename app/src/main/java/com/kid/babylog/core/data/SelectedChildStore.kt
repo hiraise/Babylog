@@ -30,3 +30,12 @@ class PrefsSelectedChildStore(context: Context) : SelectedChildStore {
         const val NONE = -1L
     }
 }
+
+/** Выбор ребёнка в примере дневника (ADR-0043): живёт, пока открыт гайд, и настоящий выбор не трогает. */
+class MemorySelectedChildStore(initial: Long? = null) : SelectedChildStore {
+    override val selectedChildId = MutableStateFlow(initial)
+
+    override fun select(childId: Long) {
+        selectedChildId.value = childId
+    }
+}

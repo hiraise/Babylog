@@ -33,6 +33,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.time.LocalDate
 
 /** Репозиторий в памяти с тем же поведением, что у Room-реализации. */
@@ -48,6 +52,9 @@ class FakeDiaryRepository(
     /** Фото по id записи, по порядку. */
     val photos = MutableStateFlow<Map<Long, List<EventPhoto>>>(emptyMap())
     private var nextPhotoId = 1L
+
+    /** Место фото в записи, как `position` в базе: импорт добавляет фото не по порядку. */
+    private val positions = mutableMapOf<Long, Int>()
 
     override fun observeChildren(): Flow<List<Child>> = children
 
@@ -105,7 +112,22 @@ class FakeDiaryRepository(
     override suspend fun setEventPhotos(eventId: Long, edit: PhotoEdit) {
         val current = photos.value[eventId].orEmpty().associateBy { it.id }
         val kept = edit.keep.mapNotNull { current[it] }
-        photos.value += eventId to kept + edit.add.map { EventPhoto(nextPhotoId++, it) }
+        val list = kept + edit.add.map { EventPhoto(nextPhotoId++, it) }
+        list.forEachIndexed { i, photo -> positions[photo.id] = i }
+        photos.value += eventId to list
+    }
+
+    override suspend fun photoIds(): Map<Long, List<Long>> =
+        photos.value.filterValues { it.isNotEmpty() }.mapValues { (_, list) -> list.map { it.id } }
+
+    override suspend fun photoJpeg(photoId: Long): ByteArray? =
+        photos.value.values.flatten().firstOrNull { it.id == photoId }?.jpeg
+
+    override suspend fun addEventPhoto(eventId: Long, position: Int, jpeg: ByteArray) {
+        val photo = EventPhoto(nextPhotoId++, jpeg)
+        positions[photo.id] = position
+        val list = photos.value[eventId].orEmpty() + photo
+        photos.value += eventId to list.sortedWith(compareBy<EventPhoto> { positions[it.id] }.thenBy { it.id })
     }
 
     override suspend fun startSleep(childId: Long, start: Long): Boolean {
@@ -162,7 +184,7 @@ class FakeSelectedChildStore(initial: Long? = null) : SelectedChildStore {
     }
 }
 
-/** «Файлы» по uri в памяти. */
+/** Кнопки в шторке (ADR-0042) в памяти. */
 class FakeShadeStore(enabled: Boolean = true, memo: ShadeMemo = ShadeMemo()) : ShadeStore {
     override val enabled = MutableStateFlow(enabled)
     override val memo = MutableStateFlow(memo)
@@ -176,11 +198,20 @@ class FakeShadeStore(enabled: Boolean = true, memo: ShadeMemo = ShadeMemo()) : S
     }
 }
 
-class FakeDocumentStore(val files: MutableMap<String, String> = mutableMapOf()) : DocumentStore {
-    override suspend fun read(uri: String): String = files[uri] ?: error("Нет файла $uri")
+/** «Файлы» по uri в памяти; [opened] — сколько раз файл открывали на чтение. */
+class FakeDocumentStore(val files: MutableMap<String, ByteArray> = mutableMapOf()) : DocumentStore {
+    var opened = 0
+        private set
 
-    override suspend fun write(uri: String, text: String) {
-        files[uri] = text
+    override suspend fun <T> read(uri: String, block: suspend (InputStream) -> T): T {
+        val bytes = files[uri] ?: error("Нет файла $uri")
+        opened++
+        return block(ByteArrayInputStream(bytes))
+    }
+
+    override suspend fun <T> write(uri: String, block: suspend (OutputStream) -> T): T {
+        val out = ByteArrayOutputStream()
+        return block(out).also { files[uri] = out.toByteArray() }
     }
 }
 

@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import java.time.LocalDate
 
@@ -52,7 +54,7 @@ internal fun AnalyticsDetail(
     var sleepHelp by rememberSaveable { mutableStateOf(false) }
     if (sleepHelp) SleepHelpSheet(onDismiss = { sleepHelp = false })
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize().guideTarget(GuideTarget.ANALYTICS_DETAIL),
         contentPadding = analyticsListPadding(),
         verticalArrangement = Arrangement.spacedBy(BabyLogTheme.spacing.m),
     ) {

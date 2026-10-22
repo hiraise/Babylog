@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `core/model/BabyEvent.kt` (`Feeding`), `core/data/` (`startFeeding`), `feature/diary/DiaryViewModel.kt` (`switchBreast`), `feature/summary/DaySummary.kt` (`feedingSessions`), `feature/transfer/CsvTransfer.kt` (`FEEDING`), README «Формат CSV»
+- **Затрагивает:** `core/model/BabyEvent.kt` (`Feeding`), `core/data/` (`startFeeding`), `feature/diary/DiaryViewModel.kt` (`switchBreast`), `feature/summary/DaySummary.kt` (`feedingSessions`), `feature/transfer/CsvTransfer.kt` (`FEEDING`), `docs/development.md` «Формат CSV»
 
 ## Контекст
 

@@ -23,7 +23,7 @@ fun prepareEventPhoto(context: Context, source: String): String {
  * JPEG не больше [maxBytes]: строка базы с фото должна уместиться в окно курсора SQLite (2 МБ), иначе запись
  * не прочитается. Очень детальное фото сжимается сильнее, а если не влезло и так — уменьшается на четверть.
  */
-internal fun fittingJpeg(bitmap: Bitmap, maxBytes: Int = MAX_JPEG_BYTES): ByteArray {
+internal fun fittingJpeg(bitmap: Bitmap, maxBytes: Int = EventPhoto.MAX_BYTES): ByteArray {
     var current = bitmap
     while (true) {
         JPEG_QUALITIES.forEach { quality -> current.toJpeg(quality).let { if (it.size <= maxBytes) return it } }
@@ -67,9 +67,8 @@ fun sweepPhotoCache(context: Context, now: Long) {
     }
 }
 
-/** Качество JPEG по очереди: первое, которое уложилось в [MAX_JPEG_BYTES]. */
+/** Качество JPEG по очереди: первое, которое уложилось в [EventPhoto.MAX_BYTES]. */
 private val JPEG_QUALITIES = listOf(85, 70, 50)
-private const val MAX_JPEG_BYTES = 1_200_000
 private const val STALE_MS = 24 * 60 * 60 * 1000L
 private const val SHARE_DIR = "share"
 internal const val PHOTOS_DIR = "photos"

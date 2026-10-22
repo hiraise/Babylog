@@ -78,6 +78,18 @@ interface DiaryRepository {
     suspend fun setEventPhotos(eventId: Long, edit: PhotoEdit)
 
     /**
+     * Фото всех записей без самих JPEG: id записи → id её фото по порядку; записей без фото нет. Для экспорта
+     * и импорта (ADR-0045): фото всего дневника в память не помещаются, их читают по одному — [photoJpeg].
+     */
+    suspend fun photoIds(): Map<Long, List<Long>>
+
+    /** JPEG фото записи; null — фото уже удалили. */
+    suspend fun photoJpeg(photoId: Long): ByteArray?
+
+    /** Добавляет записи фото на место [position] (по порядку, с нуля) — импорт фото по одному (ADR-0045). */
+    suspend fun addEventPhoto(eventId: Long, position: Int, jpeg: ByteArray)
+
+    /**
      * Добавляет бутылочку (ADR-0025). Идущий сон, начатый не позже неё, заканчивается в её время:
      * кормят не во сне (ADR-0020). Сон, начатый позже, — бутылочку записали задним числом, он идёт.
      */

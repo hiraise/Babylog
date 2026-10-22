@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-19
-- **Затрагивает:** `core/model/` (`Crying`, `Tags.kt`, `Routine.kt`), `EventRecord.kt` (`CRYING`), `DiaryRepository` (`startCrying`, `startSleep`), `testing/Fakes.kt`, `WideTimerTile`, `CryingCard`, `feature/editor/` (`CryingSheets.kt`, `CryingChoices.kt`), сводка в `feature/summary/`, `feature/analytics/` (`Crying.kt`, `CryingCards.kt`), `ChartColors.crying`, `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/` (`Crying`, `Tags.kt`, `Routine.kt`), `EventRecord.kt` (`CRYING`), `DiaryRepository` (`startCrying`, `startSleep`), `testing/Fakes.kt`, `WideTimerTile`, `CryingCard`, `feature/editor/` (`CryingSheets.kt`, `CryingChoices.kt`), сводка в `feature/summary/`, `feature/analytics/` (`Crying.kt`, `CryingCards.kt`), `ChartColors.crying`, `feature/transfer/`, `docs/development.md` «Формат CSV»
 
 ## Контекст
 

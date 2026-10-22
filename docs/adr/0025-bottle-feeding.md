@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-17
-- **Затрагивает:** `core/model/BabyEvent.kt` (`Bottle`, `Milk`), `EventRecord.kt` (`BOTTLE`), `DiaryRepository.addBottle`, `FeedingStartSheet`, сводка в `feature/summary/`, `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/BabyEvent.kt` (`Bottle`, `Milk`), `EventRecord.kt` (`BOTTLE`), `DiaryRepository.addBottle`, `FeedingStartSheet`, сводка в `feature/summary/`, `feature/transfer/`, `docs/development.md` «Формат CSV»
 
 ## Контекст
 

@@ -33,6 +33,8 @@ import com.kid.babylog.core.ui.diaryTitle
 import com.kid.babylog.core.ui.formatAge
 import com.kid.babylog.core.ui.formatHeight
 import com.kid.babylog.core.ui.formatWeight
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
@@ -47,6 +49,7 @@ fun ChildSelector(child: Child, lastWeight: Weight?, lastHeight: Height?, now: L
     val info = childInfo(child, lastWeight, lastHeight, now.toLocalDate())
     Row(
         modifier = Modifier
+            .guideTarget(GuideTarget.CHILD_SELECTOR, MaterialTheme.shapes.small)
             .clip(MaterialTheme.shapes.small)
             .clickable(onClickLabel = "выбрать ребёнка", role = Role.Button, onClick = onClick)
             .padding(end = spacing.s),
@@ -128,7 +131,7 @@ fun ChildrenSheet(
                 }
             }
         }
-        SheetMenuItem(R.drawable.ic_add_child, "Добавить ребёнка", onClick = { closer.close(onAdd) })
+        SheetMenuItem(R.drawable.ic_add_child, "Добавить ребёнка", onClick = { closer.close(onAdd) }, modifier = Modifier.guideTarget(GuideTarget.ADD_CHILD))
     }
 }
 

@@ -4,6 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +44,9 @@ import com.kid.babylog.core.ui.components.SheetMenuItem
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
+import com.kid.babylog.core.ui.guide.GuideSheet
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.analytics.AnalyticsContent
 import com.kid.babylog.feature.analytics.AnalyticsSection
@@ -79,6 +85,9 @@ private const val NONE = -1L
  * (ADR-0017): экран только показывает выбор и сообщает о новом. Системная «Назад» сначала закрывает
  * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня». Уведомление в шторке
  * (ADR-0042) включается в меню ([shadeEnabled]); его «Отметить» открывает лист плача [cryingDetailsId].
+ *
+ * Справка (ADR-0043) — последний пункт меню ([onOpenHelp]), точка на ⋮ — [helpBadge], карточка «Где справка»
+ * вверху «Сегодня» — [helpPointer]. [example] — пример дневника в гайде справки: без экспорта, импорта и «Справки».
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +104,10 @@ fun DiaryScreen(
     onShadeChange: (Boolean) -> Unit = {},
     cryingDetailsId: Long? = null,
     onCryingDetailsShown: () -> Unit = {},
+    example: Boolean = false,
+    onOpenHelp: (() -> Unit)? = null,
+    helpBadge: Boolean = false,
+    helpPointer: (@Composable () -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
@@ -188,7 +201,7 @@ fun DiaryScreen(
     BackHandler(enabled = openIllness != null) { openIllnessId = NONE }
 
     val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/csv")
+        ActivityResultContracts.CreateDocument("application/zip")
     ) { uri -> if (uri != null) viewModel.exportTo(uri.toString()) }
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -215,8 +228,10 @@ fun DiaryScreen(
                     scrolledContainerColor = MaterialTheme.colorScheme.background,
                 ),
                 actions = {
-                    IconButton(onClick = { menuOpen = true }) {
-                        AppIcon(R.drawable.ic_more, contentDescription = "Меню")
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.guideTarget(GuideTarget.MENU_BUTTON, CircleShape)) {
+                        BadgedBox(badge = { if (helpBadge) Badge() }) {
+                            AppIcon(R.drawable.ic_more, contentDescription = if (helpBadge) "Меню, новое в справке" else "Меню")
+                        }
                     }
                 },
             )
@@ -266,6 +281,7 @@ fun DiaryScreen(
                     now = now,
                     actions = actions,
                     modifier = Modifier.padding(padding),
+                    helpPointer = helpPointer,
                     tipsBanner = week?.takeIf { it.allTips.isNotEmpty() }?.let { current ->
                         { WeekTipsBanner(current, isNew = newTips, onClick = { openSection(MainSection.DEVELOPMENT) }) }
                     },
@@ -334,15 +350,24 @@ fun DiaryScreen(
             SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
             // Переключатель меню не закрывает: видно, что включилось, а разрешение спросит система
             ShadeMenuItem(shadeToggle)
-            SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
-                pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
-            })
-            SheetMenuItem(R.drawable.ic_import, "Импорт из CSV", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+            // Пример дневника в гайде (ADR-0043) не выгружают и не дополняют: он исчезнет вместе с гайдом
+            if (!example) {
+                // Архив с записями и фото (ADR-0045); импорт берёт и архив, и CSV — у CSV в разных приложениях свой MIME-тип
+                SheetMenuItem(R.drawable.ic_export, "Экспорт в файл", onClick = {
+                    pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.zip") }
+                })
+                SheetMenuItem(R.drawable.ic_import, "Импорт из файла", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+            }
+            if (onOpenHelp != null && !example) {
+                SheetMenuItem(R.drawable.ic_help, "Справка", onClick = { pick(onOpenHelp) }, badge = helpBadge)
+            }
         }
     }
 
     if (showThemeSheet) {
-        ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
+        GuideSheet(GuideTarget.THEME_SHEET) {
+            ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
+        }
     }
 
     recovery?.let {
@@ -420,19 +445,21 @@ fun DiaryScreen(
             // Лист открывается, когда фото записи загружены: форма берёт их один раз, при открытии
             val photos by remember { viewModel.eventPhotos(event.id) }.collectAsState(initial = null)
             photos?.let {
-                EditEventSheet(
-                    event = event,
-                    child = child,
-                    photos = it,
-                    pastMedicines = state.pastMedicines,
-                    cryingChoices = state.cryingChoices,
-                    noteTags = state.noteTags,
-                    onDismiss = { editingId = NONE },
-                    onSave = { edited, edit ->
-                        viewModel.saveEvent(edited, edit)
-                        editingId = NONE
-                    },
-                )
+                GuideSheet(GuideTarget.EVENT_EDITOR) {
+                    EditEventSheet(
+                        event = event,
+                        child = child,
+                        photos = it,
+                        pastMedicines = state.pastMedicines,
+                        cryingChoices = state.cryingChoices,
+                        noteTags = state.noteTags,
+                        onDismiss = { editingId = NONE },
+                        onSave = { edited, edit ->
+                            viewModel.saveEvent(edited, edit)
+                            editingId = NONE
+                        },
+                    )
+                }
             }
         }
     }
@@ -472,7 +499,7 @@ fun DiaryScreen(
         }
     }
 
-    if (showDaySelector) {
+    if (showDaySelector) GuideSheet(GuideTarget.DAY_SELECTOR) {
         DaySelectorSheet(
             days = historyDays(state.events, now.toLocalDate()),
             events = state.events,
@@ -486,7 +513,7 @@ fun DiaryScreen(
         )
     }
 
-    if (showChildren) {
+    if (showChildren) GuideSheet(GuideTarget.CHILDREN_SHEET) {
         ChildrenSheet(
             children = state.children,
             selectedId = child.id,

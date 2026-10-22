@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +33,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.kid.babylog.R
+import com.kid.babylog.core.ui.guide.GuideSheetHint
+import com.kid.babylog.core.ui.guide.LocalSheetTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -94,6 +98,8 @@ fun AppSheet(
         sheetState = state,
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
+        // Гайд справки (ADR-0043): лист закрывает его панель, поэтому текст шага — здесь
+        GuideSheetHint(Modifier.padding(start = spacing.l, end = spacing.l, bottom = spacing.m))
         if (title != null) {
             Row(
                 modifier = Modifier.padding(start = spacing.l, end = spacing.l, bottom = spacing.m),
@@ -105,8 +111,10 @@ fun AppSheet(
             }
         }
         // weight(fill = false): длинное содержимое прокручивается, а кнопки остаются видны над ним
+        val guide = LocalSheetTarget.current
         Column(
             modifier = Modifier
+                .then(if (guide != null) Modifier.guideTarget(guide) else Modifier)
                 .weight(1f, fill = false)
                 .then(if (scrollable) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .then(if (edgeToEdge) Modifier else Modifier.padding(horizontal = spacing.l)),
@@ -143,12 +151,22 @@ fun AppSheet(
     }
 }
 
-/** Пункт листа-меню ([AppSheet] с `edgeToEdge`): иконка и подпись во всю ширину, нажимается вся строка. */
+/**
+ * Пункт листа-меню ([AppSheet] с `edgeToEdge`): иконка и подпись во всю ширину, нажимается вся строка.
+ * [badge] — точка после подписи: в пункте есть новое («Справка», ADR-0043).
+ */
 @Composable
-fun SheetMenuItem(@DrawableRes icon: Int, label: String, onClick: () -> Unit, tint: Color = MaterialTheme.colorScheme.primary) {
+fun SheetMenuItem(
+    @DrawableRes icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    tint: Color = MaterialTheme.colorScheme.primary,
+    badge: Boolean = false,
+    modifier: Modifier = Modifier,
+) {
     val spacing = BabyLogTheme.spacing
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onClick)
@@ -158,6 +176,7 @@ fun SheetMenuItem(@DrawableRes icon: Int, label: String, onClick: () -> Unit, ti
     ) {
         AppIcon(icon, contentDescription = null, tint = tint)
         Text(label, style = MaterialTheme.typography.bodyLarge)
+        if (badge) Badge()
     }
 }
 
@@ -166,5 +185,5 @@ fun SheetMenuItem(@DrawableRes icon: Int, label: String, onClick: () -> Unit, ti
 private fun AppSheetPreview() = LightDarkPreview {
     // Сам ModalBottomSheet в превью не открывается — показываем его строки
     SheetMenuItem(R.drawable.ic_add_child, "Добавить ребёнка", onClick = {})
-    SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {})
+    SheetMenuItem(R.drawable.ic_export, "Экспорт в файл", onClick = {})
 }

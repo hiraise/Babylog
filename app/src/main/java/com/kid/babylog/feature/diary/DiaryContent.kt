@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.dp
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Illness
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.editor.NewEventKind
@@ -72,6 +74,7 @@ internal fun TodayContent(
     actions: DiaryActions,
     modifier: Modifier = Modifier,
     tipsBanner: (@Composable () -> Unit)? = null,
+    helpPointer: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BabyLogTheme.spacing
     val illness = state.activeIllness
@@ -81,12 +84,15 @@ internal fun TodayContent(
         illness?.let { illnessCardModel(state.events, it, now, ZoneId.systemDefault()) }
     }
     DiaryList(modifier) {
+        // Где справка (ADR-0043) — над плитками, чтобы новичок увидел её сразу; один раз
+        if (helpPointer != null) item(key = "help") { helpPointer() }
         if (illnessCard != null) {
             item(key = "illness") {
                 IllnessCard(
                     model = illnessCard,
                     now = now,
                     onOpen = { actions.onOpenIllness(illnessCard.illness) },
+                    modifier = Modifier.guideTarget(GuideTarget.ILLNESS_CARD),
                     onTemperature = actions.onTemperature,
                     onMedicine = { actions.onAdd(NewEventKind.MEDICINE) },
                     onNote = { actions.onAdd(NewEventKind.NOTE) },
@@ -160,7 +166,8 @@ internal fun HistoryContent(
     val swipeThresholdPx = with(LocalDensity.current) { 90.dp.toPx() }
     var dragTotal by remember { mutableFloatStateOf(0f) }
     DiaryList(
-        modifier.pointerInput(prevDay, nextDay) {
+        // Гайд справки (ADR-0043) узнаёт, что «Дневник» открыт, и что пролистали на прошлый день
+        modifier.guideTarget(if (selectedDate == today) GuideTarget.HISTORY else GuideTarget.PAST_DAY).pointerInput(prevDay, nextDay) {
             detectHorizontalDragGestures(
                 onDragStart = { dragTotal = 0f },
                 onHorizontalDrag = { _, dragAmount -> dragTotal += dragAmount },
