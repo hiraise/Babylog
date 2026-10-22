@@ -74,6 +74,6 @@ class RecoverySheetTest {
     fun `without a backup the diary is new and import is offered`() {
         show(DatabaseRecovery(at = clock.millis(), backupTime = null))
         compose.onNodeWithText("Дневник начат заново").assertIsDisplayed()
-        compose.onNodeWithText("Импорт из CSV").assertIsDisplayed()
+        compose.onNodeWithText("Импорт из файла").assertIsDisplayed()
     }
 }

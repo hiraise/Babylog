@@ -60,15 +60,15 @@ class CsvCodecTest {
         val csv = CsvCodec.encode(listOf(masha, petya), emptyList())
         val rows = CsvCodec.parseRows(csv)
         assertEquals(CsvCodec.HEADER.split(","), rows[0])
-        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "", "", "Маша"), rows[1])
+        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "", "", "Маша", ""), rows[1])
         // Без даты рождения строка всё равно есть: она переносит имя ребёнка
-        assertEquals(listOf("PROFILE", "", "", "", "", "Петя, младший"), rows[2])
+        assertEquals(listOf("PROFILE", "", "", "", "", "Петя, младший", ""), rows[2])
     }
 
     @Test
     fun `profile row keeps sex in detail`() {
         val csv = CsvCodec.encode(listOf(masha.copy(sex = Sex.GIRL)), emptyList())
-        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "GIRL", "", "Маша"), CsvCodec.parseRows(csv)[1])
+        assertEquals(listOf("PROFILE", "2026-05-20 00:00:00", "", "GIRL", "", "Маша", ""), CsvCodec.parseRows(csv)[1])
     }
 
     @Test
@@ -119,6 +119,28 @@ class CsvCodecTest {
     @Test
     fun `active sleep exports with empty end`() {
         val csv = CsvCodec.encode(listOf(masha), listOf(Sleep(childId = 1, start = ms("2026-08-15 13:00:00"))))
-        assertTrue(csv.contains("SLEEP,2026-08-15 13:00:00,,,,Маша\r\n"))
+        assertTrue(csv.contains("SLEEP,2026-08-15 13:00:00,,,,Маша,\r\n"))
+    }
+
+    @Test
+    fun `photos column lists archive files of the child and of each record`() {
+        val diaper = Diaper(id = 7, childId = 1, start = ms("2026-08-15 15:10:00"), kind = DiaperKind.WET)
+        val csv = CsvCodec.encode(
+            listOf(masha),
+            listOf(diaper),
+            childPhotos = mapOf(1L to "photos/child_1.jpg"),
+            eventPhotos = mapOf(7L to listOf("photos/a.jpg", "photos/b.jpg")),
+        )
+        val rows = CsvCodec.parseRows(csv)
+        assertEquals(listOf("photos/child_1.jpg"), CsvCodec.photoNames(rows[1]))
+        assertEquals(listOf("photos/a.jpg", "photos/b.jpg"), CsvCodec.photoNames(rows[2]))
+        assertTrue(csv.contains("DIAPER,2026-08-15 15:10:00,,WET,,Маша,photos/a.jpg;photos/b.jpg\r\n"))
+    }
+
+    @Test
+    fun `rows of earlier versions have no photos`() {
+        val rows = CsvCodec.parseRows("type,start,end,detail,note,child\r\nDIAPER,2026-08-15 15:10:00,,WET,,Маша\r\n")
+        assertEquals(emptyList<String>(), CsvCodec.photoNames(rows[1]))
+        assertEquals(emptyList<String>(), CsvCodec.photoNames(listOf("DIAPER", "", "", "", "", "Маша", " ; ")))
     }
 }

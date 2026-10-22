@@ -17,6 +17,12 @@ class EventPhoto(val id: Long, val jpeg: ByteArray) {
 
         /** Сколько фото можно приложить к одной записи. */
         const val MAX_PER_EVENT = 6
+
+        /**
+         * Наибольший JPEG в базе: строка с фото должна уместиться в окно курсора SQLite (2 МБ), иначе запись
+         * не прочитается. Фото больше сжимает `fittingJpeg`, а импорт такие не берёт (ADR-0045).
+         */
+        const val MAX_BYTES = 1_200_000
     }
 }
 

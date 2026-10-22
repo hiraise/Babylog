@@ -367,7 +367,7 @@ cmd_seed() {
     ensure_device
     "$ADB" push "$csv" /sdcard/Download/ >/dev/null
     echo "$(($(grep -c . "$csv") - 2)) записей «Сони» — в /sdcard/Download/$(basename "$csv")"
-    echo "Импорт: ⋮ → «Импорт из CSV» → файл в Download. Повторный импорт удвоит записи — сначала удалите «Соню»"
+    echo "Импорт: ⋮ → «Импорт из файла» → файл в Download. Повторный импорт удвоит записи — сначала удалите «Соню»"
 }
 
 cmd_screenshot() {

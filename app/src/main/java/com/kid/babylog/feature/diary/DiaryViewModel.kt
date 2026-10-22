@@ -24,8 +24,8 @@ import com.kid.babylog.core.model.isValidChildName
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.feature.transfer.DocumentStore
 import com.kid.babylog.feature.transfer.describe
-import com.kid.babylog.feature.transfer.exportCsv
-import com.kid.babylog.feature.transfer.importCsv
+import com.kid.babylog.feature.transfer.exportArchive
+import com.kid.babylog.feature.transfer.importFile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -251,21 +251,20 @@ class DiaryViewModel(
         show("Кормление: ${formatDuration((feeding.end ?: feeding.start) - feeding.start)}", MessageAction.ResumeTimer(feeding.copy(end = null)))
     }
 
+    /** Весь дневник с фото — архивом .zip (ADR-0045). Архив с фото пишется не мгновенно — сначала говорим, что идёт. */
     fun exportTo(uri: String) = viewModelScope.launch {
-        show(runCatching {
-            val export = exportCsv(repository)
-            documents.write(uri, export.text)
-            export.eventCount
-        }.fold(
-            onSuccess = { "Экспортировано записей: $it" },
+        show("Сохраняю дневник в файл…")
+        show(runCatching { documents.write(uri) { exportArchive(repository, it) } }.fold(
+            onSuccess = { it.describe() },
             onFailure = { "Ошибка экспорта: ${it.message}" },
         ))
     }
 
-    /** Строки без колонки `child` (файлы старых версий) попадают к выбранному ребёнку. */
+    /** Архив экспорта или CSV (ADR-0045). Строки без колонки `child` (файлы старых версий) попадают к выбранному ребёнку. */
     fun importFrom(uri: String) = viewModelScope.launch {
         val child = state.value.child ?: return@launch
-        show(runCatching { importCsv(repository, documents.read(uri), defaultChildId = child.id) }
+        show("Загружаю дневник из файла…")
+        show(runCatching { importFile(repository, documents, uri, defaultChildId = child.id) }
             .fold(
                 onSuccess = { it.describe() },
                 onFailure = { "Ошибка импорта: ${it.message}" },

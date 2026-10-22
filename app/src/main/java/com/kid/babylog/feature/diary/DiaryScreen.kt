@@ -201,7 +201,7 @@ fun DiaryScreen(
     BackHandler(enabled = openIllness != null) { openIllnessId = NONE }
 
     val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("text/csv")
+        ActivityResultContracts.CreateDocument("application/zip")
     ) { uri -> if (uri != null) viewModel.exportTo(uri.toString()) }
     val importLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -352,10 +352,11 @@ fun DiaryScreen(
             ShadeMenuItem(shadeToggle)
             // Пример дневника в гайде (ADR-0043) не выгружают и не дополняют: он исчезнет вместе с гайдом
             if (!example) {
-                SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
-                    pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
+                // Архив с записями и фото (ADR-0045); импорт берёт и архив, и CSV — у CSV в разных приложениях свой MIME-тип
+                SheetMenuItem(R.drawable.ic_export, "Экспорт в файл", onClick = {
+                    pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.zip") }
                 })
-                SheetMenuItem(R.drawable.ic_import, "Импорт из CSV", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+                SheetMenuItem(R.drawable.ic_import, "Импорт из файла", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
             }
             if (onOpenHelp != null && !example) {
                 SheetMenuItem(R.drawable.ic_help, "Справка", onClick = { pick(onOpenHelp) }, badge = helpBadge)

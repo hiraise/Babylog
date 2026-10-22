@@ -116,8 +116,8 @@ class HelpNavigationTest {
         }
         compose.onNodeWithContentDescription("Меню").performClick()
         compose.onNodeWithText("Тема").assertIsDisplayed()
-        compose.onNodeWithText("Экспорт в CSV").assertDoesNotExist()
-        compose.onNodeWithText("Импорт из CSV").assertDoesNotExist()
+        compose.onNodeWithText("Экспорт в файл").assertDoesNotExist()
+        compose.onNodeWithText("Импорт из файла").assertDoesNotExist()
         compose.onNodeWithText("Справка").assertDoesNotExist()
     }
 
