@@ -16,8 +16,11 @@ enum class DarkPalette {
     DUSK, NIGHTLIGHT, SAGE, POWDER, CLASSIC;
 
     companion object {
-        /** Палитра по умолчанию: её фон повторяет `window_background` в `values-night/colors.xml`. */
-        val DEFAULT = DUSK
+        /**
+         * Палитра по умолчанию — «Классика» (ADR-0044): её фон и акцент повторяют `window_background`
+         * и `shade_*` в `values-night/colors.xml`.
+         */
+        val DEFAULT = CLASSIC
     }
 }
 
