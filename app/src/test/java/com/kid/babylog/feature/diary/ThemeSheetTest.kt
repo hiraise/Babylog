@@ -47,11 +47,12 @@ class ThemeSheetTest {
     @Test
     fun `palette is chosen without touching the mode`() {
         showSheet(ThemeChoice(mode = ThemeMode.DARK))
-        compose.onNodeWithText("Сумерки").assertIsSelected()
+        // По умолчанию — «Классика» (ADR-0044)
+        compose.onNodeWithText("Классика").assertIsSelected()
         compose.onNodeWithText("Ночник").performClick()
         assertEquals(ThemeChoice(mode = ThemeMode.DARK, darkPalette = DarkPalette.NIGHTLIGHT), theme)
         compose.onNodeWithText("Ночник").assertIsSelected()
-        compose.onNodeWithText("Сумерки").assertIsNotSelected()
+        compose.onNodeWithText("Классика").assertIsNotSelected()
     }
 
     @Test
