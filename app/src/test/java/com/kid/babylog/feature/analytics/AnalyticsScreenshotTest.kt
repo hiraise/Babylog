@@ -13,7 +13,7 @@ import com.kid.babylog.testing.FakeDiaryRepository
 import com.kid.babylog.testing.FakeDocumentStore
 import com.kid.babylog.testing.FakeSelectedChildStore
 import com.kid.babylog.testing.SCREENSHOT_OPTIONS
-import com.kid.babylog.testing.sampleMonths
+import com.kid.babylog.feature.help.sampleMonths
 import com.kid.babylog.testing.testDevelopment
 import org.junit.After
 import org.junit.Before

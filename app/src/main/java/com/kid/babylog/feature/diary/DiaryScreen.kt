@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -79,6 +81,9 @@ private const val NONE = -1L
  * (ADR-0017): экран только показывает выбор и сообщает о новом. Системная «Назад» сначала закрывает
  * открытое внутри раздела, затем из любого раздела возвращает на «Сегодня». Уведомление в шторке
  * (ADR-0042) включается в меню ([shadeEnabled]); его «Отметить» открывает лист плача [cryingDetailsId].
+ *
+ * Справка (ADR-0043) — последний пункт меню ([onOpenHelp]), точка на ⋮ — [helpBadge], карточка «Где справка»
+ * вверху «Сегодня» — [helpPointer]. [example] — пример дневника в гайде справки: без экспорта, импорта и «Справки».
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,6 +100,10 @@ fun DiaryScreen(
     onShadeChange: (Boolean) -> Unit = {},
     cryingDetailsId: Long? = null,
     onCryingDetailsShown: () -> Unit = {},
+    example: Boolean = false,
+    onOpenHelp: (() -> Unit)? = null,
+    helpBadge: Boolean = false,
+    helpPointer: (@Composable () -> Unit)? = null,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val clock = LocalClock.current
@@ -216,7 +225,9 @@ fun DiaryScreen(
                 ),
                 actions = {
                     IconButton(onClick = { menuOpen = true }) {
-                        AppIcon(R.drawable.ic_more, contentDescription = "Меню")
+                        BadgedBox(badge = { if (helpBadge) Badge() }) {
+                            AppIcon(R.drawable.ic_more, contentDescription = if (helpBadge) "Меню, новое в справке" else "Меню")
+                        }
                     }
                 },
             )
@@ -266,6 +277,7 @@ fun DiaryScreen(
                     now = now,
                     actions = actions,
                     modifier = Modifier.padding(padding),
+                    helpPointer = helpPointer,
                     tipsBanner = week?.takeIf { it.allTips.isNotEmpty() }?.let { current ->
                         { WeekTipsBanner(current, isNew = newTips, onClick = { openSection(MainSection.DEVELOPMENT) }) }
                     },
@@ -334,10 +346,16 @@ fun DiaryScreen(
             SheetMenuItem(R.drawable.ic_theme, "Тема", onClick = { pick { showThemeSheet = true } })
             // Переключатель меню не закрывает: видно, что включилось, а разрешение спросит система
             ShadeMenuItem(shadeToggle)
-            SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
-                pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
-            })
-            SheetMenuItem(R.drawable.ic_import, "Импорт из CSV", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+            // Пример дневника в гайде (ADR-0043) не выгружают и не дополняют: он исчезнет вместе с гайдом
+            if (!example) {
+                SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {
+                    pick { exportLauncher.launch("baby-diary-${now.toLocalDate()}.csv") }
+                })
+                SheetMenuItem(R.drawable.ic_import, "Импорт из CSV", onClick = { pick { importLauncher.launch(arrayOf("*/*")) } })
+            }
+            if (onOpenHelp != null && !example) {
+                SheetMenuItem(R.drawable.ic_help, "Справка", onClick = { pick(onOpenHelp) }, badge = helpBadge)
+            }
         }
     }
 

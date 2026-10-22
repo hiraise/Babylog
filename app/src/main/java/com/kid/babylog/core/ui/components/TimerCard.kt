@@ -162,8 +162,8 @@ private val TileColorMotion = tween<Color>(TILE_MOTION_MS, easing = FastOutSlowI
 
 /** Кнопка-иконка в углу идущего таймера ([TimerTile] `corner`): «Сменить грудь». Цвет — как у текста плитки. */
 @Composable
-fun TimerCornerButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit) {
-    IconButton(onClick = onClick) {
+fun TimerCornerButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(onClick = onClick, modifier = modifier) {
         AppIcon(icon, contentDescription = description)
     }
 }

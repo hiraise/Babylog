@@ -72,6 +72,7 @@ internal fun TodayContent(
     actions: DiaryActions,
     modifier: Modifier = Modifier,
     tipsBanner: (@Composable () -> Unit)? = null,
+    helpPointer: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BabyLogTheme.spacing
     val illness = state.activeIllness
@@ -81,6 +82,8 @@ internal fun TodayContent(
         illness?.let { illnessCardModel(state.events, it, now, ZoneId.systemDefault()) }
     }
     DiaryList(modifier) {
+        // Где справка (ADR-0043) — над плитками, чтобы новичок увидел её сразу; один раз
+        if (helpPointer != null) item(key = "help") { helpPointer() }
         if (illnessCard != null) {
             item(key = "illness") {
                 IllnessCard(

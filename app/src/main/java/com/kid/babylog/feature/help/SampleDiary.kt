@@ -1,5 +1,6 @@
-package com.kid.babylog.testing
+package com.kid.babylog.feature.help
 
+import com.kid.babylog.core.data.DiaryRepository
 import com.kid.babylog.core.model.BabyEvent
 import com.kid.babylog.core.model.Bottle
 import com.kid.babylog.core.model.Breast
@@ -13,16 +14,19 @@ import com.kid.babylog.core.model.IllnessName
 import com.kid.babylog.core.model.Temperature
 import com.kid.babylog.core.model.TemperatureMethod
 import com.kid.babylog.core.model.Medicine
+import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Note
 import com.kid.babylog.core.model.Milk
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.random.Random
 
 /**
- * Дневник 4-месячной девочки за [days] суток по [now] включительно — для скриншотов «Аналитики».
+ * Дневник 4-месячной девочки за [days] суток по [now] включительно: пример в гайдах справки (ADR-0043),
+ * скриншоты «Аналитики» и тестовый дневник `/seed`. Поменяешь записи — поменяются эталоны скриншотов.
  * Режим как в жизни: ночь с 1–2 пробуждениями на кормление, 3–4 дневных сна, кормления после сна,
  * иногда бутылочка смеси на ночь, подгузники, витамин D по утрам, вес с рождения раз в две недели,
  * рост — раз в месяц, через вечер — плач с причинами (ADR-0030).
@@ -89,15 +93,15 @@ fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days:
         events += Diaper(id++, childId, bed - 32 * MINUTE, DiaperKind.WET)
         previousBed = bed
     }
-    // Вес с рождения (148 дней назад) раз в две недели
+    // Вес с рождения (SAMPLE_AGE_DAYS дней назад) раз в две недели
     listOf(0 to 3250, 4 to 3120, 10 to 3300, 17 to 3560, 31 to 4080, 45 to 4620, 59 to 5020, 73 to 5380, 87 to 5690, 108 to 5850, 122 to 6080, 144 to 6350)
         .forEach { (age, grams) ->
-            val start = today.minusDays(148L - age).atStartOfDay(zone).plusHours(10).toInstant().toEpochMilli()
+            val start = today.minusDays(SAMPLE_AGE_DAYS - age).atStartOfDay(zone).plusHours(10).toInstant().toEpochMilli()
             events += Weight(id++, childId, start, grams)
         }
     // Рост у врача раз в месяц, с точностью до 0,5 см
     listOf(0 to 500, 31 to 540, 59 to 575, 87 to 600, 122 to 625, 144 to 645).forEach { (age, millimeters) ->
-        val start = today.minusDays(148L - age).atStartOfDay(zone).plusHours(11).toInstant().toEpochMilli()
+        val start = today.minusDays(SAMPLE_AGE_DAYS - age).atStartOfDay(zone).plusHours(11).toInstant().toEpochMilli()
         events += Height(id++, childId, start, millimeters)
     }
     val nurofen = today.minusDays(4).atStartOfDay(zone).plusHours(22).toInstant().toEpochMilli()
@@ -144,3 +148,23 @@ fun sampleMonths(childId: Long, today: LocalDate, now: Long, zone: ZoneId, days:
 }
 
 private const val MINUTE = 60_000L
+
+/** Девочка примера: её дневник — в гайдах справки (ADR-0043) и в `/seed`. */
+const val SAMPLE_CHILD_NAME = "Соня"
+
+/** Сколько дней девочке примера: вес в [sampleMonths] записан с рождения, [SAMPLE_AGE_DAYS] дней назад. */
+const val SAMPLE_AGE_DAYS = 148L
+
+
+/**
+ * Кладёт в [repository] пример дневника для гайда (ADR-0043): девочку [SAMPLE_CHILD_NAME] и её записи по
+ * [now]. Идущих таймеров нет: гайд сам предложит их запустить. Возвращает id ребёнка.
+ */
+suspend fun fillSampleDiary(repository: DiaryRepository, now: Long, zone: ZoneId): Long {
+    val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+    val birth = today.minusDays(SAMPLE_AGE_DAYS).atStartOfDay(zone).toInstant().toEpochMilli()
+    val childId = repository.addChild(SAMPLE_CHILD_NAME, birth, Sex.GIRL, photo = null)
+    val events = sampleMonths(childId, today, now, zone).filterNot { it is Sleep && it.isActive || it is Feeding && it.isActive }
+    repository.inTransaction { events.forEach { repository.addEvent(it) } }
+    return childId
+}
