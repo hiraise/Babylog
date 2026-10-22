@@ -1,6 +1,6 @@
 # ADR-0023: Фото ребёнка — кадрированный JPEG 512×512 в `children.photo`; камера и галерея — системные, без разрешений
 
-- **Статус:** Принято
+- **Статус:** Заменено [ADR-0046](0046-child-photo.md)
 - **Дата:** 2026-10-17
 - **Затрагивает:** `Child.photo` (`core/model/Child.kt`), `children.photo` (`core/data/room/`), `AndroidManifest.xml` (`FileProvider`, permissions), `res/xml/photo_paths.xml`, `core/ui/photo/` (`rememberPhotoPicker`, `loadUpright`), `PhotoCropSheet`, `Avatar`, `feature/transfer/`
 

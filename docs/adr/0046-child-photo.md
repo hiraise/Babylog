@@ -1,6 +1,6 @@
 # ADR-0046: Фото ребёнка — кадрированный JPEG 512×512 в `children.photo`; камера и галерея — системные, без разрешений
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-10-22
 - **Затрагивает:** `Child.photo` (`core/model/Child.kt`), `children.photo` (`core/data/room/`), `AndroidManifest.xml` (`FileProvider`, permissions), `res/xml/photo_paths.xml`, `core/ui/photo/` (`rememberPhotoPicker`, `loadUpright`), `PhotoCropSheet`, `Avatar`, `feature/transfer/`
 - **Заменяет:** [ADR-0023](0023-child-photo.md) — сводный: его правила вместе с заменами из [ADR-0024](0024-event-photos.md) (`FileProvider`) и [ADR-0045](0045-export-archive-with-photos.md) (перенос фото)
