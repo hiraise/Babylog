@@ -70,4 +70,11 @@ interface DiaryDao {
 
     @Insert
     suspend fun insertPhoto(photo: EventPhotoEntity)
+
+    /** Без самих фото: id и запись каждого, по порядку внутри записи. */
+    @Query("SELECT id, eventId FROM event_photos ORDER BY eventId, position, id")
+    suspend fun getPhotoRefs(): List<PhotoRef>
+
+    @Query("SELECT jpeg FROM event_photos WHERE id = :id")
+    suspend fun getPhotoJpeg(id: Long): ByteArray?
 }

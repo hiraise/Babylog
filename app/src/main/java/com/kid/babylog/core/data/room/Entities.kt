@@ -73,6 +73,9 @@ data class EventPhotoEntity(
 /** Сколько фото у записи [eventId] — для отметки в истории, без самих фото. */
 data class PhotoCount(val eventId: Long, val count: Int)
 
+/** Фото [id] записи [eventId] — без JPEG, для экспорта и импорта (ADR-0045). */
+data class PhotoRef(val id: Long, val eventId: Long)
+
 fun ChildEntity.toChild() =
     Child(id = id, name = name, birthDate = birthDate, sex = Sex.fromCode(sex), photo = photo?.let(::ChildPhoto))
 

@@ -1,33 +1,37 @@
 package com.kid.babylog.feature.transfer
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.OutputStream
 
 /**
- * Чтение и запись файла, который пользователь выбрал в системном диалоге (SAF).
- * Интерфейс отделяет ViewModel от Android: в тестах его заменяет фейк.
+ * Чтение и запись файла, который пользователь выбрал в системном диалоге (SAF). Файл отдаётся потоком: архив
+ * с фото бывает в сотни мегабайт (ADR-0045). Интерфейс отделяет ViewModel от Android: в тестах его заменяет фейк.
  */
 interface DocumentStore {
-    suspend fun read(uri: String): String
+    /** Открывает файл [uri] на чтение — каждый раз с начала — и отдаёт поток [block]; закрывает после него. */
+    suspend fun <T> read(uri: String, block: suspend (InputStream) -> T): T
 
-    suspend fun write(uri: String, text: String)
+    /** Открывает файл [uri] на запись с нуля и отдаёт поток [block]; закрывает после него. */
+    suspend fun <T> write(uri: String, block: suspend (OutputStream) -> T): T
 }
 
 class ContentResolverDocumentStore(context: Context) : DocumentStore {
 
     private val resolver = context.applicationContext.contentResolver
 
-    override suspend fun read(uri: String): String = withContext(Dispatchers.IO) {
-        resolver.openInputStream(Uri.parse(uri))?.use(::readCsvText) ?: error("Не удалось открыть файл")
+    override suspend fun <T> read(uri: String, block: suspend (InputStream) -> T): T = withContext(Dispatchers.IO) {
+        val input = resolver.openInputStream(uri.toUri()) ?: error("Не удалось открыть файл")
+        input.use { block(it) }
     }
 
-    override suspend fun write(uri: String, text: String) = withContext(Dispatchers.IO) {
-        resolver.openOutputStream(Uri.parse(uri), "wt")?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
-            ?: error("Не удалось открыть файл")
+    override suspend fun <T> write(uri: String, block: suspend (OutputStream) -> T): T = withContext(Dispatchers.IO) {
+        val output = resolver.openOutputStream(uri.toUri(), "wt") ?: error("Не удалось открыть файл")
+        output.buffered().use { block(it) }
     }
 }
 

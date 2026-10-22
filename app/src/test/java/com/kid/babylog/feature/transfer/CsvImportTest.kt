@@ -28,6 +28,9 @@ class CsvImportTest {
 
     private fun ms(s: String): Long = CsvCodec.parseTime(s)!!
 
+    /** CSV всего дневника — как `diary.csv` в архиве экспорта, но без фото. */
+    private suspend fun csvOf(repo: FakeDiaryRepository) = CsvCodec.encode(repo.allChildren(), repo.allEvents())
+
     private val legacyFile = "﻿type,start,end,detail,note\r\n" +
         "PROFILE,2026-05-20 00:00:00,,,\r\n" +
         "FEEDING,2026-08-15 10:00:00,,LEFT,\r\n" +
@@ -75,7 +78,7 @@ class CsvImportTest {
         repo.addEvent(Sleep(childId = 2, start = ms("2026-08-15 11:00:00"), end = ms("2026-08-15 12:30:00")))
         // Кормление идёт во время экспорта: в файле оно без конца, но в базе уже есть
         repo.addEvent(Feeding(childId = 1, start = ms("2026-08-15 13:00:00"), breast = Breast.RIGHT))
-        val result = importCsv(repo, exportCsv(repo).text, defaultChildId = 1)
+        val result = importCsv(repo, csvOf(repo), defaultChildId = 1)
         assertEquals(ImportResult(duplicates = 4), result)
         assertEquals(4, repo.events.value.size)
     }
@@ -88,7 +91,7 @@ class CsvImportTest {
             Feeding(childId = 1, start = ms("2026-08-15 10:00:00"), end = ms("2026-08-15 10:20:00"), breast = Breast.RIGHT),
         )
         val target = FakeDiaryRepository() // новый телефон: один «Малыш» без записей
-        importCsv(target, exportCsv(source).text, defaultChildId = 1)
+        importCsv(target, csvOf(source), defaultChildId = 1)
 
         fun snapshot(repo: FakeDiaryRepository) = repo.events.value.map { e ->
             repo.children.value.first { it.id == e.childId }.let { it.name to it.birthDate } to e.toRecord()
@@ -205,7 +208,7 @@ class CsvImportTest {
     fun `sex survives export to another phone`() = runTest {
         val source = FakeDiaryRepository(listOf(Child(1, "Маша", null, Sex.GIRL)))
         val target = FakeDiaryRepository()
-        importCsv(target, exportCsv(source).text, defaultChildId = 1)
+        importCsv(target, csvOf(source), defaultChildId = 1)
         assertEquals(Sex.GIRL, target.children.value.first { it.name == "Маша" }.sex)
     }
 

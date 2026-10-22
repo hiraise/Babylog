@@ -185,5 +185,5 @@ fun SheetMenuItem(
 private fun AppSheetPreview() = LightDarkPreview {
     // Сам ModalBottomSheet в превью не открывается — показываем его строки
     SheetMenuItem(R.drawable.ic_add_child, "Добавить ребёнка", onClick = {})
-    SheetMenuItem(R.drawable.ic_export, "Экспорт в CSV", onClick = {})
+    SheetMenuItem(R.drawable.ic_export, "Экспорт в файл", onClick = {})
 }

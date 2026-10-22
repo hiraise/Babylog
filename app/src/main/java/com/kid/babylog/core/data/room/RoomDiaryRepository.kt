@@ -68,6 +68,14 @@ class RoomDiaryRepository(private val db: AppDatabase) : DiaryRepository {
         }
     }
 
+    override suspend fun photoIds(): Map<Long, List<Long>> =
+        dao.getPhotoRefs().groupBy({ it.eventId }, { it.id })
+
+    override suspend fun photoJpeg(photoId: Long): ByteArray? = dao.getPhotoJpeg(photoId)
+
+    override suspend fun addEventPhoto(eventId: Long, position: Int, jpeg: ByteArray) =
+        dao.insertPhoto(EventPhotoEntity(eventId = eventId, position = position, jpeg = jpeg))
+
     override suspend fun startSleep(childId: Long, start: Long): Boolean = db.withTransaction {
         if (dao.countActive(childId, EventRecord.SLEEP) > 0) return@withTransaction false
         finishActive(childId, EventRecord.FEEDING, at = start)

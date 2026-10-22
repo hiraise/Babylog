@@ -10,16 +10,18 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * CSV-формат (ADR-0009): `type,start,end,detail,note,child`.
+ * CSV-формат (ADR-0009): `type,start,end,detail,note,child,photos`.
  * Время — локальное, "yyyy-MM-dd HH:mm:ss" (при импорте допускается 'T' как разделитель
  * и время без секунд). Экранирование по RFC 4180. Строка PROFILE описывает ребёнка:
  * дата рождения в `start` (может быть пустой), пол в `detail` (`BOY`/`GIRL`, может быть пустым,
- * ADR-0016), имя в `child`.
+ * ADR-0016), имя в `child`. `photos` — файлы фото в архиве экспорта через `;` (ADR-0045): у PROFILE —
+ * фото ребёнка, у записи — её фото по порядку.
  */
 object CsvCodec {
 
-    const val HEADER = "type,start,end,detail,note,child"
+    const val HEADER = "type,start,end,detail,note,child,photos"
     const val PROFILE_ROW = "PROFILE"
+    private const val PHOTO_SEPARATOR = ";"
 
     /**
      * Поле длиннее — не запись приложения: так выглядят строки, склеенные незакрытой кавычкой, или чужой
@@ -42,8 +44,16 @@ object CsvCodec {
         }
     }
 
-    /** Весь дневник: строка PROFILE на каждого ребёнка, затем записи в переданном порядке. */
-    fun encode(children: List<Child>, events: List<BabyEvent>): String {
+    /**
+     * Весь дневник: строка PROFILE на каждого ребёнка, затем записи в переданном порядке. [childPhotos] — файл
+     * фото ребёнка по его id, [eventPhotos] — файлы фото записи по её id; это пути внутри архива (ADR-0045).
+     */
+    fun encode(
+        children: List<Child>,
+        events: List<BabyEvent>,
+        childPhotos: Map<Long, String> = emptyMap(),
+        eventPhotos: Map<Long, List<String>> = emptyMap(),
+    ): String {
         val names = children.associate { it.id to it.name }
         val sb = StringBuilder()
         sb.append('\uFEFF') // BOM, чтобы Excel корректно открывал кириллицу
@@ -52,7 +62,8 @@ object CsvCodec {
             sb.append(PROFILE_ROW).append(',')
                 .append(child.birthDate?.let { formatTime(it) } ?: "")
                 .append(",,").append(child.sex?.name ?: "").append(",,")
-                .append(escape(child.name)).append("\r\n")
+                .append(escape(child.name)).append(',')
+                .append(escape(childPhotos[child.id].orEmpty())).append("\r\n")
         }
         for (event in events) {
             val r = event.toRecord()
@@ -61,7 +72,8 @@ object CsvCodec {
                 .append(r.end?.let { formatTime(it) } ?: "").append(',')
                 .append(escape(r.detail)).append(',')
                 .append(escape(r.note)).append(',')
-                .append(escape(names[event.childId] ?: "")).append("\r\n")
+                .append(escape(names[event.childId] ?: "")).append(',')
+                .append(escape(eventPhotos[event.id].orEmpty().joinToString(PHOTO_SEPARATOR))).append("\r\n")
         }
         return sb.toString()
     }
@@ -134,4 +146,8 @@ object CsvCodec {
 
     /** Имя ребёнка из колонки `child`; пусто — колонки нет (файл старой версии) или она не заполнена. */
     fun childName(row: List<String>): String = row.getOrElse(5) { "" }.trim()
+
+    /** Файлы фото из колонки `photos` по порядку; пусто — фото нет или файл версии до 1.10 (ADR-0045). */
+    fun photoNames(row: List<String>): List<String> =
+        row.getOrElse(6) { "" }.split(PHOTO_SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }
 }
