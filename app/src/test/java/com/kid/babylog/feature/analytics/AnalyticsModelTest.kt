@@ -11,7 +11,7 @@ import com.kid.babylog.core.model.Medicine
 import com.kid.babylog.core.model.Sex
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.model.Weight
-import com.kid.babylog.testing.sampleMonths
+import com.kid.babylog.feature.help.sampleMonths
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

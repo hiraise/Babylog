@@ -1,12 +1,16 @@
 package com.kid.babylog
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.kid.babylog.core.data.DevelopmentSeenStore
 import com.kid.babylog.core.data.DiaryRepository
+import com.kid.babylog.core.data.HelpStore
 import com.kid.babylog.core.data.PrefsDevelopmentSeenStore
+import com.kid.babylog.core.data.PrefsHelpStore
 import com.kid.babylog.core.data.PrefsRecoveryNotices
 import com.kid.babylog.core.data.PrefsSelectedChildStore
 import com.kid.babylog.core.data.PrefsShadeStore
@@ -72,6 +76,31 @@ class AppContainer(context: Context) {
     val developmentViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
         initializer { DevelopmentViewModel(tips, developmentSeen) }
     }
+
+    /** Версия приложения: от неё справка считает «Новое» (ADR-0043). */
+    val appVersion: String = context.versionName()
+
+    val help: HelpStore = PrefsHelpStore(context, appVersion)
+
+    /** Пример дневника для гайдов справки (ADR-0043): своя база в памяти на каждый гайд. */
+    val guideSessionsFactory: ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            GuideSessions { topic ->
+                val example = AppDatabase.inMemory(context)
+                GuideSandbox(topic, RoomDiaryRepository(example), tips, documents, clock, onClose = example::close)
+            }
+        }
+    }
+}
+
+private fun Context.versionName(): String {
+    val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0)
+    }
+    return info.versionName.orEmpty()
 }
 
 private object SystemZoneClock : Clock() {

@@ -192,6 +192,12 @@ check_adr_rules() {
     report "ADR-0042: разрешения в манифесте — только POST_NOTIFICATIONS и RECEIVE_BOOT_COMPLETED для уведомления в шторке" "$hits" || failed=1
     hits="$(grep -A2 'android:name=".ShadeActionReceiver"' "$main/AndroidManifest.xml" | grep -L 'android:exported="false"' || true)"
     report "ADR-0042: приёмник кнопок ShadeActionReceiver не экспортируется — иначе таймеры запустит чужое приложение" "${hits:+$main/AndroidManifest.xml}" || failed=1
+    # Гайд темы справки проверяет UI-тест *GuideTest.kt с id темы: иначе он тихо сломается при правке экрана
+    hits=""
+    while IFS= read -r id; do
+        grep -rqF --include='*GuideTest.kt' "\"$id\"" "$ROOT/app/src/test/java/com/kid/babylog/feature/help" || hits+="$id"$'\n'
+    done < <(sed -n 's/^ *id = "\([a-z0-9-]*\)",$/\1/p' "$code/feature/help/HelpTopics.kt")
+    report "ADR-0043: у темы справки нет UI-теста гайда (feature/help/*GuideTest.kt с её id)" "${hits%$'\n'}" || failed=1
     return "$failed"
 }
 

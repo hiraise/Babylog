@@ -9,8 +9,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -20,13 +25,16 @@ import com.kid.babylog.core.data.ThemeMode
 import com.kid.babylog.core.data.isDark
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.feature.diary.DiaryScreen
+import com.kid.babylog.feature.help.HELP_TOPICS
+import com.kid.babylog.feature.help.HelpPointerCard
+import com.kid.babylog.feature.help.helpBadge
 import com.kid.babylog.feature.shade.ShadeIntents
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * Единственный экран приложения. Смена темы окно не пересоздаёт (ADR-0017): в манифесте
- * `configChanges="uiMode"`, Compose перерисовывается с новой темой за один кадр, а фон окна
- * и системные панели перекрашивает [paintWindow].
+ * Единственный экран приложения: дневник, а вместо него, пока открыта, — справка ([HelpHost], ADR-0043).
+ * Смена темы окно не пересоздаёт (ADR-0017): в манифесте `configChanges="uiMode"`, Compose
+ * перерисовывается с новой темой за один кадр, а фон окна и системные панели перекрашивает [paintWindow].
  */
 class MainActivity : ComponentActivity() {
 
@@ -47,23 +55,61 @@ class MainActivity : ComponentActivity() {
             val recovery by container.recoveryNotices.pending.collectAsStateWithLifecycle()
             val shadeEnabled by container.shadeStore.enabled.collectAsStateWithLifecycle()
             val cryingDetailsId by cryingDetails.collectAsStateWithLifecycle()
+            val helpProgress by container.help.progress.collectAsStateWithLifecycle()
+            val guideSessions: GuideSessions = viewModel(factory = container.guideSessionsFactory)
+            // Справка (ADR-0043) — вместо дневника; дневник помнит раздел и листы, пока она открыта
+            var help by rememberSaveable(stateSaver = HelpRouteSaver) { mutableStateOf<HelpRoute?>(null) }
+            val diaryState = rememberSaveableStateHolder()
+            val openHelp = {
+                container.help.dismissPointer()
+                help = HelpRoute.Topics
+            }
+            // «Отметить» в шторке открывает лист плача в дневнике — из справки возвращаемся туда
+            LaunchedEffect(cryingDetailsId) {
+                if (cryingDetailsId != null && help != null) {
+                    guideSessions.close()
+                    help = null
+                }
+            }
             // На API 31+ конфигурация уже несёт выбранную тему (setApplicationNightMode), до 31 — системную
             val dark = theme.mode.isDark(systemDark = isSystemInDarkTheme())
             BabyLogTheme(clock = container.clock, darkTheme = dark, darkPalette = theme.darkPalette) {
                 val background = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect { paintWindow(background, dark) }
-                DiaryScreen(
-                    viewModel = viewModel(factory = container.diaryViewModelFactory),
-                    theme = theme,
-                    onThemeChange = ::changeTheme,
-                    development = viewModel(factory = container.developmentViewModelFactory),
-                    recovery = recovery,
-                    onRecoverySeen = container.recoveryNotices::dismiss,
-                    shadeEnabled = shadeEnabled,
-                    onShadeChange = container.shadeStore::setEnabled,
-                    cryingDetailsId = cryingDetailsId,
-                    onCryingDetailsShown = { cryingDetails.value = null },
-                )
+                when (val route = help) {
+                    null -> diaryState.SaveableStateProvider("diary") {
+                        DiaryScreen(
+                            viewModel = viewModel(factory = container.diaryViewModelFactory),
+                            theme = theme,
+                            onThemeChange = ::changeTheme,
+                            development = viewModel(factory = container.developmentViewModelFactory),
+                            recovery = recovery,
+                            onRecoverySeen = container.recoveryNotices::dismiss,
+                            shadeEnabled = shadeEnabled,
+                            onShadeChange = container.shadeStore::setEnabled,
+                            cryingDetailsId = cryingDetailsId,
+                            onCryingDetailsShown = { cryingDetails.value = null },
+                            onOpenHelp = openHelp,
+                            helpBadge = helpBadge(HELP_TOPICS, helpProgress),
+                            helpPointer = if (helpProgress.pointerDone) null else {
+                                { HelpPointerCard(onOpen = openHelp, onDismiss = container.help::dismissPointer) }
+                            },
+                        )
+                    }
+                    else -> HelpHost(
+                        route = route,
+                        onRoute = { help = it },
+                        topics = HELP_TOPICS,
+                        progress = helpProgress,
+                        onTopicOpened = { container.help.markOpened(it.id, container.appVersion) },
+                        onTopicCompleted = { container.help.markCompleted(it.id) },
+                        sessions = guideSessions,
+                        theme = theme,
+                        onThemeChange = ::changeTheme,
+                        shadeEnabled = shadeEnabled,
+                        onShadeChange = container.shadeStore::setEnabled,
+                    )
+                }
             }
         }
     }

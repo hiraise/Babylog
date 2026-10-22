@@ -32,6 +32,13 @@ abstract class AppDatabase : RoomDatabase() {
                 .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
                 .addCallback(CreateFirstChild)
                 .build()
+
+        /**
+         * Пример дневника для гайдов справки (ADR-0043): база только в памяти и пустая — ребёнка и записи
+         * кладёт гайд. Файла нет, поэтому нет и копий ADR-0033: закрытая база исчезает целиком.
+         */
+        fun inMemory(context: Context): AppDatabase =
+            Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
     }
 }
 

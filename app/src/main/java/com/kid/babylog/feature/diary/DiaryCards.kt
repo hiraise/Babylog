@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,6 +38,8 @@ import com.kid.babylog.core.ui.formatAgo
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDuration
 import com.kid.babylog.core.ui.formatShortDay
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.editor.NewEventKind
@@ -64,7 +67,7 @@ internal fun SleepCard(
         stopLabel = bySex(child.sex, "проснулся", "проснулась"),
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.SLEEP_TILE),
         idleCaption = awakeCaption(lastSleepEnd, now),
     )
 }
@@ -97,10 +100,12 @@ internal fun FeedingCard(
         stopLabel = "закончить кормление",
         onStart = onStart,
         onStop = onEnd,
-        modifier = modifier,
+        modifier = modifier.guideTarget(GuideTarget.FEEDING_TILE),
         runningLabel = activeFeeding?.let { "${breastLabel(it.breast)} грудь" } ?: "Кормление",
         idleCaption = afterFeedingCaption(lastFeeding, now),
-        corner = { TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast) },
+        corner = {
+            TimerCornerButton(R.drawable.ic_swap, "Сменить грудь", onSwitchBreast, Modifier.guideTarget(GuideTarget.SWITCH_BREAST, CircleShape))
+        },
     )
 }
 
