@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +44,9 @@ import com.kid.babylog.core.ui.components.SheetMenuItem
 import com.kid.babylog.core.ui.eventIcon
 import com.kid.babylog.core.ui.eventTimeLine
 import com.kid.babylog.core.ui.eventTitle
+import com.kid.babylog.core.ui.guide.GuideSheet
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.toLocalDate
 import com.kid.babylog.feature.analytics.AnalyticsContent
 import com.kid.babylog.feature.analytics.AnalyticsSection
@@ -224,7 +228,7 @@ fun DiaryScreen(
                     scrolledContainerColor = MaterialTheme.colorScheme.background,
                 ),
                 actions = {
-                    IconButton(onClick = { menuOpen = true }) {
+                    IconButton(onClick = { menuOpen = true }, modifier = Modifier.guideTarget(GuideTarget.MENU_BUTTON, CircleShape)) {
                         BadgedBox(badge = { if (helpBadge) Badge() }) {
                             AppIcon(R.drawable.ic_more, contentDescription = if (helpBadge) "Меню, новое в справке" else "Меню")
                         }
@@ -360,7 +364,9 @@ fun DiaryScreen(
     }
 
     if (showThemeSheet) {
-        ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
+        GuideSheet(GuideTarget.THEME_SHEET) {
+            ThemeSheet(theme = theme, onSelect = onThemeChange, onDismiss = { showThemeSheet = false })
+        }
     }
 
     recovery?.let {
@@ -438,19 +444,21 @@ fun DiaryScreen(
             // Лист открывается, когда фото записи загружены: форма берёт их один раз, при открытии
             val photos by remember { viewModel.eventPhotos(event.id) }.collectAsState(initial = null)
             photos?.let {
-                EditEventSheet(
-                    event = event,
-                    child = child,
-                    photos = it,
-                    pastMedicines = state.pastMedicines,
-                    cryingChoices = state.cryingChoices,
-                    noteTags = state.noteTags,
-                    onDismiss = { editingId = NONE },
-                    onSave = { edited, edit ->
-                        viewModel.saveEvent(edited, edit)
-                        editingId = NONE
-                    },
-                )
+                GuideSheet(GuideTarget.EVENT_EDITOR) {
+                    EditEventSheet(
+                        event = event,
+                        child = child,
+                        photos = it,
+                        pastMedicines = state.pastMedicines,
+                        cryingChoices = state.cryingChoices,
+                        noteTags = state.noteTags,
+                        onDismiss = { editingId = NONE },
+                        onSave = { edited, edit ->
+                            viewModel.saveEvent(edited, edit)
+                            editingId = NONE
+                        },
+                    )
+                }
             }
         }
     }
@@ -490,7 +498,7 @@ fun DiaryScreen(
         }
     }
 
-    if (showDaySelector) {
+    if (showDaySelector) GuideSheet(GuideTarget.DAY_SELECTOR) {
         DaySelectorSheet(
             days = historyDays(state.events, now.toLocalDate()),
             events = state.events,
@@ -504,7 +512,7 @@ fun DiaryScreen(
         )
     }
 
-    if (showChildren) {
+    if (showChildren) GuideSheet(GuideTarget.CHILDREN_SHEET) {
         ChildrenSheet(
             children = state.children,
             selectedId = child.id,

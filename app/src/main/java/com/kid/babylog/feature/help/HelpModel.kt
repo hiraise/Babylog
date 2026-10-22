@@ -3,6 +3,7 @@ package com.kid.babylog.feature.help
 import androidx.annotation.DrawableRes
 import com.kid.babylog.core.data.HelpProgress
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.ui.guide.GuideTarget
 
 /**
@@ -46,13 +47,22 @@ data class GuideStep(
     val since: String? = null,
 )
 
-/** Когда шаг засчитан. Засчитанный шаг не откатывается, даже если условие потом перестало выполняться. */
+/**
+ * Когда шаг засчитан. Засчитанный шаг не откатывается, даже если условие потом перестало выполняться.
+ * Шаг, который не засчитывается кнопкой, можно пропустить («Пропустить шаг» на панели).
+ */
 sealed interface StepDone {
     /** По записям примера: [check] получает записи сейчас и в начале шага. */
     class Records(val check: (now: List<BabyEvent>, atStart: List<BabyEvent>) -> Boolean) : StepDone
 
+    /** По детям примера: [check] получает детей сейчас и в начале шага. */
+    class Children(val check: (now: List<Child>, atStart: List<Child>) -> Boolean) : StepDone
+
     /** Цель появилась на экране: открылся раздел, экран или лист. */
     data class Shown(val target: GuideTarget) : StepDone
+
+    /** Цель была на экране во время шага и закрылась: лист открыли и выбрали в нём или закрыли. */
+    data class Visited(val target: GuideTarget) : StepDone
 
     /** Кнопкой шага. */
     data object Next : StepDone

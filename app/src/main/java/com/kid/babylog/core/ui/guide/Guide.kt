@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,13 +33,55 @@ import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 
 /**
- * Места экрана, на которые показывает гайд справки (ADR-0043). Цель ставят модификатором
- * [guideTarget] на сам элемент; шаг гайда называет цель и ждёт её появления.
+ * Места экрана, на которые показывает гайд справки (ADR-0043). Цель, куда нажать, ставят модификатором
+ * [guideTarget] на сам элемент; экран или лист, о котором гайду надо знать, что он открыт, — тем же
+ * модификатором на его элемент (такую цель шаг не обводит: он ждёт её появления). Пустой Spacer для
+ * метки не добавляй: в колонке со `spacedBy` он даст лишний промежуток.
  */
 enum class GuideTarget {
+    // «Сегодня»
     SLEEP_TILE,
     FEEDING_TILE,
     SWITCH_BREAST,
+    CRYING_TILE,
+    NOTE_TILE,
+    DIAPER_TILE,
+    HEALTH_TILE,
+    WEIGHT_TILE,
+    HEIGHT_TILE,
+    ILLNESS_CARD,
+
+    // Шапка, меню и нижняя панель
+    CHILD_SELECTOR,
+    MENU_BUTTON,
+    NAV_DIARY,
+    NAV_DEVELOPMENT,
+    NAV_ANALYTICS,
+
+    // «Дневник»
+    HISTORY,
+    PAST_DAY,
+    DAY_PICKER,
+    DAY_SELECTOR,
+    EVENT_EDITOR,
+    NOTES_BUTTON,
+    NOTES_FEED,
+    TAG_SUMMARY,
+
+    // «Аналитика» и «Развитие»
+    ANALYTICS_OVERVIEW,
+    ANALYTICS_SLEEP_TILE,
+    ANALYTICS_DETAIL,
+    DEVELOPMENT,
+    SKILLS_BUTTON,
+    SKILLS,
+
+    // Болезнь, дети, тема
+    ILLNESS_SCREEN,
+    RECOVER_BUTTON,
+    CHILDREN_SHEET,
+    ADD_CHILD,
+    THEME_SHEET,
 }
 
 /**
@@ -57,6 +101,19 @@ interface GuideTracker {
 }
 
 val LocalGuide = staticCompositionLocalOf<GuideTracker?> { null }
+
+/**
+ * Цель гайда для нижнего листа, который открывается внутри: [com.kid.babylog.core.ui.components.AppSheet]
+ * ставит её на своё содержимое. Так лист правки записи или выбора дня становится целью, не протаскивая
+ * параметр через все свои формы.
+ */
+val LocalSheetTarget = compositionLocalOf<GuideTarget?> { null }
+
+/** Листы внутри [content] — цель [target] для гайда справки. */
+@Composable
+fun GuideSheet(target: GuideTarget, content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalSheetTarget provides target, content = content)
+}
 
 /**
  * Цель гайда: сообщает гайду, что элемент на экране, и обводит его, когда это цель текущего шага.

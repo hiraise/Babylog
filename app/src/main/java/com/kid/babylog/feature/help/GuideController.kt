@@ -5,6 +5,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.setValue
 import com.kid.babylog.core.model.BabyEvent
+import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.ui.guide.GuideTarget
 import com.kid.babylog.core.ui.guide.GuideTracker
 import java.time.Clock
@@ -15,8 +16,9 @@ import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Ход гайда по теме (ADR-0043): какой шаг сейчас и засчитан ли он. Шаг засчитывается сам — по записям
- * примера ([onEvents]) или появлению цели ([shown]) — либо кнопкой шага ([press]). Пройденный шаг
- * не откатывается: остановленный потом таймер не возвращает гайд назад.
+ * и детям примера ([onEvents], [onChildren]), появлению и закрытию цели ([shown], [hidden]) — либо
+ * кнопкой шага ([press]); шаг с действием можно пропустить ([skip]). Пройденный шаг не откатывается:
+ * остановленный потом таймер не возвращает гайд назад.
  */
 class GuideController(val topic: HelpTopic, private val clock: GuideClock) : GuideTracker {
 
@@ -32,6 +34,11 @@ class GuideController(val topic: HelpTopic, private val clock: GuideClock) : Gui
     /** null — записи примера ещё не пришли: шаги по записям ждут. */
     private var events: List<BabyEvent>? = null
     private var atStart: List<BabyEvent> = emptyList()
+    private var children: List<Child>? = null
+    private var childrenAtStart: List<Child> = emptyList()
+
+    /** Цели, которые были на экране во время текущего шага, — для [StepDone.Visited]. */
+    private val visited = mutableSetOf<GuideTarget>()
 
     override val target: GuideTarget? get() = step?.target
 
@@ -39,12 +46,21 @@ class GuideController(val topic: HelpTopic, private val clock: GuideClock) : Gui
 
     override fun shown(target: GuideTarget) {
         onScreen[target] = (onScreen[target] ?: 0) + 1
+        visited += target
         advance()
     }
 
     override fun hidden(target: GuideTarget) {
         val count = (onScreen[target] ?: 0) - 1
         if (count > 0) onScreen[target] = count else onScreen.remove(target)
+        advance()
+    }
+
+    /** Дети примера изменились. Первые — точка отсчёта первого шага. */
+    fun onChildren(list: List<Child>) {
+        if (children == null) childrenAtStart = list
+        children = list
+        advance()
     }
 
     /** Записи примера изменились. Первые — точка отсчёта первого шага. */
@@ -63,6 +79,13 @@ class GuideController(val topic: HelpTopic, private val clock: GuideClock) : Gui
         advance()
     }
 
+    /** «Пропустить шаг»: шаг с действием засчитывается без него — гайд не застревает. */
+    fun skip() {
+        if (step == null) return
+        moveOn()
+        advance()
+    }
+
     private fun advance() {
         while (true) {
             val current = step ?: return
@@ -73,13 +96,19 @@ class GuideController(val topic: HelpTopic, private val clock: GuideClock) : Gui
 
     private fun isDone(done: StepDone): Boolean = when (done) {
         is StepDone.Records -> events?.let { done.check(it, atStart) } ?: false
-        is StepDone.Shown -> (onScreen[done.target] ?: 0) > 0
+        is StepDone.Children -> children?.let { done.check(it, childrenAtStart) } ?: false
+        is StepDone.Shown -> done.target in onScreen
+        is StepDone.Visited -> done.target in visited && done.target !in onScreen
         StepDone.Next -> false
     }
 
     private fun moveOn() {
         index++
         atStart = events.orEmpty()
+        childrenAtStart = children.orEmpty()
+        // Что уже открыто, считается увиденным и в новом шаге: лист, открытый раньше, закроют в нём
+        visited.clear()
+        visited += onScreen.keys
     }
 }
 

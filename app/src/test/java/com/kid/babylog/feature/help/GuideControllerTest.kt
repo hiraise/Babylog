@@ -1,6 +1,7 @@
 package com.kid.babylog.feature.help
 
 import com.kid.babylog.R
+import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.model.Sleep
 import com.kid.babylog.core.ui.guide.GuideTarget
 import org.junit.Assert.assertEquals
@@ -63,6 +64,44 @@ class GuideControllerTest {
         guide.onEvents(listOf(sleep))
         guide.onEvents(listOf(sleep.copy(end = base.millis())))
         assertEquals(1, guide.index)
+    }
+
+    @Test
+    fun `skip passes a step that waits for an action`() {
+        guide.onEvents(emptyList())
+        guide.skip()
+        assertEquals(1, guide.index)
+        assertEquals(base.millis(), clock.millis())
+    }
+
+    @Test
+    fun `visited step passes when the sheet opened earlier closes`() {
+        val sheet = GuideController(
+            HelpTopic("sheet", "Лист", R.drawable.ic_help, "", listOf(
+                GuideStep("Откройте лист", StepDone.Shown(GuideTarget.DAY_SELECTOR)),
+                GuideStep("Выберите день", StepDone.Visited(GuideTarget.DAY_SELECTOR)),
+            )),
+            clock,
+        )
+        sheet.shown(GuideTarget.DAY_SELECTOR)
+        assertEquals(1, sheet.index)
+        sheet.hidden(GuideTarget.DAY_SELECTOR)
+        assertTrue(sheet.finished)
+    }
+
+    @Test
+    fun `children step passes when a child is added`() {
+        val masha = Child(1, "Маша", null)
+        val children = GuideController(
+            HelpTopic("children", "Дети", R.drawable.ic_help, "", listOf(
+                GuideStep("Добавьте ребёнка", StepDone.Children { now, atStart -> now.size > atStart.size }),
+            )),
+            clock,
+        )
+        children.onChildren(listOf(masha))
+        assertEquals(0, children.index)
+        children.onChildren(listOf(masha, Child(2, "Петя", null)))
+        assertTrue(children.finished)
     }
 
     @Test

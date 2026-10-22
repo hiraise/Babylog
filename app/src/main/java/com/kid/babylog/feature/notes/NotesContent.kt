@@ -64,6 +64,8 @@ import com.kid.babylog.core.ui.eventTitle
 import com.kid.babylog.core.ui.formatClock
 import com.kid.babylog.core.ui.formatDayHeader
 import com.kid.babylog.core.ui.formatDuration
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import java.time.ZoneId
@@ -151,7 +153,8 @@ fun NotesContent(
     Box(modifier.fillMaxSize()) {
         LazyColumn(
             state = list,
-            modifier = Modifier.fillMaxSize(),
+            // Гайд справки (ADR-0043): открыта лента или сводка метки
+            modifier = Modifier.fillMaxSize().guideTarget(if (filter is NotesFilter.Tag) GuideTarget.TAG_SUMMARY else GuideTarget.NOTES_FEED),
             contentPadding = PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = FabClearance),
             verticalArrangement = Arrangement.spacedBy(spacing.m),
         ) {

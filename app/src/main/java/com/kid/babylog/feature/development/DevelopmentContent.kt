@@ -31,6 +31,8 @@ import com.kid.babylog.core.model.Child
 import com.kid.babylog.core.ui.components.AppCard
 import com.kid.babylog.core.ui.components.AppIcon
 import com.kid.babylog.core.ui.formatAge
+import com.kid.babylog.core.ui.guide.GuideTarget
+import com.kid.babylog.core.ui.guide.guideTarget
 import com.kid.babylog.core.ui.theme.BabyLogTheme
 import com.kid.babylog.core.ui.toLocalDate
 import java.time.LocalDate
@@ -64,7 +66,8 @@ fun DevelopmentContent(
     val overviewList = rememberLazyListState()
     val skillsList = rememberLazyListState()
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        // Гайд справки (ADR-0043): открыт раздел или экран навыков
+        modifier = modifier.fillMaxSize().guideTarget(if (showSkills) GuideTarget.SKILLS else GuideTarget.DEVELOPMENT),
         state = if (showSkills) skillsList else overviewList,
         contentPadding = PaddingValues(start = spacing.l, top = spacing.m, end = spacing.l, bottom = spacing.xl),
         verticalArrangement = Arrangement.spacedBy(spacing.m),
@@ -127,7 +130,7 @@ private fun LazyListScope.overview(
         AppCard(Modifier.fillMaxWidth()) {
             CardColumn {
                 CardTitle(R.drawable.ic_development, "Навыки по возрасту") {
-                    TextButton(onClick = onShowSkills) { Text("подробнее") }
+                    TextButton(onClick = onShowSkills, modifier = Modifier.guideTarget(GuideTarget.SKILLS_BUTTON)) { Text("подробнее") }
                 }
                 MilestoneChart(week.milestones, week.ageDays)
                 Text(windowsSummary(week), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
