@@ -273,7 +273,7 @@ cmd_check() {
     run_gradle "${CHECK_TASKS[@]}"
 }
 
-# Gradle-шаг CI: всё из check и release-сборка — по ней README учит собирать APK (ADR-0011)
+# Gradle-шаг CI: всё из check и release-сборка — по ней docs/development.md учит собирать APK (ADR-0011)
 cmd_build() {
     run_gradle "${CHECK_TASKS[@]}" assembleRelease
 }

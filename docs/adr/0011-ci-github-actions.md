@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `.github/workflows/`, `.github/dependabot.yml`, `scripts/dev.sh` (`rules`, `check`, `build`, `schemas`), CLAUDE.md «Сборка и проверка», README «Разработка»
+- **Затрагивает:** `.github/workflows/`, `.github/dependabot.yml`, `scripts/dev.sh` (`rules`, `check`, `build`, `schemas`), CLAUDE.md «Сборка и проверка», `docs/development.md` «Процесс»
 
 ## Контекст
 

@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-21
-- **Затрагивает:** `core/model/` (`Illness`, `IllnessName`, `Illnesses.kt`), `EventRecord.kt` (`ILLNESS`), `DiaryRepository.startIllness`, `testing/Fakes.kt`, плитка «Здоровье» в `QuickActions`, `IllnessCard`, `feature/illness/`, листы болезни в `feature/editor/`, `NotesFilter.Illnesses`, `DayStats.ill` и полоса болезни в `core/ui/components/chart/`, `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/` (`Illness`, `IllnessName`, `Illnesses.kt`), `EventRecord.kt` (`ILLNESS`), `DiaryRepository.startIllness`, `testing/Fakes.kt`, плитка «Здоровье» в `QuickActions`, `IllnessCard`, `feature/illness/`, листы болезни в `feature/editor/`, `NotesFilter.Illnesses`, `DayStats.ill` и полоса болезни в `core/ui/components/chart/`, `feature/transfer/`, `docs/development.md` «Формат CSV»
 
 ## Контекст
 
