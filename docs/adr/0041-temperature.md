@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-21
-- **Затрагивает:** `core/model/` (`Temperature`, `TemperatureMethod`), `EventRecord.kt` (`TEMPERATURE`), `TemperatureSheet`, `parseTemperature`, сводка в `feature/summary/`, `TemperatureChart`, `ChartColors.temperature`, `feature/transfer/`, README «Формат CSV»
+- **Затрагивает:** `core/model/` (`Temperature`, `TemperatureMethod`), `EventRecord.kt` (`TEMPERATURE`), `TemperatureSheet`, `parseTemperature`, сводка в `feature/summary/`, `TemperatureChart`, `ChartColors.temperature`, `feature/transfer/`, `docs/development.md` «Формат CSV»
 
 ## Контекст
 
