@@ -5,5 +5,5 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.21" apply false
     id("com.google.devtools.ksp") version "2.3.12" apply false
     // Скриншот-тесты на JVM: задачи recordRoborazziDebug / verifyRoborazziDebug (ADR-0013)
-    id("io.github.takahirom.roborazzi") version "1.76.0" apply false
+    id("io.github.takahirom.roborazzi") version "1.77.0" apply false
 }
