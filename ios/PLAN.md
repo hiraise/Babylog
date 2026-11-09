@@ -16,7 +16,10 @@
    write it in the doc comment; if it changes user-visible behaviour or data, stop and ask the owner (ADR).
 4. Done when `scripts/dev.sh ios` and `scripts/dev.sh rules` pass, the owner approved it on the
    simulator (`scripts/dev.sh ios-run`, show via the iOS Simulator panel), the PR is green (`/pr`).
-5. Work in your own worktree (`git worktree add ../kid-ios-<id> -b ios/<id> main`). Sessions marked
+5. **The whole port ships in release 1.11** (owner's decision). Sessions build on each other, so branch
+   from the release branch, not `main`: `git fetch && git worktree add ../kid-ios-<id> -b ios/<id> origin/release/v1.11`,
+   copy `local.properties`; open the PR with `--base release/v1.11`; after approval and green CI merge it
+   into the release branch by `/release` § 4 («Пока PR открыт»). Sessions marked
    parallel touch disjoint folders; the only shared file is the status table below — resolve conflicts there by keeping both rows.
 6. Effort = the session's reasoning effort setting. Size = Android lines to port (main / tests).
 
