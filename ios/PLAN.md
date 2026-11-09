@@ -79,7 +79,10 @@ External TestFlight for the focus group — after S4e and S5a (diary usable, dat
 - `ios/BabyLog.xcodeproj` (synchronized folders), `BabyLogApp`, empty root view, `AppContainer`, `Clock`.
   SPM: GRDB, ZIPFoundation, swift-snapshot-testing (test target only). iOS 17, iPhone only, orientations as Android (not locked).
 - `ios/Version.xcconfig` = `versionName`/`versionCode`; `scripts/dev.sh rules` checks it.
-- Info.plist: `ITSAppUsesNonExemptEncryption = NO`, display name «Дневник малыша», `DEVELOPMENT_TEAM` from S0.
+- Info.plist: `ITSAppUsesNonExemptEncryption = NO`, display name «Дневник малыша».
+- Signing per ADR-0049: `DEVELOPMENT_TEAM` (from S0) in `ios/Signing.xcconfig`, optional untracked
+  `ios/Local.xcconfig` included after it; `.gitignore`: `ios/Local.xcconfig`, `xcuserdata/`, `*.p12`, `*.cer`,
+  `*.mobileprovision`, `*.p8`, `*.xcarchive`. CI and tests build with `CODE_SIGNING_ALLOWED=NO`.
 - Shared resources by reference (not copied): `app/src/main/res/font/*.ttf` (`UIAppFonts`),
   `app/src/main/assets/development/*.json`.
 - `scripts/dev.sh`: `ios` (build + test on pinned simulator), `ios-goldens`, `ios-run`. Pin the Xcode version in one place.
