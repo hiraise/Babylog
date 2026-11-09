@@ -16,7 +16,10 @@
    write it in the doc comment; if it changes user-visible behaviour or data, stop and ask the owner (ADR).
 4. Done when `scripts/dev.sh ios` and `scripts/dev.sh rules` pass, the owner approved it on the
    simulator (`scripts/dev.sh ios-run`, show via the iOS Simulator panel), the PR is green (`/pr`).
-5. Work in your own worktree (`git worktree add ../kid-ios-<id> -b ios/<id> main`). Sessions marked
+5. **The whole port ships in release 1.11** (owner's decision). Sessions build on each other, so branch
+   from the release branch, not `main`: `git fetch && git worktree add ../kid-ios-<id> -b ios/<id> origin/release/v1.11`,
+   copy `local.properties`; open the PR with `--base release/v1.11`; after approval and green CI merge it
+   into the release branch by `/release` § 4 («Пока PR открыт»). Sessions marked
    parallel touch disjoint folders; the only shared file is the status table below — resolve conflicts there by keeping both rows.
 6. Effort = the session's reasoning effort setting. Size = Android lines to port (main / tests).
 
@@ -76,7 +79,10 @@ External TestFlight for the focus group — after S4e and S5a (diary usable, dat
 - `ios/BabyLog.xcodeproj` (synchronized folders), `BabyLogApp`, empty root view, `AppContainer`, `Clock`.
   SPM: GRDB, ZIPFoundation, swift-snapshot-testing (test target only). iOS 17, iPhone only, orientations as Android (not locked).
 - `ios/Version.xcconfig` = `versionName`/`versionCode`; `scripts/dev.sh rules` checks it.
-- Info.plist: `ITSAppUsesNonExemptEncryption = NO`, display name «Дневник малыша», `DEVELOPMENT_TEAM` from S0.
+- Info.plist: `ITSAppUsesNonExemptEncryption = NO`, display name «Дневник малыша».
+- Signing per ADR-0049: `DEVELOPMENT_TEAM` (from S0) in `ios/Signing.xcconfig`, optional untracked
+  `ios/Local.xcconfig` included after it; `.gitignore`: `ios/Local.xcconfig`, `xcuserdata/`, `*.p12`, `*.cer`,
+  `*.mobileprovision`, `*.p8`, `*.xcarchive`. CI and tests build with `CODE_SIGNING_ALLOWED=NO`.
 - Shared resources by reference (not copied): `app/src/main/res/font/*.ttf` (`UIAppFonts`),
   `app/src/main/assets/development/*.json`.
 - `scripts/dev.sh`: `ios` (build + test on pinned simulator), `ios-goldens`, `ios-run`. Pin the Xcode version in one place.
