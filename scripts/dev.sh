@@ -201,6 +201,57 @@ check_adr_rules() {
     return "$failed"
 }
 
+# У каждой строки плана есть ровно один файл ТЗ; статус живёт только в таблице, зависимости — в ней же
+check_ios_sessions() {
+    local plan="$ROOT/ios/PLAN.md" dir="$ROOT/ios/sessions"
+    [[ -f "$plan" && -d "$dir" ]] || {
+        report "Нет ios/PLAN.md или ios/sessions/" "$plan"
+        return 1
+    }
+    local hits="" ids="" id session effort size needs parallel status ignored f dep
+    while IFS='|' read -r ignored id session effort size needs parallel status ignored; do
+        id="$(printf '%s' "$id" | tr -d '[:space:]')"
+        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || continue
+        case " $ids " in
+            *" $id "*) hits+="$id: повторная строка в PLAN.md"$'\n' ;;
+        esac
+        ids+="$id "
+        [[ "$session" == *"](sessions/$id.md)"* ]] ||
+            hits+="$id: ссылка должна вести на sessions/$id.md"$'\n'
+        [[ -f "$dir/$id.md" ]] || hits+="$id: нет sessions/$id.md"$'\n'
+        if [[ -f "$dir/$id.md" ]]; then
+            grep -q "^# $id " "$dir/$id.md" || hits+="$id: заголовок файла не совпадает с ID"$'\n'
+        fi
+        status="$(printf '%s' "$status" | sed 's/^ *//;s/ *$//')"
+        if [[ "$id" == S0 ]]; then
+            [[ "$status" == done || "$status" =~ ^partly\ \(.+\)$ ]] ||
+                hits+="S0: статус должен быть partly (…) или done, сейчас: $status"$'\n'
+        else
+            [[ "$status" == todo || "$status" == wip || "$status" =~ ^done\ \(#[0-9]+\)$ ]] ||
+                hits+="$id: статус должен быть todo, wip или done (#PR), сейчас: $status"$'\n'
+        fi
+    done < "$plan"
+    for f in "$dir"/S*.md; do
+        [[ -f "$f" ]] || continue
+        id="$(basename "$f" .md)"
+        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || { hits+="$f: имя файла не похоже на ID сессии"$'\n'; continue; }
+        case " $ids " in
+            *" $id "*) ;;
+            *) hits+="$id: файла нет в таблице PLAN.md"$'\n' ;;
+        esac
+    done
+    while IFS='|' read -r ignored id session effort size needs parallel status ignored; do
+        id="$(printf '%s' "$id" | tr -d '[:space:]')"
+        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || continue
+        needs="$(printf '%s' "$needs" | sed 's/^ *//;s/ *$//')"
+        [[ "$needs" == "—" || "$needs" == all || "$needs" == "all UI" ]] && continue
+        for dep in ${needs//,/ }; do
+            [[ " $ids " == *" $dep "* ]] || hits+="$id: неизвестная зависимость $dep"$'\n'
+        done
+    done < "$plan"
+    report "Структура iOS-сессий (ios/PLAN.md ↔ ios/sessions/)" "${hits%$'\n'}"
+}
+
 # Документация: каждый ADR есть в индексе, номера не повторяются, относительные ссылки в .md не битые
 check_docs() {
     local adr="$ROOT/docs/adr" failed=0 f link target hits=""
@@ -212,7 +263,7 @@ check_docs() {
     report "Номера ADR повторяются" "$hits" || failed=1
     hits=""
     # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md. Из .claude/ берём только
-    # скиллы проекта: остальное там локальное (настройки, worktree)
+    # совместимые указатели скиллов; канонические .agents/skills входят в общий обход .md
     while IFS= read -r f; do
         while IFS= read -r link; do
             target="${link%%#*}"
@@ -223,6 +274,7 @@ check_docs() {
         ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' \
         \( ! -path '*/.claude/*' -o -path "$ROOT/.claude/skills/*" \))
     report "Битые ссылки в документации" "${hits%$'\n'}" || failed=1
+    check_ios_sessions || failed=1
     check_adr_numbers || failed=1
     return "$failed"
 }
@@ -267,7 +319,7 @@ cmd_rules() {
     return "$failed"
 }
 
-# Проверка, без которой задача не считается выполненной (CLAUDE.md, «Сборка и проверка»)
+# Проверка, без которой задача не считается выполненной (AGENTS.md, «Сборка и проверка»)
 cmd_check() {
     cmd_rules
     run_gradle "${CHECK_TASKS[@]}"
@@ -387,7 +439,7 @@ cmd_stop() {
     "$ADB" -s "$serial" emu kill
 }
 
-# Убирает worktree веток, чей PR уже слит в main (CLAUDE.md, «Ветки и PR»): исходники остаются
+# Убирает worktree веток, чей PR уже слит в main (AGENTS.md, «Ветки и PR»): исходники остаются
 # в истории git, сборку Gradle пересоздаст. Главную папку, текущий worktree и папки
 # с незакоммиченными правками не трогает.
 cmd_cleanup() {

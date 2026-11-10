@@ -2,7 +2,7 @@
 
 - **Статус:** Предложено
 - **Дата:** 2026-11-07
-- **Затрагивает:** `app/build.gradle.kts` (`targetSdk`, `applicationId`, подпись), `.github/workflows/release.yml`, `scripts/dev.sh release`, `.claude/skills/release/`, `fastlane/metadata/`, `PRIVACY.md`, разрешения в `AndroidManifest.xml`, README «Установка на телефон» и «Приватность»
+- **Затрагивает:** `app/build.gradle.kts` (`targetSdk`, `applicationId`, подпись), `.github/workflows/release.yml`, `scripts/dev.sh release`, `.agents/skills/release/`, `fastlane/metadata/`, `PRIVACY.md`, разрешения в `AndroidManifest.xml`, README «Установка на телефон» и «Приватность»
 - **Заменяет:** пункт [ADR-0006](0006-tech-stack-agp9.md) о targetSdk 34; альтернативу «Google Play и Play App Signing» в [ADR-0012](0012-release-signing.md)
 
 ## Контекст
