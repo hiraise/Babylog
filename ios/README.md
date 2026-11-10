@@ -9,5 +9,5 @@
 Агент запускает ровно одну сессию скиллом `ios-port <ID>` из [.agents/skills/](../.agents/skills/).
 Эти файлы по-английски по решению владельца — экономит токены сессий.
 
-Сборка и отладка появятся в [docs/development.md](../docs/development.md) вместе с каркасом
-(сессия S1a). Кнопок в шторке ([ADR-0042](../docs/adr/0042-shade-notification.md)) в версии для iOS нет.
+Сборка, запуск и эталоны описаны в [docs/development.md](../docs/development.md), раздел «iOS».
+Кнопок в шторке ([ADR-0042](../docs/adr/0042-shade-notification.md)) в версии для iOS нет.

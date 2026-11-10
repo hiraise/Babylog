@@ -52,6 +52,30 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 File → Open → папка проекта, затем Run → Debug 'app'. Нужна Android Studio
 2026.2 или новее: проект собирается на AGP 9.4.
 
+## iOS
+
+Для сборки нужны macOS и версия Xcode, закреплённая в `scripts/dev.sh`; скрипт сам выбирает её
+в `/Applications`. Также нужен симулятор `iPhone 17` с iOS той же версии. Если платформа не
+установлена, скачайте её командой `xcodebuild -downloadPlatform iOS`.
+
+| Команда | Что делает |
+| --- | --- |
+| `scripts/dev.sh ios` | собрать приложение и запустить unit- и скриншот-тесты без подписи |
+| `scripts/dev.sh ios-run` | собрать, установить и открыть приложение на закреплённом симуляторе |
+| `scripts/dev.sh ios-goldens` | перезаписать эталоны скриншот-тестов после намеренной правки UI |
+
+Проект — `ios/BabyLog.xcodeproj`; новые Swift-файлы в синхронизируемых папках `BabyLog` и
+`BabyLogTests` попадают в сборку автоматически. Шрифты и JSON раздела «Развитие» подключены
+прямо из Android-ресурсов, копировать их не нужно. Версия в `ios/Version.xcconfig` сверяется
+с Android командой `scripts/dev.sh rules`. Значок iOS генерируется из Android-вектора командой
+`python3 scripts/ios_launcher_icon.py`; для неё нужен `rsvg-convert` (`brew install librsvg`).
+
+Подпись Xcode автоматическая, Team ID хранится в `ios/Signing.xcconfig`. Свою команду и другие
+локальные параметры задайте в необязательном `ios/Local.xcconfig` — он подключён после общей
+конфигурации и игнорируется git. Тесты и CI собираются с `CODE_SIGNING_ALLOWED=NO`.
+Workflow `iOS` всегда проходит как обязательная проверка, но пропускает сборку, если не менялись
+`ios/`, общие ресурсы, схемы, fixtures или `scripts/dev.sh`.
+
 ## Технологии
 
 Kotlin, Jetpack Compose (Material 3), Room, минимум зависимостей.
