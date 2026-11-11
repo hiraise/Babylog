@@ -35,3 +35,12 @@ keystore.properties
 .claude/*
 !.claude/skills/
 !.claude/agents/
+
+# iOS: личная подпись, настройки Xcode, сертификаты и архивы (ADR-0049)
+ios/Local.xcconfig
+xcuserdata/
+*.p12
+*.cer
+*.mobileprovision
+*.p8
+*.xcarchive

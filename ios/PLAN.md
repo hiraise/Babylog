@@ -14,7 +14,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | ID | Session | Effort | Size | Needs | Parallel with | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | S0 | [Owner prep](sessions/S0.md) | — | — | — | — | done |
-| S1a | [Skeleton, tooling, CI](sessions/S1a.md) | high | — | S0 | — | todo |
+| S1a | [Skeleton, tooling, CI](sessions/S1a.md) | high | — | S0 | — | done (#64) |
 | S1b | [Theme and core components](sessions/S1b.md) | medium | 3.9k / 0.6k | S1a | S2a | todo |
 | S2a | [Model, GRDB schema, repository](sessions/S2a.md) | high | 1.9k / 0.8k | S1a | S1b | todo |
 | S2b | [Timers, stores, backups, privacy](sessions/S2b.md) | high | incl. above | S2a | S3, S6a | todo |

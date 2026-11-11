@@ -29,27 +29,15 @@
 9. Do not launch subagents for routine exploration: the session specification is the file map.
    Any required content verification, including `tips-verifier`, follows the ADRs instead.
 
-## Architecture (S1a turns this into ADR-0051; then this section becomes a link)
+## Architecture
 
-- Layout: `ios/BabyLog/{App,Core/{Model,Data,UI},Feature/<Name>}`, tests `ios/BabyLogTests/` mirror it.
-- Screen state: `@MainActor @Observable final class <Name>Model` = Android ViewModel; views get the model,
-  hold no logic. No Combine. Async work — `async/await`; Room `Flow` → GRDB `ValueObservation` as `AsyncSequence`.
-- DI: `AppContainer` (as `AppContainer.kt`) built in `BabyLogApp`, passed via `@Environment`.
-  Tests build it on an in-memory `DatabaseQueue`; fakes mirror `testing/Fakes.kt`.
-- Time: `Clock` protocol (as `core/ui/Clock.kt`), injected; stored values — epoch millis `Int64` like Android;
-  `Calendar(identifier: .gregorian)`, `ru_RU`, Monday first, `TimeZone.current`.
-- Text: Russian strings inline in Swift, as in Kotlin (no `.xcstrings`); plurals and `bySex` — ported functions from `Format.kt`.
-- Sheets: `AppSheet` = SwiftUI `.sheet` + `presentationDetents` with theme styling (ADR-0018).
-  Bottom bar — own component as Android (ADR-0035), not `TabView`, so the design matches.
-- Tests: Swift Testing for logic and models; swift-snapshot-testing for views, light + dark, on one pinned
-  simulator (`iPhone 17`, the iOS of the pinned Xcode), fixed `ru_RU`, the time zone the Android tests use, fixed `Clock`.
-  Interaction logic lives in models and is unit-tested; XCUITest only for help guides (S9b).
+See [ADR-0051](../docs/adr/0051-ios-architecture.md).
 
 ## Common ADRs
 
 - [ADR-0049](../docs/adr/0049-ios-swiftui.md): stack, shared resources, parity.
 - [ADR-0050](../docs/adr/0050-ios-local-data.md): storage.
-- ADR-0051 after S1a: iOS architecture.
+- [ADR-0051](../docs/adr/0051-ios-architecture.md): iOS architecture.
 
 ## Out of scope
 
