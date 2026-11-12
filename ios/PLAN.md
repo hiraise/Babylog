@@ -16,7 +16,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S0 | [Owner prep](sessions/S0.md) | — | — | — | — | done |
 | S1a | [Skeleton, tooling, CI](sessions/S1a.md) | high | — | S0 | — | done (#64) |
 | S1b | [Theme and core components](sessions/S1b.md) | medium | 3.9k / 0.6k | S1a | S2a | done (#65) |
-| S2a | [Model, GRDB schema, repository](sessions/S2a.md) | high | 1.9k / 0.8k | S1a | S1b | todo |
+| S2a | [Model, GRDB schema, repository](sessions/S2a.md) | high | 1.9k / 0.8k | S1a | S1b | done (#67) |
 | S2b | [Timers, stores, backups, privacy](sessions/S2b.md) | high | incl. above | S2a | S3, S6a | todo |
 | S3 | [Export / import, shared fixtures](sessions/S3.md) | high | 0.7k / 0.9k | S2a | S2b, S6a | todo |
 | S4a | [Main shell, child header, menu](sessions/S4a.md) | high | 1.4k / 0.7k | S1b, S2b, S3 | S6a, S7a | todo |
