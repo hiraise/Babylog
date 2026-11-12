@@ -1,15 +1,5 @@
 import SwiftUI
 
-enum DarkPalette: String, CaseIterable {
-    case dusk
-    case nightlight
-    case sage
-    case powder
-    case classic
-
-    static let defaultPalette: DarkPalette = .classic
-}
-
 private struct Lch {
     let l: Double
     let c: Double

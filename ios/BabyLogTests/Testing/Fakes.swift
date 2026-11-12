@@ -372,24 +372,13 @@ private actor FakePhotoCounts {
 
 /** Сообщение о восстановлении базы в памяти (ADR-0033). */
 final class FakeRecoveryNotices: RecoveryNotices, @unchecked Sendable {
-    private let lock = NSLock()
-    private var recovery: DatabaseRecovery?
-
-    var pending: DatabaseRecovery? {
-        lock.lock()
-        defer { lock.unlock() }
-        return recovery
-    }
+    let pending = StoreState<DatabaseRecovery?>(nil)
 
     func report(_ recovery: DatabaseRecovery) {
-        lock.lock()
-        self.recovery = recovery
-        lock.unlock()
+        pending.set(recovery)
     }
 
     func dismiss() {
-        lock.lock()
-        recovery = nil
-        lock.unlock()
+        pending.set(nil)
     }
 }

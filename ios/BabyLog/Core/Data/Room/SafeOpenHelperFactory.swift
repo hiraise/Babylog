@@ -1,7 +1,7 @@
 import Foundation
 import GRDB
 
-/** До первого открытия делает снимок; при `SQLITE_CORRUPT` восстанавливает копию, не удаляя дневник. */
+/** До первого открытия делает снимок; при `SQLITE_CORRUPT`/`SQLITE_NOTADB` восстанавливает копию, не удаляя дневник. */
 final class SafeOpenHelperFactory: @unchecked Sendable {
     private let backups: DatabaseBackups
     private let background: DispatchQueue
@@ -27,7 +27,8 @@ final class SafeOpenHelperFactory: @unchecked Sendable {
     func open<T>(_ operation: () throws -> T) throws -> T {
         do {
             return try operation()
-        } catch let error as DatabaseError where error.resultCode.primaryResultCode == .SQLITE_CORRUPT {
+        } catch let error as DatabaseError where error.resultCode.primaryResultCode == .SQLITE_CORRUPT
+            || error.resultCode.primaryResultCode == .SQLITE_NOTADB {
             try backups.recover()
             return try operation()
         }
