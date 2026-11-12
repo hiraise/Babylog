@@ -128,6 +128,13 @@ baby-diary-2026-10-22.zip
 - Фото больше 1,2 МБ, не JPEG или не найденное в архиве не загружается, запись импортируется без него.
   Архив, который не дочитался (скачан не до конца), не меняет дневник — импорт сообщит, что он повреждён.
 
+Общие файлы совместимости Android/iOS — `fixtures/export/sample.csv` и `sample.zip`. Тест
+`ExportFixturesTest` собирает их из фиксированного дневника в `app/build/export-fixtures/` и сравнивает
+с эталонами: CSV побайтово, ZIP — по именам, содержимому и способу сжатия записей. После намеренного
+изменения формата эталоны обновляет команда
+`BABYLOG_UPDATE_EXPORT_FIXTURES=1 ./gradlew :app:testDebugUnitTest --tests "com.kid.babylog.feature.transfer.ExportFixturesTest"`;
+изменённые файлы фикстур нужно закоммитить.
+
 ### Формат CSV
 
 Решение — [ADR-0009](adr/0009-csv-with-children.md).

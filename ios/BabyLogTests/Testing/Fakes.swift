@@ -370,6 +370,40 @@ private actor FakePhotoCounts {
     }
 }
 
+/** «Файлы» по URL в памяти; `opened` — сколько раз файл открывали на чтение. */
+final class FakeDocumentStore: DocumentStore, @unchecked Sendable {
+    var files: [URL: Data]
+    private(set) var opened = 0
+    private let directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent("BabyLogDocuments-\(UUID().uuidString)", isDirectory: true)
+
+    init(files: [URL: Data] = [:]) {
+        self.files = files
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    deinit {
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    func read<T>(_ url: URL, block: (URL) throws -> T) throws -> T {
+        guard let bytes = files[url] else { throw TransferError("Нет файла \(url.lastPathComponent)") }
+        opened += 1
+        let temporary = directory.appendingPathComponent(UUID().uuidString)
+        try bytes.write(to: temporary)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        return try block(temporary)
+    }
+
+    func write<T>(_ url: URL, block: (URL) async throws -> T) async throws -> T {
+        let temporary = directory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        let result = try await block(temporary)
+        files[url] = try Data(contentsOf: temporary)
+        return result
+    }
+}
+
 /** Сообщение о восстановлении базы в памяти (ADR-0033). */
 final class FakeRecoveryNotices: RecoveryNotices, @unchecked Sendable {
     let pending = StoreState<DatabaseRecovery?>(nil)
