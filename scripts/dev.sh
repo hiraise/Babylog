@@ -12,6 +12,15 @@ ACTIVITY="com.kid.babylog.MainActivity"
 APK="$ROOT/app/build/outputs/apk/debug/app-debug.apk"
 DB_NAME="babylog.db"
 
+# Версия Xcode задаёт и SDK, и runtime iOS для всех локальных и CI-проверок (ADR-0049, ADR-0051).
+IOS_XCODE_VERSION="27.2"
+IOS_SIMULATOR="iPhone 17"
+IOS_PROJECT="$ROOT/ios/BabyLog.xcodeproj"
+IOS_DERIVED_DATA="$ROOT/ios/build/DerivedData"
+IOS_RESULT_BUNDLE="$ROOT/ios/build/Test.xcresult"
+IOS_PACKAGE_CACHE="$ROOT/ios/build/PackageCache"
+IOS_SOURCE_PACKAGES="$ROOT/ios/build/SourcePackages"
+
 SDK="$(sed -n 's/^sdk\.dir=//p' "$ROOT/local.properties" 2>/dev/null || true)"
 SDK="${SDK:-${ANDROID_HOME:-$HOME/Library/Android/sdk}}"
 ADB="$SDK/platform-tools/adb"
@@ -77,6 +86,112 @@ ensure_device() {
     wait_device
 }
 
+select_ios_xcode() {
+    command -v xcodebuild >/dev/null || {
+        echo "Для iOS-сборки нужен Xcode $IOS_XCODE_VERSION на macOS" >&2
+        return 1
+    }
+    local current candidate
+    current="$(xcodebuild -version 2>/dev/null | sed -n '1p' || true)"
+    [[ "$current" == "Xcode $IOS_XCODE_VERSION" ]] && return
+    candidate="/Applications/Xcode_$IOS_XCODE_VERSION.app/Contents/Developer"
+    if [[ ! -d "$candidate" ]]; then
+        echo "Нужен Xcode $IOS_XCODE_VERSION: $candidate" >&2
+        return 1
+    fi
+    export DEVELOPER_DIR="$candidate"
+    current="$(xcodebuild -version | sed -n '1p')"
+    if [[ "$current" != "Xcode $IOS_XCODE_VERSION" ]]; then
+        echo "В $candidate найден $current вместо Xcode $IOS_XCODE_VERSION" >&2
+        return 1
+    fi
+}
+
+# Только runtime, соответствующий закреплённому Xcode: на runner могут быть одинаковые устройства с разной iOS.
+ios_simulator_id() {
+    local device
+    device="$(xcrun simctl list devices available | awk -v runtime="-- iOS $IOS_XCODE_VERSION --" -v name="    $IOS_SIMULATOR (" '
+        $0 == runtime { wanted = 1; next }
+        /^-- / { wanted = 0 }
+        wanted && index($0, name) == 1 {
+            line = $0
+            sub(/^    [^(]*\(/, "", line)
+            sub(/\).*$/, "", line)
+            print line
+            exit
+        }
+    ')"
+    if [[ -z "$device" ]]; then
+        local runtime="com.apple.CoreSimulator.SimRuntime.iOS-${IOS_XCODE_VERSION//./-}"
+        local device_type="com.apple.CoreSimulator.SimDeviceType.${IOS_SIMULATOR// /-}"
+        if ! device="$(xcrun simctl create "$IOS_SIMULATOR" "$device_type" "$runtime")"; then
+            echo "Нужен $IOS_SIMULATOR с iOS $IOS_XCODE_VERSION. Установите платформу: xcodebuild -downloadPlatform iOS" >&2
+            return 1
+        fi
+    fi
+    printf '%s\n' "$device"
+}
+
+cmd_ios() {
+    select_ios_xcode
+    local device
+    device="$(ios_simulator_id)"
+    rm -rf "$IOS_RESULT_BUNDLE"
+    mkdir -p "$ROOT/ios/build"
+    xcodebuild -project "$IOS_PROJECT" -scheme BabyLog \
+        -destination "platform=iOS Simulator,id=$device" \
+        -derivedDataPath "$IOS_DERIVED_DATA" \
+        -packageCachePath "$IOS_PACKAGE_CACHE" \
+        -clonedSourcePackagesDirPath "$IOS_SOURCE_PACKAGES" \
+        -resultBundlePath "$IOS_RESULT_BUNDLE" \
+        CODE_SIGNING_ALLOWED=NO build test
+}
+
+cmd_ios_goldens() {
+    # Библиотека намеренно падает после записи: второй прогон уже проверяет эталоны и остальные тесты.
+    export SNAPSHOT_TESTING_RECORD=all
+    cmd_ios || true
+    echo "Проверяю записанные эталоны обычным запуском"
+    export SNAPSHOT_TESTING_RECORD=never
+    cmd_ios
+    (cd "$ROOT" && git status --short -- ios/BabyLogTests)
+}
+
+cmd_ios_run() {
+    select_ios_xcode
+    local device app
+    device="$(ios_simulator_id)"
+    xcrun simctl boot "$device" 2>/dev/null || true
+    xcrun simctl bootstatus "$device" -b
+    xcodebuild -project "$IOS_PROJECT" -scheme BabyLog \
+        -destination "platform=iOS Simulator,id=$device" \
+        -derivedDataPath "$IOS_DERIVED_DATA" \
+        -packageCachePath "$IOS_PACKAGE_CACHE" \
+        -clonedSourcePackagesDirPath "$IOS_SOURCE_PACKAGES" \
+        CODE_SIGNING_ALLOWED=NO build
+    app="$IOS_DERIVED_DATA/Build/Products/Debug-iphonesimulator/BabyLog.app"
+    xcrun simctl install "$device" "$app"
+    xcrun simctl launch --terminate-running-process "$device" com.hiraise.babylog
+}
+
+check_ios_version() {
+    local file="$ROOT/ios/Version.xcconfig"
+    [[ -f "$file" ]] || {
+        report "ADR-0049: нет ios/Version.xcconfig" "$file"
+        return 1
+    }
+    local expected_name expected_code actual_name actual_code hits=""
+    expected_name="$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle.kts")"
+    expected_code="$(sed -n 's/^ *versionCode = \([0-9][0-9]*\).*$/\1/p' "$ROOT/app/build.gradle.kts")"
+    actual_name="$(sed -n 's/^ *MARKETING_VERSION = //p' "$file")"
+    actual_code="$(sed -n 's/^ *CURRENT_PROJECT_VERSION = //p' "$file")"
+    [[ "$actual_name" == "$expected_name" ]] ||
+        hits+="MARKETING_VERSION=$actual_name, Android versionName=$expected_name"$'\n'
+    [[ "$actual_code" == "$expected_code" ]] ||
+        hits+="CURRENT_PROJECT_VERSION=$actual_code, Android versionCode=$expected_code"$'\n'
+    report "ADR-0049: версии iOS и Android должны совпадать" "${hits%$'\n'}"
+}
+
 cmd_emulator() {
     ensure_device
     echo "Устройство готово: $ANDROID_SERIAL"
@@ -109,10 +224,26 @@ TOKEN_MESSAGES=(
     "отступ в многострочном вызове — из BabyLogTheme.spacing"
 )
 
+SWIFT_TOKEN_PATTERNS=(
+    '(Color|UIColor)\((0x|\.sRGB|\.displayP3|red:|green:)|Color\.(black|white|gray|red|orange|yellow|green|blue|purple|pink|brown|mint|teal|cyan|indigo)'
+    '(^|[^A-Za-z0-9_])(Font|UIFont)\(|Font\.custom|\.font\(\.system'
+    '\.(padding|frame)\([^)]*[1-9][0-9]*(\.[0-9]+)?'
+    '(^|[^A-Za-z0-9_])(VStack|HStack|ZStack|LazyVStack|LazyHStack|Grid)\([^)]*spacing:[[:space:]]*[1-9]'
+    'EdgeInsets\([^)]*[1-9][0-9]*'
+)
+SWIFT_TOKEN_MESSAGES=(
+    "цвет — только из babyLogTheme.colors"
+    "шрифт — только из babyLogTheme.typography"
+    "размер элемента — из BabyLogSizes"
+    "расстояние — из babyLogTheme.spacing"
+    "отступ содержимого — из babyLogTheme.spacing"
+)
+
 # Ищет литералы оформления вне темы; строки-комментарии пропускает.
-# Аргумент — каталог исходников (по умолчанию app/src/main/java): так проверку можно прогнать на копии.
+# Аргумент — каталог Android-исходников (по умолчанию app/src/main/java): так проверку можно прогнать на копии.
 check_design_tokens() {
     local src="${1:-$ROOT/app/src/main/java}"
+    local swift="$ROOT/ios/BabyLog"
     local failed=0 i hits rc
     # BSD grep на несуществующий каталог молча отвечает «не нашлось» — проверяем сами
     if [[ ! -d "$src" ]]; then
@@ -135,10 +266,37 @@ check_design_tokens() {
             failed=1
         fi
     done
+    if [[ -d "$swift" ]]; then
+        for i in "${!SWIFT_TOKEN_PATTERNS[@]}"; do
+            rc=0
+            hits="$(grep -rnE --include='*.swift' -- "${SWIFT_TOKEN_PATTERNS[$i]}" "$swift")" || rc=$?
+            if [[ "$rc" -gt 1 ]]; then
+                echo "Проверка дизайн-токенов не смогла прочитать $swift (grep вернул $rc)" >&2
+                return "$rc"
+            fi
+            hits="$(grep -v '/Core/UI/Theme/' <<<"$hits" |
+                grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)"
+            if [[ -n "$hits" ]]; then
+                echo "ADR-0010: ${SWIFT_TOKEN_MESSAGES[$i]}:" >&2
+                sed "s|^$swift/|  |" <<<"$hits" >&2
+                failed=1
+            fi
+        done
+    fi
     if [[ "$failed" -ne 0 ]]; then
-        echo "Оформление задаёт только тема core/ui/theme/ — см. docs/adr/0010-design-system.md" >&2
+        echo "Оформление задаёт только тема — см. docs/adr/0010-design-system.md" >&2
         return 1
     fi
+}
+
+check_ios_icons() {
+    # Генерация AppIcon использует macOS Quick Look; в Ubuntu Android-job проверку делает iOS-job на macOS.
+    [[ "$(uname)" == Darwin ]] || return 0
+    local hits
+    hits="$("$ROOT/scripts/ios-icons.sh" --check 2>&1)" || {
+        report "ADR-0049: SVG и AppIcon должны быть свежими (scripts/ios-icons.sh)" "$hits"
+        return 1
+    }
 }
 
 # Печатает нарушения правила (пути — от корня проекта); код 1, если нарушения есть
@@ -314,6 +472,8 @@ cmd_rules() {
     local failed=0
     check_design_tokens || failed=1
     check_adr_rules || failed=1
+    check_ios_icons || failed=1
+    check_ios_version || failed=1
     check_docs || failed=1
     [[ "$failed" -eq 0 ]] && echo "Правила проекта соблюдены"
     return "$failed"
@@ -483,10 +643,15 @@ usage() {
   screenshot  снимок экрана в build/screenshots/
   stop        выключить эмулятор
   cleanup     убрать worktree веток, чей PR уже слит в main
+  ios         собрать iOS-приложение и запустить тесты на закреплённом симуляторе без подписи
+  ios-goldens перезаписать эталоны iOS-скриншотов (ios/BabyLogTests/) после намеренной правки UI
+  ios-run     собрать, установить и открыть iOS-приложение на закреплённом симуляторе
 EOF
 }
 
 case "${1:-}" in
-    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | seed | screenshot | stop | cleanup) "cmd_$1" "${@:2}" ;;
+    run | check | rules | goldens | build | schemas | release | emulator | logcat | db | seed | screenshot | stop | cleanup | ios) "cmd_$1" "${@:2}" ;;
+    ios-goldens) cmd_ios_goldens "${@:2}" ;;
+    ios-run) cmd_ios_run "${@:2}" ;;
     *) usage ;;
 esac
