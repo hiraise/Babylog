@@ -44,7 +44,6 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 | `scripts/dev.sh seed`              | тестовый дневник «Сони» за все дни с рождения — в Download устройства; дальше ⋮ → «Импорт из файла» |
 | `scripts/dev.sh screenshot`        | скриншот в `build/screenshots/`                                         |
 | `scripts/dev.sh emulator` / `stop` | включить / выключить эмулятор                                           |
-| `scripts/dev.sh cleanup`           | убрать папки `git worktree` веток, чей PR уже слит в `main`             |
 
 На телефон по USB: `ANDROID_SERIAL=<серийник из adb devices> scripts/dev.sh run`.
 
