@@ -224,10 +224,26 @@ TOKEN_MESSAGES=(
     "отступ в многострочном вызове — из BabyLogTheme.spacing"
 )
 
+SWIFT_TOKEN_PATTERNS=(
+    '(Color|UIColor)\((0x|\.sRGB|\.displayP3|red:|green:)|Color\.(black|white|gray|red|orange|yellow|green|blue|purple|pink|brown|mint|teal|cyan|indigo)'
+    '(^|[^A-Za-z0-9_])(Font|UIFont)\(|Font\.custom|\.font\(\.system'
+    '\.(padding|frame)\([^)]*[1-9][0-9]*(\.[0-9]+)?'
+    '(^|[^A-Za-z0-9_])(VStack|HStack|ZStack|LazyVStack|LazyHStack|Grid)\([^)]*spacing:[[:space:]]*[1-9]'
+    'EdgeInsets\([^)]*[1-9][0-9]*'
+)
+SWIFT_TOKEN_MESSAGES=(
+    "цвет — только из babyLogTheme.colors"
+    "шрифт — только из babyLogTheme.typography"
+    "размер элемента — из BabyLogSizes"
+    "расстояние — из babyLogTheme.spacing"
+    "отступ содержимого — из babyLogTheme.spacing"
+)
+
 # Ищет литералы оформления вне темы; строки-комментарии пропускает.
-# Аргумент — каталог исходников (по умолчанию app/src/main/java): так проверку можно прогнать на копии.
+# Аргумент — каталог Android-исходников (по умолчанию app/src/main/java): так проверку можно прогнать на копии.
 check_design_tokens() {
     local src="${1:-$ROOT/app/src/main/java}"
+    local swift="$ROOT/ios/BabyLog"
     local failed=0 i hits rc
     # BSD grep на несуществующий каталог молча отвечает «не нашлось» — проверяем сами
     if [[ ! -d "$src" ]]; then
@@ -250,10 +266,37 @@ check_design_tokens() {
             failed=1
         fi
     done
+    if [[ -d "$swift" ]]; then
+        for i in "${!SWIFT_TOKEN_PATTERNS[@]}"; do
+            rc=0
+            hits="$(grep -rnE --include='*.swift' -- "${SWIFT_TOKEN_PATTERNS[$i]}" "$swift")" || rc=$?
+            if [[ "$rc" -gt 1 ]]; then
+                echo "Проверка дизайн-токенов не смогла прочитать $swift (grep вернул $rc)" >&2
+                return "$rc"
+            fi
+            hits="$(grep -v '/Core/UI/Theme/' <<<"$hits" |
+                grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' || true)"
+            if [[ -n "$hits" ]]; then
+                echo "ADR-0010: ${SWIFT_TOKEN_MESSAGES[$i]}:" >&2
+                sed "s|^$swift/|  |" <<<"$hits" >&2
+                failed=1
+            fi
+        done
+    fi
     if [[ "$failed" -ne 0 ]]; then
-        echo "Оформление задаёт только тема core/ui/theme/ — см. docs/adr/0010-design-system.md" >&2
+        echo "Оформление задаёт только тема — см. docs/adr/0010-design-system.md" >&2
         return 1
     fi
+}
+
+check_ios_icons() {
+    # Генерация AppIcon использует macOS Quick Look; в Ubuntu Android-job проверку делает iOS-job на macOS.
+    [[ "$(uname)" == Darwin ]] || return 0
+    local hits
+    hits="$("$ROOT/scripts/ios-icons.sh" --check 2>&1)" || {
+        report "ADR-0049: SVG и AppIcon должны быть свежими (scripts/ios-icons.sh)" "$hits"
+        return 1
+    }
 }
 
 # Печатает нарушения правила (пути — от корня проекта); код 1, если нарушения есть
@@ -429,6 +472,7 @@ cmd_rules() {
     local failed=0
     check_design_tokens || failed=1
     check_adr_rules || failed=1
+    check_ios_icons || failed=1
     check_ios_version || failed=1
     check_docs || failed=1
     [[ "$failed" -eq 0 ]] && echo "Правила проекта соблюдены"
