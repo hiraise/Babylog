@@ -12,7 +12,7 @@ Session ID: `$ARGUMENTS`.
 If the ID is missing, is not exactly one ID, is `S0`, or has no matching file, stop and ask the owner for a valid implementation session ID.
 
 1. Read `ios/AGENTS.md` and only `ios/sessions/<ID>.md`. Do not read `CLAUDE.md`, other session files, or explore the whole repository.
-2. Work in a dedicated clean worktree created from the base specified in `ios/AGENTS.md`. Never use another session's dirty worktree.
+2. Work sequentially in the clean main checkout, on a branch created from the base in `ios/AGENTS.md`. Never discard another task's uncommitted changes and do not create worktrees.
 3. In `ios/PLAN.md`, read only the status table and roadmap. Check the session's `Needs`; stop and report a blocker if a required session is not `done`.
 4. Read the common ADRs named in `ios/AGENTS.md`, the additional ADRs in the session file, and only the Android sources and tests named there.
 5. Implement the complete session, including its tests and documentation. Keep Android as the behaviour reference and preserve the mirrored file layout.
