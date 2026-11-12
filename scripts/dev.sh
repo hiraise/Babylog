@@ -290,6 +290,8 @@ check_design_tokens() {
 }
 
 check_ios_icons() {
+    # Генерация AppIcon использует macOS Quick Look; в Ubuntu Android-job проверку делает iOS-job на macOS.
+    [[ "$(uname)" == Darwin ]] || return 0
     local hits
     hits="$("$ROOT/scripts/ios-icons.sh" --check 2>&1)" || {
         report "ADR-0049: SVG и AppIcon должны быть свежими (scripts/ios-icons.sh)" "$hits"

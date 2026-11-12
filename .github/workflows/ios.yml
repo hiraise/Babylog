@@ -46,6 +46,10 @@ jobs:
           fi
           echo "changed=$changed" >>"$GITHUB_OUTPUT"
 
+      - name: Правила, включая свежесть сгенерированных иконок
+        if: steps.changes.outputs.changed == 'true'
+        run: scripts/dev.sh rules
+
       - name: Сборка и тесты на закреплённом симуляторе
         if: steps.changes.outputs.changed == 'true'
         run: scripts/dev.sh ios
