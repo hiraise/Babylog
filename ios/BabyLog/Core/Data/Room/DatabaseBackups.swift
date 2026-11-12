@@ -1,19 +1,6 @@
 import Foundation
 import GRDB
 
-struct DatabaseRecovery: Hashable, Sendable {
-    var at: Int64
-    var backupTime: Int64?
-}
-
-protocol RecoveryNotices: Sendable {
-    func report(_ recovery: DatabaseRecovery)
-}
-
-struct IgnoredRecoveryNotices: RecoveryNotices {
-    func report(_ recovery: DatabaseRecovery) {}
-}
-
 /** Проверенная копия базы `file`, снятая в момент `time`. */
 struct DatabaseBackup: Hashable, Sendable {
     var file: URL

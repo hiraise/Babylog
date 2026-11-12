@@ -21,7 +21,11 @@ final class AppDatabase: @unchecked Sendable {
     ) throws -> AppDatabase {
         let url = databaseURL ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent(name)
-        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let root = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let photos = root.appendingPathComponent("photos", isDirectory: true)
+        try FileManager.default.createDirectory(at: photos, withIntermediateDirectories: true)
+        excludeFromBackup(photos)
         let backups = DatabaseBackups(database: url, notices: notices, now: now)
         let opener = SafeOpenHelperFactory(backups: backups, background: background)
         opener.beforeOpen()
