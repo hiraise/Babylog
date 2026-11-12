@@ -19,7 +19,7 @@
 5. Behaviour equals the Android code. If identical behaviour is impossible, keep the closest behaviour
    and document why. If user-visible behaviour or data changes, stop and ask the owner about an ADR.
 6. Done when `scripts/dev.sh ios` and `scripts/dev.sh rules` pass, the owner approved the build on
-   the simulator (`scripts/dev.sh ios-run`, shown through the iOS Simulator panel), and the PR is green.
+   the simulator (`scripts/dev.sh ios-run`, shown in Device Hub on the pinned Xcode), and the PR is green.
    Use the `pr` skill; open the PR with `--base release/v1.11` only after owner approval.
 7. The whole port ships in release 1.11. Branch from the release branch, not `main`. After approval
    and green CI, merge into the release branch only through the `release` skill, section «Пока PR открыт»,
