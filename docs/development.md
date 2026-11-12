@@ -67,8 +67,9 @@ File → Open → папка проекта, затем Run → Debug 'app'. Н�
 Проект — `ios/BabyLog.xcodeproj`; новые Swift-файлы в синхронизируемых папках `BabyLog` и
 `BabyLogTests` попадают в сборку автоматически. Шрифты и JSON раздела «Развитие» подключены
 прямо из Android-ресурсов, копировать их не нужно. Версия в `ios/Version.xcconfig` сверяется
-с Android командой `scripts/dev.sh rules`. Значок iOS генерируется из Android-вектора командой
-`python3 scripts/ios_launcher_icon.py`; для неё нужен `rsvg-convert` (`brew install librsvg`).
+с Android командой `scripts/dev.sh rules`. Все векторные иконки, launch screen и значок iOS генерируются
+из Android-ресурсов командой `scripts/ios-icons.sh`; дополнительных зависимостей, кроме macOS и Python 3,
+не нужно. `rules` проверяет, что сгенерированные файлы не устарели.
 
 Подпись Xcode автоматическая, Team ID хранится в `ios/Signing.xcconfig`. Свою команду и другие
 локальные параметры задайте в необязательном `ios/Local.xcconfig` — он подключён после общей

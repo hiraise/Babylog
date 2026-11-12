@@ -38,9 +38,9 @@ jobs:
               git cat-file -e "$BASE_SHA^{commit}" 2>/dev/null; then
             if git diff --quiet "$BASE_SHA" "$HEAD_SHA" -- \
                 ios app/src/main/res/font app/src/main/assets/development \
-                app/src/main/res/drawable/ic_launcher_foreground.xml \
-                app/src/main/res/values/colors.xml \
-                app/schemas fixtures scripts/dev.sh scripts/ios_launcher_icon.py; then
+                app/src/main/res/drawable \
+                app/src/main/res/values/colors.xml app/src/main/res/values-night/colors.xml \
+                app/schemas fixtures scripts/dev.sh scripts/ios-icons.sh scripts/ios-icons.py; then
               changed=false
             fi
           fi
