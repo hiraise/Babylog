@@ -19,7 +19,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S2a | [Model, GRDB schema, repository](sessions/S2a.md) | high | 1.9k / 0.8k | S1a | S1b | done (#67) |
 | S2b | [Timers, stores, backups, privacy](sessions/S2b.md) | high | incl. above | S2a | S3, S6a | done (#68) |
 | S3 | [Export / import, shared fixtures](sessions/S3.md) | high | 0.7k / 0.9k | S2a | S2b, S6a | done (#69) |
-| S4a | [Main shell, child header, menu](sessions/S4a.md) | high | 1.4k / 0.7k | S1b, S2b, S3 | S6a, S7a | wip |
+| S4a | [Main shell, child header, menu](sessions/S4a.md) | high | 1.4k / 0.7k | S1b, S2b, S3 | S6a, S7a | done (#70) |
 | S4b | [Today: tiles, timers, day summary](sessions/S4b.md) | high | 1.2k / 0.9k | S4a | S6a, S7a | todo |
 | S4c | [Editors part 1 (timer sheets)](sessions/S4c.md) | medium | 1.3k / 0.5k | S4b | S6b | todo |
 | S4d | [Editors part 2 (measures, notes)](sessions/S4d.md) | medium | 1.2k / 0.4k | S4c | S6b | todo |
