@@ -26,10 +26,11 @@ func assertComponentSnapshot<Content: View>(
     filePath: StaticString = #filePath,
     testName: String = #function,
     line: UInt = #line,
+    clock: any Clock = TestClock(),
     @ViewBuilder content: () -> Content
 ) {
     let dark = style == .dark
-    let root = BabyLogTheme(clock: TestClock(), darkTheme: dark) {
+    let root = BabyLogTheme(clock: clock, darkTheme: dark) {
         ComponentSnapshotFrame {
             content()
         }

@@ -10,6 +10,8 @@ import Observation
     let help: any HelpStore
     let developmentSeen: any DevelopmentSeenStore
     let recoveryNotices: any RecoveryNotices
+    let repository: any DiaryRepository
+    let documents: any DocumentStore
 
     init(
         clock: any Clock = SystemClock(),
@@ -19,7 +21,9 @@ import Observation
             version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
         ),
         developmentSeen: any DevelopmentSeenStore = PrefsDevelopmentSeenStore(),
-        recoveryNotices: any RecoveryNotices = PrefsRecoveryNotices()
+        recoveryNotices: any RecoveryNotices = PrefsRecoveryNotices(),
+        repository: (any DiaryRepository)? = nil,
+        documents: any DocumentStore = URLDocumentStore()
     ) {
         self.clock = clock
         self.selectedChild = selectedChild
@@ -27,5 +31,12 @@ import Observation
         self.help = help
         self.developmentSeen = developmentSeen
         self.recoveryNotices = recoveryNotices
+        if let repository {
+            self.repository = repository
+        } else {
+            let database = try! AppDatabase.build(notices: recoveryNotices, now: { clock.millis() })
+            self.repository = RoomDiaryRepository(database: database)
+        }
+        self.documents = documents
     }
 }

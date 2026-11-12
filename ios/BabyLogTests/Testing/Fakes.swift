@@ -51,6 +51,8 @@ final class FakeDiaryRepository: DiaryRepository, @unchecked Sendable {
     private var nextEventId: Int64 = 1
     private var nextPhotoId: Int64 = 1
     private var positions: [Int64: Int] = [:]
+    var eventsReadError: Error?
+    var writeError: Error?
 
     init(children: [Child] = [Child(id: 1, name: Child.defaultName, birthDate: nil)]) {
         childrenStore = FakeValueStore(children)
@@ -66,6 +68,9 @@ final class FakeDiaryRepository: DiaryRepository, @unchecked Sendable {
     }
 
     func observeEvents(childId: Int64) -> AsyncThrowingStream<[any BabyEvent], Error> {
+        if let eventsReadError {
+            return AsyncThrowingStream { $0.finish(throwing: eventsReadError) }
+        }
         let source = eventsStore.stream()
         return AsyncThrowingStream { continuation in
             let task = Task {
@@ -89,12 +94,19 @@ final class FakeDiaryRepository: DiaryRepository, @unchecked Sendable {
 
     @discardableResult
     func addChild(name: String, birthDate: Int64?, sex: Sex?, photo: ChildPhoto?) async throws -> Int64 {
-        syncAddChild(name: name, birthDate: birthDate, sex: sex, photo: photo)
+        if let writeError { throw writeError }
+        return syncAddChild(name: name, birthDate: birthDate, sex: sex, photo: photo)
     }
 
-    func updateChild(_ child: Child) async throws { syncUpdateChild(child) }
+    func updateChild(_ child: Child) async throws {
+        if let writeError { throw writeError }
+        syncUpdateChild(child)
+    }
     @discardableResult func deleteChild(_ childId: Int64) async throws -> Bool { syncDeleteChild(childId) }
-    @discardableResult func addEvent(_ event: any BabyEvent) async throws -> Int64 { syncAddEvent(event) }
+    @discardableResult func addEvent(_ event: any BabyEvent) async throws -> Int64 {
+        if let writeError { throw writeError }
+        return syncAddEvent(event)
+    }
     func updateEvent(_ event: any BabyEvent) async throws { syncUpdateEvent(event) }
     func deleteEvent(_ event: any BabyEvent) async throws { syncDeleteEvent(event) }
     @discardableResult func startSleep(childId: Int64, start: Int64) async throws -> Bool { syncStartSleep(childId: childId, start: start) }

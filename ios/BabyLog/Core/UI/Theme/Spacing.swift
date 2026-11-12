@@ -28,4 +28,7 @@ enum BabyLogSizes {
     static let menuMinHeight: CGFloat = 56
     static let touchTarget: CGFloat = 48
     static let badge: CGFloat = 8
+    static let navigationHeight: CGFloat = 80
+    static let rowMinHeight: CGFloat = 64
+    static let daySelectorMaxHeight: CGFloat = 420
 }
