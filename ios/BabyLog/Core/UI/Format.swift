@@ -1,55 +1,6 @@
 import Foundation
 
-enum Sex: Hashable {
-    case boy
-    case girl
-}
-
-enum Breast {
-    case left
-    case right
-}
-
-enum DiaperKind {
-    case wet
-    case dirty
-    case mixed
-}
-
-enum Milk {
-    case formula
-    case breastMilk
-}
-
-enum TemperatureMethod {
-    case armpit
-    case ear
-    case rectal
-    case forehead
-}
-
-/** Минимальный UI-контракт записи; модель данных следующих сессий реализует эти протоколы. */
-protocol BabyEvent {
-    var start: Int64 { get }
-    var end: Int64? { get }
-    var note: String? { get }
-}
-
-extension BabyEvent {
-    var isActive: Bool { end == nil }
-}
-
-protocol FeedingEvent: BabyEvent { var breast: Breast { get } }
-protocol BottleEvent: BabyEvent { var volumeMl: Int { get }; var milk: Milk? { get } }
-protocol DiaperEvent: BabyEvent { var kind: DiaperKind { get } }
-protocol SleepEvent: BabyEvent {}
-protocol MedicineEvent: BabyEvent { var name: String { get } }
-protocol WeightEvent: BabyEvent { var grams: Int { get } }
-protocol HeightEvent: BabyEvent { var millimeters: Int { get } }
-protocol CryingEvent: BabyEvent { var reasons: [String] { get }; var helped: [String] { get } }
-protocol NoteEvent: BabyEvent { var tags: [String] { get } }
-protocol IllnessEvent: BabyEvent { var illnessTitle: String { get } }
-protocol TemperatureEvent: BabyEvent { var tenths: Int { get }; var method: TemperatureMethod? { get } }
+import Foundation
 
 let RU = Locale(identifier: "ru")
 

@@ -17,27 +17,27 @@ private struct Feeding: FeedingEvent {
     let start: Int64
     let end: Int64?
     let breast: Breast
-    let note: String? = nil
+    let note: String = ""
 }
 private struct Diaper: DiaperEvent {
     let start: Int64
     let end: Int64? = nil
     let kind: DiaperKind
-    let note: String? = nil
+    let note: String = ""
 }
 private struct Bottle: BottleEvent {
     let start: Int64
     let end: Int64? = nil
     let volumeMl: Int
     let milk: Milk?
-    let note: String? = nil
+    let note: String = ""
 }
 private struct Crying: CryingEvent {
     let start: Int64
     let end: Int64?
     let reasons: [String]
     let helped: [String]
-    let note: String? = nil
+    let note: String = ""
 }
 
 struct FormatTests {
