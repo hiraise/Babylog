@@ -99,6 +99,18 @@ import Observation
         }
     }
 
+    /** Сохраняет замер и при выборе пользователя начинает болезнь с того же времени в одной транзакции. */
+    func saveTemperature(_ temperature: Temperature, startIllness: Bool) async {
+        await write {
+            try await repository.inTransaction { transaction in
+                _ = try transaction.addEvent(temperature)
+                if startIllness {
+                    _ = try transaction.startIllness(Illness(childId: temperature.childId, start: temperature.start))
+                }
+            }
+        }
+    }
+
     /** Более раннее начало плача сдвигает и конец сна, который этот плач прервал. */
     func saveCryingDetails(_ crying: Crying, start: Int64, reasons: [String], helped: [String], note: String) async {
         await write {

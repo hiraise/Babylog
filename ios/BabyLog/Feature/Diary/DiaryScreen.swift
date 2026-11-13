@@ -31,6 +31,8 @@ struct DiaryScreen: View {
     @State private var showSleepStart = false
     @State private var showFeedingStart = false
     @State private var cryingDone: Crying?
+    @State private var showHealthMenu = false
+    @State private var showTemperature = false
     @State private var newEventKind: NewEventKind?
 
     let model: DiaryViewModel
@@ -295,11 +297,57 @@ struct DiaryScreen: View {
                 }
             )
         }
+        if showHealthMenu {
+            HealthSheet(
+                isPresented: $showHealthMenu,
+                state: model.state,
+                now: currentNow,
+                onDismiss: { showHealthMenu = false },
+                onMedicine: {
+                    showHealthMenu = false
+                    newEventKind = .medicine
+                },
+                onTemperature: {
+                    showHealthMenu = false
+                    showTemperature = true
+                }
+            )
+        }
+        if showTemperature, let child = model.state.child {
+            TemperatureSheet(
+                isPresented: $showTemperature,
+                initial: nil,
+                last: model.state.lastTemperature,
+                sex: child.sex,
+                offerIllness: model.state.activeIllness == nil,
+                onDismiss: { showTemperature = false },
+                onSave: { tenths, method, time, note, startIllness in
+                    showTemperature = false
+                    Task {
+                        await model.saveTemperature(
+                            Temperature(childId: child.id, start: time, tenths: tenths, method: method, note: note),
+                            startIllness: startIllness
+                        )
+                    }
+                },
+                onSaveWithMedicine: model.state.activeIllness == nil ? nil : { tenths, method, time, note in
+                    showTemperature = false
+                    Task {
+                        await model.saveTemperature(
+                            Temperature(childId: child.id, start: time, tenths: tenths, method: method, note: note),
+                            startIllness: false
+                        )
+                        newEventKind = .medicine
+                    }
+                }
+            )
+        }
         if let kind = newEventKind, let child = model.state.child {
             NewEventSheet(
                 isPresented: Binding(get: { true }, set: { if !$0 { newEventKind = nil } }),
                 kind: kind,
                 child: child,
+                events: model.state.events,
                 onDismiss: { newEventKind = nil },
                 onSave: { event, photos in
                     newEventKind = nil
@@ -358,8 +406,9 @@ struct DiaryScreen: View {
                             }
                         },
                         onAdd: { kind in
-                            if kind == .diaper { newEventKind = kind }
-                        }
+                            newEventKind = kind
+                        },
+                        onHealth: { showHealthMenu = true }
                     )
                 )
             } else {
