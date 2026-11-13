@@ -31,8 +31,10 @@ struct DiaryScreen: View {
     @State private var showSleepStart = false
     @State private var showFeedingStart = false
     @State private var cryingDone: Crying?
-    @State private var showHealthMenu = false
-    @State private var showTemperature = false
+    @State private var healthSheets = HealthSheets()
+    @State private var openIllnessId: Int64?
+    @State private var editingId: Int64?
+    @State private var editingPhotos: [EventPhoto]?
     @State private var newEventKind: NewEventKind?
 
     let model: DiaryViewModel
@@ -78,7 +80,10 @@ struct DiaryScreen: View {
                 .background(themeValues.colors.background)
             MainNavigationBar(
                 selected: section,
-                onSelect: { section = $0 },
+                onSelect: {
+                    section = $0
+                    openIllnessId = nil
+                },
                 developmentBadge: developmentBadge
             )
         }
@@ -117,6 +122,7 @@ struct DiaryScreen: View {
         }
         .onChange(of: model.state.child?.id) { _, _ in
             selectedDate = nil
+            openIllnessId = nil
         }
         .diaryFileExporter(
             isPresented: $showExporter,
@@ -297,48 +303,31 @@ struct DiaryScreen: View {
                 }
             )
         }
-        if showHealthMenu {
-            HealthSheet(
-                isPresented: $showHealthMenu,
+        if let child = model.state.child {
+            HealthSheetsHost(
+                sheets: healthSheets,
                 state: model.state,
+                child: child,
                 now: currentNow,
-                onDismiss: { showHealthMenu = false },
-                onMedicine: {
-                    showHealthMenu = false
-                    newEventKind = .medicine
-                },
-                onTemperature: {
-                    showHealthMenu = false
-                    showTemperature = true
-                }
+                model: model,
+                onAddMedicine: { newEventKind = .medicine },
+                onOpenIllness: { openIllnessId = $0.id }
             )
         }
-        if showTemperature, let child = model.state.child {
-            TemperatureSheet(
-                isPresented: $showTemperature,
-                initial: nil,
-                last: model.state.lastTemperature,
-                sex: child.sex,
-                offerIllness: model.state.activeIllness == nil,
-                onDismiss: { showTemperature = false },
-                onSave: { tenths, method, time, note, startIllness in
-                    showTemperature = false
-                    Task {
-                        await model.saveTemperature(
-                            Temperature(childId: child.id, start: time, tenths: tenths, method: method, note: note),
-                            startIllness: startIllness
-                        )
-                    }
-                },
-                onSaveWithMedicine: model.state.activeIllness == nil ? nil : { tenths, method, time, note in
-                    showTemperature = false
-                    Task {
-                        await model.saveTemperature(
-                            Temperature(childId: child.id, start: time, tenths: tenths, method: method, note: note),
-                            startIllness: false
-                        )
-                        newEventKind = .medicine
-                    }
+        if let editingId, let editingPhotos, let child = model.state.child,
+           let event = model.state.events.first(where: { $0.id == editingId }) {
+            EditEventSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { self.editingId = nil; self.editingPhotos = nil } }),
+                event: event,
+                child: child,
+                events: model.state.events,
+                photos: editingPhotos,
+                cryingChoices: cryingChoices(events: model.state.events),
+                onDismiss: { self.editingId = nil; self.editingPhotos = nil },
+                onSave: { edited, photos in
+                    self.editingId = nil
+                    self.editingPhotos = nil
+                    Task { await model.saveEvent(edited, photos: photos) }
                 }
             )
         }
@@ -386,58 +375,74 @@ struct DiaryScreen: View {
     }
 
     @ViewBuilder private func content(selected: Date, today: Date, days: [Date]) -> some View {
-        switch section {
-        case .today:
-            if let child = model.state.child {
-                TodayContent(
-                    state: model.state,
-                    child: child,
-                    now: now ?? clock.millis(),
-                    actions: DiaryActions(
-                        onStartSleep: { showSleepStart = true },
-                        onEndSleep: { Task { await model.endSleep() } },
-                        onStartFeeding: { showFeedingStart = true },
-                        onEndFeeding: { Task { await model.endFeeding() } },
-                        onSwitchBreast: { Task { await model.switchBreast() } },
-                        onStartCrying: { Task { await model.startCrying() } },
-                        onEndCrying: {
-                            Task {
-                                if let crying = await model.endCrying() { cryingDone = crying }
-                            }
-                        },
-                        onAdd: { kind in
-                            newEventKind = kind
-                        },
-                        onHealth: { showHealthMenu = true }
-                    )
-                )
-            } else {
-                SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
-            }
-        case .diary:
-            DiarySection(view: diaryView, onView: { diaryView = $0 }) { view in
-                switch view {
-                case .days:
-                    VStack(spacing: 0) {
-                        DayNavRow(
-                            selectedDate: selected,
-                            today: today,
-                            hasPrev: days.first.map { selected > $0 } ?? false,
-                            hasNext: days.last.map { selected < $0 } ?? false,
-                            onPrev: { moveDay(days: days, selected: selected, offset: -1) },
-                            onNext: { moveDay(days: days, selected: selected, offset: 1) },
-                            onPick: { showDaySelector = true }
+        let openIllness = model.state.events.compactMap { $0 as? Illness }.first { $0.id == openIllnessId }
+        if let openIllness, let child = model.state.child, section == .today || section == .diary {
+            IllnessScreen(
+                illness: openIllness,
+                state: model.state,
+                child: child,
+                now: now ?? clock.millis(),
+                sheets: healthSheets,
+                model: model,
+                onBack: { openIllnessId = nil },
+                onEditRecord: edit,
+                onAddMedicine: { newEventKind = .medicine }
+            )
+        } else {
+            switch section {
+            case .today:
+                if let child = model.state.child {
+                    TodayContent(
+                        state: model.state,
+                        child: child,
+                        now: now ?? clock.millis(),
+                        actions: DiaryActions(
+                            onStartSleep: { showSleepStart = true },
+                            onEndSleep: { Task { await model.endSleep() } },
+                            onStartFeeding: { showFeedingStart = true },
+                            onEndFeeding: { Task { await model.endFeeding() } },
+                            onSwitchBreast: { Task { await model.switchBreast() } },
+                            onStartCrying: { Task { await model.startCrying() } },
+                            onEndCrying: {
+                                Task {
+                                    if let crying = await model.endCrying() { cryingDone = crying }
+                                }
+                            },
+                            onAdd: { newEventKind = $0 },
+                            onEditEvent: edit,
+                            onHealth: { healthSheets.menu = true },
+                            onTemperature: { healthSheets.temperature = true },
+                            onOpenIllness: { openIllnessId = $0.id }
                         )
-                        SectionPlaceholder(title: "День", text: "Сводка и записи выбранного дня появятся здесь.")
-                    }
-                case .notes:
-                    SectionPlaceholder(title: "Заметки", text: "Плач и заметки появятся здесь.")
+                    )
+                } else {
+                    SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
                 }
+            case .diary:
+                DiarySection(view: diaryView, onView: { diaryView = $0 }) { view in
+                    switch view {
+                    case .days:
+                        VStack(spacing: 0) {
+                            DayNavRow(
+                                selectedDate: selected,
+                                today: today,
+                                hasPrev: days.first.map { selected > $0 } ?? false,
+                                hasNext: days.last.map { selected < $0 } ?? false,
+                                onPrev: { moveDay(days: days, selected: selected, offset: -1) },
+                                onNext: { moveDay(days: days, selected: selected, offset: 1) },
+                                onPick: { showDaySelector = true }
+                            )
+                            SectionPlaceholder(title: "День", text: "Сводка и записи выбранного дня появятся здесь.")
+                        }
+                    case .notes:
+                        SectionPlaceholder(title: "Заметки", text: "Плач и заметки появятся здесь.")
+                    }
+                }
+            case .development:
+                SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
+            case .analytics:
+                SectionPlaceholder(title: "Аналитика", text: "Графики и сводки появятся здесь.")
             }
-        case .development:
-            SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
-        case .analytics:
-            SectionPlaceholder(title: "Аналитика", text: "Графики и сводки появятся здесь.")
         }
     }
 
@@ -446,6 +451,14 @@ struct DiaryScreen: View {
         let target = index + offset
         guard days.indices.contains(target) else { return }
         selectedDate = days[target]
+    }
+
+    private func edit(_ event: any BabyEvent) {
+        Task {
+            let photos = await model.eventPhotos(event.id)
+            editingPhotos = photos
+            editingId = event.id
+        }
     }
 
 }

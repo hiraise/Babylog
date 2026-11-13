@@ -36,4 +36,6 @@ enum BabyLogSizes {
     static let navigationHeight: CGFloat = 80
     static let rowMinHeight: CGFloat = 64
     static let daySelectorMaxHeight: CGFloat = 420
+    static let illnessChartHeight: CGFloat = 150
+    static let illnessChartLabelsHeight: CGFloat = 20
 }

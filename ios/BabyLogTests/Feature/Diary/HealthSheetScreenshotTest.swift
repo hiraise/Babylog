@@ -15,7 +15,7 @@ struct HealthSheetScreenshotTest {
         assertComponentSnapshot(
             name: dark ? "dark" : "light",
             style: dark ? .dark : .light,
-            height: 280
+            height: 360
         ) {
             HealthSheetContent(state: state, now: 1_760_541_600_000, onMedicine: {}, onTemperature: {})
         }

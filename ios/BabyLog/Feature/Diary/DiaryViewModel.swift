@@ -99,16 +99,102 @@ import Observation
         }
     }
 
-    /** Сохраняет замер и при выборе пользователя начинает болезнь с того же времени в одной транзакции. */
-    func saveTemperature(_ temperature: Temperature, startIllness: Bool) async {
+    /** Фото записи загружаются перед открытием её редактора. */
+    func eventPhotos(_ eventId: Int64) async -> [EventPhoto] {
+        do {
+            for try await photos in repository.observeEventPhotos(eventId: eventId) { return photos }
+        } catch {
+            show(Self.readError)
+        }
+        return []
+    }
+
+    /**
+     Болезнь началась (ADR-0040): `names` — с начала болезни, `temperatureTenths` — замер «сейчас» с местом
+     прошлого замера. Идущая болезнь уже есть — ничего: она у ребёнка одна.
+     */
+    func startIllness(start: Int64, names: [String], note: String, temperatureTenths: Int?) async {
+        guard let child = state.child else { return }
+        let method = state.lastTemperature?.method
         await write {
             try await repository.inTransaction { transaction in
-                _ = try transaction.addEvent(temperature)
-                if startIllness {
-                    _ = try transaction.startIllness(Illness(childId: temperature.childId, start: temperature.start))
+                let illness = Illness(childId: child.id, start: start, names: names.map { IllnessName($0) }, note: note)
+                guard try transaction.startIllness(illness) != nil else { return }
+                if let temperatureTenths {
+                    _ = try transaction.addEvent(Temperature(
+                        childId: child.id,
+                        start: max(clock.millis(), start),
+                        tenths: temperatureTenths,
+                        method: method
+                    ))
                 }
             }
         }
+    }
+
+    /** «Прошлая вернулась» или «Ещё болеет»: у болезни снова нет конца — если другой идущей нет. */
+    func resumeIllness(_ illness: Illness) async {
+        guard state.activeIllness == nil else { return }
+        await write {
+            var resumed = current(illness)
+            resumed.end = nil
+            try await repository.updateEvent(resumed)
+        }
+    }
+
+    /** «Выздоровел(а)»: болезнь заканчивается в `end`, но не раньше начала. */
+    func recoverIllness(_ illness: Illness, end: Int64) async {
+        await write {
+            var recovered = current(illness)
+            recovered.end = max(end, recovered.start)
+            try await repository.updateEvent(recovered)
+        }
+    }
+
+    /** Новое название болезни (`old` = nil) или правка: названия без повторов без учёта регистра. */
+    func saveIllnessName(_ illness: Illness, old: IllnessName?, name: IllnessName) async {
+        await write {
+            var fresh = current(illness)
+            let changed = old.map { oldName in fresh.names.map { $0 == oldName ? name : $0 } } ?? (fresh.names + [name])
+            var seen: Set<String> = []
+            fresh.names = changed.filter { seen.insert($0.name.lowercased()).inserted }
+            try await repository.updateEvent(fresh)
+        }
+    }
+
+    func removeIllnessName(_ illness: Illness, name: IllnessName) async {
+        await write {
+            var fresh = current(illness)
+            fresh.names = fresh.names.filter { $0 != name }
+            try await repository.updateEvent(fresh)
+        }
+    }
+
+    /**
+     Замер температуры (ADR-0041), новый или правка; `startIllness` — «Заболел(а)» в листе: болезнь начинается
+     с этого замера, если идущей ещё нет.
+     */
+    func saveTemperature(_ temperature: Temperature, startIllness: Bool) async {
+        guard let child = state.child else { return }
+        await write {
+            try await repository.inTransaction { transaction in
+                if temperature.id == 0 {
+                    var created = temperature
+                    created.childId = child.id
+                    _ = try transaction.addEvent(created)
+                } else {
+                    try transaction.updateEvent(temperature)
+                }
+                if startIllness {
+                    _ = try transaction.startIllness(Illness(childId: child.id, start: temperature.start))
+                }
+            }
+        }
+    }
+
+    /** Свежая запись болезни: лист мог открыться до того, как в ней что-то поменялось. */
+    private func current(_ illness: Illness) -> Illness {
+        state.events.compactMap { $0 as? Illness }.first { $0.id == illness.id } ?? illness
     }
 
     /** Более раннее начало плача сдвигает и конец сна, который этот плач прервал. */

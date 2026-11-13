@@ -189,6 +189,14 @@ struct EditEventSheet: View {
                 edited.note = note
                 onSave(edited, nil)
             }
+        case let initial as Illness:
+            IllnessEditSheet(isPresented: $isPresented, initial: initial, onDismiss: onDismiss) { start, end, note in
+                var edited = initial
+                edited.start = start
+                edited.end = end
+                edited.note = note
+                onSave(edited, nil)
+            }
         default:
             EmptyView()
         }
