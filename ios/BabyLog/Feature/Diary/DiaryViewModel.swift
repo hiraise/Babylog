@@ -9,6 +9,7 @@ import Observation
     @ObservationIgnored private let selection: any SelectedChildStore
     @ObservationIgnored private let documents: any DocumentStore
     @ObservationIgnored private let clock: any Clock
+    @ObservationIgnored private let timers: Timers
     @ObservationIgnored private var selectedId: Int64?
     @ObservationIgnored private var childrenTask: Task<Void, Never>?
     @ObservationIgnored private var selectionTask: Task<Void, Never>?
@@ -25,6 +26,7 @@ import Observation
         self.selection = selection
         self.documents = documents
         self.clock = clock
+        self.timers = Timers(repository: repository, clock: clock)
         observeChildren()
         observeSelection()
     }
@@ -61,6 +63,73 @@ import Observation
         }
     }
 
+    func startSleep(start: Int64? = nil) async {
+        guard let child = state.child else { return }
+        await write { _ = try await timers.startSleep(childId: child.id, start: start) }
+    }
+
+    func startFeeding(start: Int64? = nil, breast: Breast) async {
+        guard let child = state.child else { return }
+        await write { _ = try await timers.startFeeding(childId: child.id, breast: breast, start: start) }
+    }
+
+    /** Остановку касанием можно отменить, пока не начался другой сон или кормление (ADR-0021). */
+    func endSleep() async {
+        guard let child = state.child else { return }
+        await write {
+            guard let stopped = try await timers.endSleep(childId: child.id), let end = stopped.end else { return }
+            var resumed = stopped
+            resumed.end = nil
+            show("Сон: \(formatDuration(end - stopped.start))", action: .resumeTimer(timer: resumed))
+        }
+    }
+
+    func endFeeding() async {
+        guard let child = state.child else { return }
+        await write {
+            guard let stopped = try await timers.endFeeding(childId: child.id), let end = stopped.end else { return }
+            var resumed = stopped
+            resumed.end = nil
+            show("Кормление: \(formatDuration(end - stopped.start))", action: .resumeTimer(timer: resumed))
+        }
+    }
+
+    func switchBreast() async {
+        guard let child = state.child else { return }
+        await write { _ = try await timers.switchBreast(childId: child.id) }
+    }
+
+    /** Плач начинается сразу; «Отменить» удаляет его и возвращает прерванный сон. */
+    func startCrying() async {
+        guard let child = state.child else { return }
+        await write {
+            guard let started = try await timers.startCrying(childId: child.id) else { return }
+            show(
+                started.sleep == nil ? "Плач начат" : "Плач начат, сон закончен",
+                action: .cancelCrying(childId: child.id, started: started)
+            )
+        }
+    }
+
+    /** У остановленного плача свой лист с «Ещё плачет», поэтому снекбар отмены убирается. */
+    func endCrying() async {
+        state.message = nil
+        state.messageAction = nil
+        guard let child = state.child else { return }
+        await write { _ = try await timers.endCrying(childId: child.id) }
+    }
+
+    /** «Ещё плачет» продолжает ту же запись; во сне плач возобновить нельзя. */
+    func resumeCrying(_ crying: Crying) async {
+        await write {
+            let active = try await timers.active(childId: crying.childId)
+            guard active.sleep == nil, active.crying == nil else { return }
+            var resumed = crying
+            resumed.end = nil
+            try await repository.updateEvent(resumed)
+        }
+    }
+
     /** Весь дневник с фото — архивом .zip (ADR-0045). */
     func exportTo(_ url: URL) async {
         show("Сохраняю дневник в файл…")
@@ -91,8 +160,23 @@ import Observation
         }
     }
 
-    func consumeMessage() {
+    func consumeMessage(performed: Bool = false) async {
+        let action = state.messageAction
         state.message = nil
+        state.messageAction = nil
+        guard performed, let action else { return }
+        await write {
+            switch action {
+            case let .resumeTimer(timer):
+                _ = try await timers.resume(timer: timer)
+            case let .cancelCrying(childId, started):
+                try await timers.cancelCrying(
+                    childId: childId,
+                    cryingId: started.cryingId,
+                    sleep: started.sleep
+                )
+            }
+        }
     }
 
     private func observeChildren() {
@@ -143,7 +227,8 @@ import Observation
             child: child,
             events: changed ? [] : state.events,
             photoCounts: changed ? [:] : state.photoCounts,
-            message: state.message
+            message: state.message,
+            messageAction: state.messageAction
         )
         if changed { observeChild(child) }
     }
@@ -198,7 +283,8 @@ import Observation
             child: state.child,
             events: events,
             photoCounts: state.photoCounts,
-            message: state.message
+            message: state.message,
+            messageAction: state.messageAction
         )
     }
 
@@ -218,8 +304,9 @@ import Observation
         }
     }
 
-    private func show(_ text: String) {
+    private func show(_ text: String, action: MessageAction? = nil) {
         state.message = text
+        state.messageAction = action
     }
 
     private static let writeError = "Не удалось сохранить. Проверьте, есть ли свободное место в памяти телефона"

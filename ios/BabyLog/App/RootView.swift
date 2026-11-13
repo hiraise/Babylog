@@ -7,6 +7,10 @@ struct RootView: View {
     @State private var theme = ThemeChoice()
     @State private var recovery: DatabaseRecovery?
 
+    init(model: DiaryViewModel? = nil) {
+        _model = State(initialValue: model)
+    }
+
     var body: some View {
         BabyLogTheme(
             clock: container.clock,

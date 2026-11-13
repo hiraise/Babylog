@@ -23,6 +23,7 @@ enum BabyLogSizes {
     static let timerIcon: CGFloat = 32
     static let avatar: CGFloat = 40
     static let actionMinHeight: CGFloat = 72
+    static let cryingNoteRowHeight: CGFloat = 96
     static let timerMinHeight: CGFloat = 104
     static let wideTimerMinHeight: CGFloat = 48
     static let menuMinHeight: CGFloat = 56

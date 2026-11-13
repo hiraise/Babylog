@@ -103,7 +103,7 @@ struct DiaryViewModelTest {
         await model.exportTo(url)
         #expect(model.state.message == "Экспортировано записей: 1")
         #expect(repository.events.count == 1)
-        model.consumeMessage()
+        await model.consumeMessage()
         await model.importFrom(url)
         #expect(model.state.message == "Импорт: добавлено 0, дубликатов 1")
     }
@@ -138,5 +138,146 @@ struct DiaryViewModelTest {
         let days = historyDays(events: [event], today: today, timeZone: utc)
 
         #expect(days == [toLocalDate(event.start, timeZone: utc), toLocalDate(Int64(today.timeIntervalSince1970 * 1000), timeZone: utc)])
+    }
+
+    @Test func sleepTimerEndsAtClockTimeTruncatedToSeconds() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.startSleep(start: nowMillis)
+        #expect(repository.events.count == 1)
+        await model.endSleep()
+
+        let sleep = repository.events.first as? Sleep
+        #expect(sleep?.end == 1_792_058_400_000)
+        #expect(await waitUntil { model.state.activeSleep == nil })
+    }
+
+    @Test func switchingBreastSplitsFeedingAtOneSecondAndEndStopsIt() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        let start = nowMillis - 600_000
+
+        await model.startFeeding(start: start, breast: .left)
+        await model.startFeeding(start: nowMillis, breast: .right)
+        #expect((repository.events.first as? Feeding)?.breast == .left)
+        await model.switchBreast()
+        await model.endFeeding()
+
+        let feedings = repository.events.compactMap { $0 as? Feeding }.sorted { $0.start < $1.start }
+        #expect(feedings.map(\.breast) == [.left, .right])
+        #expect(feedings.map(\.end) == [1_792_058_400_000, 1_792_058_400_000])
+        #expect(feedings[1].start == 1_792_058_400_000)
+        #expect(await waitUntil { model.state.activeFeeding == nil })
+    }
+
+    @Test func sleepAndFeedingNeverRunTogether() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        let start = nowMillis - 1_800_000
+
+        await model.startFeeding(start: start, breast: .left)
+        await model.startSleep(start: start + 600_000)
+        #expect(repository.events.compactMap { $0 as? Feeding }.first?.end == 1_792_057_200_000)
+        await model.startFeeding(start: start + 1_200_000, breast: .right)
+
+        #expect(await waitUntil { model.state.activeSleep == nil && model.state.activeFeeding?.breast == .right })
+    }
+
+    @Test func stoppingTimerByTapCanBeUndone() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.endSleep()
+
+        #expect(model.state.message == "Сон: 1 ч")
+        guard case .resumeTimer = model.state.messageAction else {
+            Issue.record("У остановки таймера нет действия «Отменить»")
+            return
+        }
+        await model.consumeMessage(performed: true)
+        #expect(repository.events.compactMap { $0 as? Sleep }.first?.end == nil)
+        #expect(model.state.messageAction == nil)
+        #expect(await waitUntil { model.state.activeSleep != nil })
+    }
+
+    @Test func accidentalCryingStartIsUndoneAndSleepGoesOn() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.startCrying()
+
+        #expect(model.state.message == "Плач начат, сон закончен")
+        await model.consumeMessage(performed: true)
+        #expect(!repository.events.contains { $0 is Crying })
+        #expect(await waitUntil { model.state.activeSleep != nil })
+    }
+
+    @Test func stoppingCryingDropsItsUndo() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        await model.startCrying()
+        #expect(model.state.message == "Плач начат")
+
+        await model.endCrying()
+        #expect(model.state.message == nil)
+        #expect(model.state.messageAction == nil)
+    }
+
+    @Test func fallingAsleepEndsCryingWithoutMessage() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        await model.startCrying()
+        await model.consumeMessage()
+        await model.startSleep()
+
+        #expect(await waitUntil { model.state.activeCrying == nil && model.state.activeSleep != nil })
+        #expect(model.state.message == nil)
+    }
+
+    @Test func cryingStartsAtOnceWakesBabyAndCanBeResumedAfterWrongStop() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.startCrying()
+
+        let crying = repository.events.compactMap { $0 as? Crying }.first
+        #expect(crying?.start == 1_792_058_400_000)
+        #expect(repository.events.compactMap { $0 as? Sleep }.first?.end != nil)
+        await model.endCrying()
+        #expect(await waitUntil { model.state.lastCrying?.id == crying?.id })
+        await model.resumeCrying(model.state.lastCrying!)
+
+        #expect(repository.events.compactMap { $0 as? Crying }.first?.start == crying?.start)
+        #expect(await waitUntil { model.state.activeCrying?.start == crying?.start })
+    }
+
+    @Test func undoDoesNotResumeTimerOnceAnotherOneStarted() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000)
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.endSleep()
+        await model.startFeeding(breast: .left)
+        await model.consumeMessage(performed: true)
+
+        #expect(repository.events.compactMap { $0 as? Sleep }.first?.end != nil)
+        #expect(await waitUntil { model.state.activeSleep == nil && model.state.activeFeeding?.breast == .left })
     }
 }
