@@ -22,7 +22,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S4a | [Main shell, child header, menu](sessions/S4a.md) | high | 1.4k / 0.7k | S1b, S2b, S3 | S6a, S7a | done (#70) |
 | S4b | [Today: tiles, timers, day summary](sessions/S4b.md) | high | 1.2k / 0.9k | S4a | S6a, S7a | done (#71) |
 | S4c | [Editors part 1 (timer sheets)](sessions/S4c.md) | medium | 1.3k / 0.5k | S4b | S6b | done (#75) |
-| S4d | [Editors part 2 (measures, notes)](sessions/S4d.md) | medium | 1.2k / 0.4k | S4c | S6b | todo |
+| S4d | [Editors part 2 (measures, notes)](sessions/S4d.md) | medium | 1.2k / 0.4k | S4c | S6b | done (#76) |
 | S4e | [Illness](sessions/S4e.md) | medium | 0.9k / 0.5k | S4d | S5b, S6b | todo |
 | S5a | [Diary tab: history, notes, tags](sessions/S5a.md) | medium | 1.0k / 0.4k | S4d | S5b, S6b | todo |
 | S5b | [Photos: pick, crop, share](sessions/S5b.md) | high | 0.8k / 0.3k | S4d | S5a, S4e | todo |
