@@ -46,7 +46,6 @@ struct ChildSheet: View {
     @Environment(\.timeZone) private var timeZone
     @State private var model: ChildSheetModel
     @State private var pickBirth = false
-    @State private var draftBirth = Date()
 
     @Binding var isPresented: Bool
     let initial: Child?
@@ -98,9 +97,6 @@ struct ChildSheet: View {
                         label: model.birthDate.map { formatDate($0, timeZone: timeZone) } ?? "указать",
                         icon: "ic_calendar"
                     ) {
-                        draftBirth = model.birthDate.map {
-                            toLocalDate($0, timeZone: timeZone)
-                        } ?? Date()
                         pickBirth = true
                     }
                 }
@@ -121,43 +117,16 @@ struct ChildSheet: View {
                 }
             }
             if pickBirth {
-                BirthDatePicker(
+                BirthDateSheet(
                     isPresented: $pickBirth,
-                    date: $draftBirth,
-                    timeZone: timeZone,
+                    initial: model.birthDate,
                     onDismiss: { pickBirth = false },
                     onSave: {
-                        var calendar = Calendar(identifier: .gregorian)
-                        calendar.timeZone = timeZone
-                        model.birthDate = Int64(calendar.startOfDay(for: draftBirth).timeIntervalSince1970 * 1000)
+                        model.birthDate = $0
                         pickBirth = false
                     }
                 )
             }
-        }
-    }
-}
-
-private struct BirthDatePicker: View {
-    @Binding var isPresented: Bool
-    @Binding var date: Date
-    let timeZone: TimeZone
-    let onDismiss: () -> Void
-    let onSave: () -> Void
-
-    var body: some View {
-        AppSheet(
-            isPresented: $isPresented,
-            onDismiss: onDismiss,
-            title: "Дата рождения",
-            icon: "ic_calendar",
-            confirm: SheetAction(label: "Сохранить", onClick: onSave)
-        ) { _ in
-            DatePicker("Дата рождения", selection: $date, in: ...Date(), displayedComponents: .date)
-                .datePickerStyle(.wheel)
-                .labelsHidden()
-                .environment(\.timeZone, timeZone)
-                .frame(maxWidth: .infinity)
         }
     }
 }

@@ -28,6 +28,10 @@ struct DiaryScreen: View {
     @State private var showHelp = false
     @State private var showExporter = false
     @State private var showImporter = false
+    @State private var showSleepStart = false
+    @State private var showFeedingStart = false
+    @State private var cryingDone: Crying?
+    @State private var newEventKind: NewEventKind?
 
     let model: DiaryViewModel
     let theme: ThemeChoice
@@ -243,6 +247,66 @@ struct DiaryScreen: View {
                 }
             )
         }
+        if showSleepStart {
+            SleepStartSheet(
+                isPresented: $showSleepStart,
+                activeFeeding: model.state.activeFeeding,
+                activeCrying: model.state.activeCrying,
+                onDismiss: { showSleepStart = false },
+                onSave: { time in
+                    showSleepStart = false
+                    Task {
+                        if let crying = await model.startSleep(start: time) { cryingDone = crying }
+                    }
+                }
+            )
+        }
+        if showFeedingStart {
+            FeedingStartSheet(
+                isPresented: $showFeedingStart,
+                activeSleep: model.state.activeSleep,
+                lastBottle: model.state.lastBottle,
+                onDismiss: { showFeedingStart = false },
+                onSave: { breast, time in
+                    showFeedingStart = false
+                    Task { await model.startFeeding(start: time, breast: breast) }
+                },
+                onSaveBottle: { volume, milk, time in
+                    showFeedingStart = false
+                    Task { await model.addBottle(volumeMl: volume, milk: milk, time: time) }
+                }
+            )
+        }
+        if let crying = cryingDone {
+            CryingDoneSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { cryingDone = nil } }),
+                crying: crying,
+                context: cryingContext(events: model.state.events, crying: crying),
+                choices: cryingChoices(events: model.state.events),
+                sex: model.state.child?.sex,
+                onResume: model.state.activeSleep == nil ? {
+                    cryingDone = nil
+                    Task { await model.resumeCrying(crying) }
+                } : nil,
+                onDismiss: { cryingDone = nil },
+                onSave: { start, reasons, helped, note in
+                    cryingDone = nil
+                    Task { await model.saveCryingDetails(crying, start: start, reasons: reasons, helped: helped, note: note) }
+                }
+            )
+        }
+        if let kind = newEventKind, let child = model.state.child {
+            NewEventSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { newEventKind = nil } }),
+                kind: kind,
+                child: child,
+                onDismiss: { newEventKind = nil },
+                onSave: { event, photos in
+                    newEventKind = nil
+                    Task { await model.saveEvent(event, photos: photos) }
+                }
+            )
+        }
     }
 
     @ViewBuilder private func header(now: Int64) -> some View {
@@ -282,16 +346,20 @@ struct DiaryScreen: View {
                     child: child,
                     now: now ?? clock.millis(),
                     actions: DiaryActions(
-                        onStartSleep: { Task { await model.startSleep() } },
+                        onStartSleep: { showSleepStart = true },
                         onEndSleep: { Task { await model.endSleep() } },
-                        onStartFeeding: {
-                            let breast = nextBreast(events: model.state.events)
-                            Task { await model.startFeeding(breast: breast) }
-                        },
+                        onStartFeeding: { showFeedingStart = true },
                         onEndFeeding: { Task { await model.endFeeding() } },
                         onSwitchBreast: { Task { await model.switchBreast() } },
                         onStartCrying: { Task { await model.startCrying() } },
-                        onEndCrying: { Task { await model.endCrying() } }
+                        onEndCrying: {
+                            Task {
+                                if let crying = await model.endCrying() { cryingDone = crying }
+                            }
+                        },
+                        onAdd: { kind in
+                            if kind == .diaper { newEventKind = kind }
+                        }
                     )
                 )
             } else {
