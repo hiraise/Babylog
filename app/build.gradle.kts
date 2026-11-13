@@ -101,7 +101,7 @@ dependencies {
     // Android на JVM без эмулятора: миграции, Room и скриншоты (ADR-0013)
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.room:room-testing:2.8.5")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.76.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.78.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.76.0")
     // Нажатия и ввод на экранах — UI-тесты Compose на JVM; версии из compose-bom (ADR-0022)
     testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
