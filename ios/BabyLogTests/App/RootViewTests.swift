@@ -17,19 +17,30 @@ struct RootViewTests {
     }
 
     private func assertRoot(style: UIUserInterfaceStyle, named name: String) async {
+        let clock = TestClock()
+        let selection = MemorySelectedChildStore()
+        let repository = FakeDiaryRepository(children: [
+            Child(id: 1, name: "Маша", birthDate: nil, sex: .girl),
+        ])
+        let documents = FakeDocumentStore()
         let container = withTestUserDefaults { defaults in
             AppContainer(
-                clock: TestClock(),
-                selectedChild: MemorySelectedChildStore(),
+                clock: clock,
+                selectedChild: selection,
                 themeMode: PrefsThemeModeStore(defaults: defaults),
                 recoveryNotices: FakeRecoveryNotices(),
-                repository: FakeDiaryRepository(children: [
-                    Child(id: 1, name: "Маша", birthDate: nil, sex: .girl),
-                ]),
-                documents: FakeDocumentStore()
+                repository: repository,
+                documents: documents
             )
         }
-        let root = RootView()
+        let model = DiaryViewModel(
+            repository: repository,
+            selection: selection,
+            documents: documents,
+            clock: clock
+        )
+        _ = await waitUntil { model.state.child != nil }
+        let root = RootView(model: model)
             .environment(container)
             .environment(\.locale, Locale(identifier: "ru_RU"))
             .environment(\.timeZone, TimeZone(identifier: "Europe/Moscow")!)

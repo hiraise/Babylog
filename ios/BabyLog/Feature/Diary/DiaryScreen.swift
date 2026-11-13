@@ -84,8 +84,12 @@ struct DiaryScreen: View {
                     Text(message)
                         .appTextStyle(themeValues.typography.bodyMedium)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Button("Понятно") { model.consumeMessage() }
+                    if model.state.messageAction != nil {
+                        Button("Отменить") {
+                            Task { await model.consumeMessage(performed: true) }
+                        }
                         .appTextStyle(themeValues.typography.labelLarge)
+                    }
                 }
                 .padding(themeValues.spacing.l)
                 .background(themeValues.colors.surfaceContainerHigh, in: RoundedRectangle(cornerRadius: themeValues.shapes.small))
@@ -102,8 +106,8 @@ struct DiaryScreen: View {
         }
         .task(id: model.state.message) {
             guard model.state.message != nil else { return }
-            try? await Task.sleep(for: .seconds(4))
-            if !Task.isCancelled { model.consumeMessage() }
+            try? await Task.sleep(for: .seconds(model.state.messageAction == nil ? 4 : 10))
+            if !Task.isCancelled { await model.consumeMessage() }
         }
         .onChange(of: model.state.child?.id) { _, _ in
             selectedDate = nil
@@ -272,7 +276,27 @@ struct DiaryScreen: View {
     @ViewBuilder private func content(selected: Date, today: Date, days: [Date]) -> some View {
         switch section {
         case .today:
-            SectionPlaceholder(title: "Сегодня", text: "Плитки записей и сводка дня появятся здесь.")
+            if let child = model.state.child {
+                TodayContent(
+                    state: model.state,
+                    child: child,
+                    now: now ?? clock.millis(),
+                    actions: DiaryActions(
+                        onStartSleep: { Task { await model.startSleep() } },
+                        onEndSleep: { Task { await model.endSleep() } },
+                        onStartFeeding: {
+                            let breast = nextBreast(events: model.state.events)
+                            Task { await model.startFeeding(breast: breast) }
+                        },
+                        onEndFeeding: { Task { await model.endFeeding() } },
+                        onSwitchBreast: { Task { await model.switchBreast() } },
+                        onStartCrying: { Task { await model.startCrying() } },
+                        onEndCrying: { Task { await model.endCrying() } }
+                    )
+                )
+            } else {
+                SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
+            }
         case .diary:
             DiarySection(view: diaryView, onView: { diaryView = $0 }) { view in
                 switch view {
