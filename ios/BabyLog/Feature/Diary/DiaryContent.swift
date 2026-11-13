@@ -1,14 +1,5 @@
 import SwiftUI
 
-/** Тип новой записи, которую открывают быстрые плитки; редакторы подключаются своими сессиями. */
-enum NewEventKind: Sendable {
-    case diaper
-    case weight
-    case height
-    case note
-    case medicine
-}
-
 /** Действия пользователя на главном экране. */
 struct DiaryActions {
     var onStartSleep: () -> Void = {}

@@ -63,14 +63,60 @@ import Observation
         }
     }
 
-    func startSleep(start: Int64? = nil) async {
-        guard let child = state.child else { return }
+    /** Возвращает плач, который закончился с началом сна: экран сразу открывает его подробности. */
+    @discardableResult
+    func startSleep(start: Int64? = nil) async -> Crying? {
+        guard let child = state.child else { return nil }
+        let crying = state.activeCrying
         await write { _ = try await timers.startSleep(childId: child.id, start: start) }
+        guard var crying else { return nil }
+        crying.end = max(crying.start, start ?? clock.millis()).truncatedToSecond()
+        return crying
     }
 
     func startFeeding(start: Int64? = nil, breast: Breast) async {
         guard let child = state.child else { return }
         await write { _ = try await timers.startFeeding(childId: child.id, breast: breast, start: start) }
+    }
+
+    func addBottle(volumeMl: Int, milk: Milk?, time: Int64) async {
+        guard let child = state.child else { return }
+        await write {
+            try await repository.addBottle(Bottle(childId: child.id, start: time, volumeMl: volumeMl, milk: milk))
+        }
+    }
+
+    /** Добавляет или обновляет запись и в той же операции сохраняет изменение её фото. */
+    func saveEvent(_ event: any BabyEvent, photos: PhotoEdit? = nil) async {
+        await write {
+            if event.id == 0 {
+                let id = try await repository.addEvent(event)
+                if let photos { try await repository.setEventPhotos(eventId: id, edit: photos) }
+            } else {
+                try await repository.updateEvent(event)
+                if let photos { try await repository.setEventPhotos(eventId: event.id, edit: photos) }
+            }
+        }
+    }
+
+    /** Более раннее начало плача сдвигает и конец сна, который этот плач прервал. */
+    func saveCryingDetails(_ crying: Crying, start: Int64, reasons: [String], helped: [String], note: String) async {
+        await write {
+            try await repository.inTransaction { transaction in
+                var edited = crying
+                edited.start = start
+                edited.reasons = reasons
+                edited.helped = helped
+                edited.note = note
+                try transaction.updateEvent(edited)
+                guard start < crying.start else { return }
+                for case var sleep as Sleep in try transaction.allEvents()
+                where sleep.childId == crying.childId && sleep.end == crying.start {
+                    sleep.end = start
+                    try transaction.updateEvent(sleep)
+                }
+            }
+        }
     }
 
     /** Остановку касанием можно отменить, пока не начался другой сон или кормление (ADR-0021). */
@@ -111,12 +157,15 @@ import Observation
         }
     }
 
-    /** У остановленного плача свой лист с «Ещё плачет», поэтому снекбар отмены убирается. */
-    func endCrying() async {
+    /** Возвращает остановленный плач для листа подробностей; снекбар отмены при этом убирается. */
+    @discardableResult
+    func endCrying() async -> Crying? {
         state.message = nil
         state.messageAction = nil
-        guard let child = state.child else { return }
-        await write { _ = try await timers.endCrying(childId: child.id) }
+        guard let child = state.child else { return nil }
+        var stopped: Crying?
+        await write { stopped = try await timers.endCrying(childId: child.id) }
+        return stopped
     }
 
     /** «Ещё плачет» продолжает ту же запись; во сне плач возобновить нельзя. */

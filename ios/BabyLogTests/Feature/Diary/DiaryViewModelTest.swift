@@ -280,4 +280,49 @@ struct DiaryViewModelTest {
         #expect(repository.events.compactMap { $0 as? Sleep }.first?.end != nil)
         #expect(await waitUntil { model.state.activeSleep == nil && model.state.activeFeeding?.breast == .left })
     }
+
+    @Test func cryingThatStartedEarlierMovesEndOfSleepItInterrupted() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        let nowMillis = Int64(now.timeIntervalSince1970 * 1000) / 1000 * 1000
+        await model.startSleep(start: nowMillis - 3_600_000)
+        await model.startCrying()
+        let crying = await model.endCrying()!
+        let earlier = crying.start - 600_000
+
+        await model.saveCryingDetails(crying, start: earlier, reasons: ["голод"], helped: [], note: "")
+
+        #expect(await waitUntil { model.state.lastCrying?.start == earlier })
+        #expect(model.state.lastCrying?.reasons == ["голод"])
+        #expect(repository.events.compactMap { $0 as? Sleep }.first?.end == earlier)
+    }
+
+    @Test func detailsOfFinishedCryingBecomeNextSheetChoices() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+        await model.startCrying()
+        let done = await model.endCrying()!
+
+        await model.saveCryingDetails(done, start: done.start, reasons: ["срыгивание"], helped: ["укачивание"], note: "вечер")
+
+        #expect(await waitUntil { model.state.lastCrying?.note == "вечер" })
+        #expect(cryingChoices(events: model.state.events).reasons.shown.first == "срыгивание")
+        #expect(model.state.lastCrying?.helped == ["укачивание"])
+    }
+
+    @Test func bottleIsSavedForSelectedChildAndBecomesLastFeeding() async {
+        let repository = FakeDiaryRepository()
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+
+        await model.addBottle(volumeMl: 120, milk: .formula, time: 5_000)
+
+        #expect(await waitUntil { model.state.lastBottle?.volumeMl == 120 })
+        let bottle = model.state.lastBottle
+        #expect(bottle?.childId == 1)
+        #expect(bottle?.milk == .formula)
+        #expect(model.state.lastFeeding == LastFeeding(start: 5_000, end: 5_000, breast: nil))
+    }
 }
