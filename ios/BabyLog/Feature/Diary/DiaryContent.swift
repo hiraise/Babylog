@@ -12,12 +12,16 @@ struct DiaryActions {
     var onAdd: (NewEventKind) -> Void = { _ in }
     var onEditEvent: (any BabyEvent) -> Void = { _ in }
     var onDeleteEvent: (any BabyEvent) -> Void = { _ in }
+    /** Плитка «Здоровье», «Температура» на карточке болезни и её заголовок (ADR-0040). */
     var onHealth: () -> Void = {}
+    var onTemperature: () -> Void = {}
+    var onOpenIllness: (Illness) -> Void = { _ in }
 }
 
 /**
  Раздел «Сегодня»: плитки сна и кормления в ряд, под ними плач с «Заметкой»,
- плитки быстрых записей и сводка за сегодня. Ребёнок — в шапке.
+ плитки быстрых записей и сводка за сегодня. Ребёнок — в шапке. Пока ребёнок болеет, над таймерами —
+ карточка болезни (`IllnessCard`, ADR-0040): ночью за ней и открывают «Сегодня».
  */
 struct TodayContent: View {
     @Environment(\.babyLogTheme) private var theme
@@ -47,8 +51,21 @@ struct TodayContent: View {
     }
 
     var body: some View {
+        let illnessCard = state.activeIllness.map {
+            illnessCardModel(events: state.events, illness: $0, now: now, timeZone: timeZone)
+        }
         DiaryList {
             if let helpPointer { helpPointer }
+            if let illnessCard {
+                IllnessCard(
+                    model: illnessCard,
+                    now: now,
+                    onOpen: { actions.onOpenIllness(illnessCard.illness) },
+                    onTemperature: actions.onTemperature,
+                    onMedicine: { actions.onAdd(.medicine) },
+                    onNote: { actions.onAdd(.note) }
+                )
+            }
             VStack(spacing: theme.spacing.s) {
                 HStack(spacing: theme.spacing.s) {
                     SleepCard(
@@ -85,6 +102,7 @@ struct TodayContent: View {
                 lastHeight: state.lastHeight?.start,
                 sleeping: state.activeSleep != nil,
                 now: now,
+                illnessDay: illnessCard?.day,
                 onAdd: actions.onAdd,
                 onHealth: actions.onHealth
             )

@@ -43,6 +43,8 @@ struct DiaryUiState: Sendable {
     var lastTemperature: Temperature?
     /** Последнее лекарство — подпись в листе «Здоровье». */
     var lastMedicine: Medicine?
+    /** Названия для листов болезни: из прошлых болезней ребёнка, затем частые. */
+    var illnessNames: [String] = []
     /** Сколько фото у записей: id записи → число, для отметки в истории (ADR-0024). */
     var photoCounts: [Int64: Int] = [:]
     /** Сообщение для снекбара; UI показывает его и вызывает `consumeMessage()`. */
@@ -87,9 +89,10 @@ struct DiaryUiState: Sendable {
             lastDiaper: events.compactMap { ($0 as? Diaper)?.start }.max(),
             lastWeight: events.compactMap { $0 as? Weight }.max { $0.start < $1.start },
             lastHeight: events.compactMap { $0 as? Height }.max { $0.start < $1.start },
-            activeIllness: events.compactMap { $0 as? Illness }.first(where: \.isActive),
+            activeIllness: events.activeIllness(),
             lastTemperature: events.compactMap { $0 as? Temperature }.max { $0.start < $1.start },
             lastMedicine: events.compactMap { $0 as? Medicine }.max { $0.start < $1.start },
+            illnessNames: events.illnessNameChoices(),
             photoCounts: photoCounts,
             message: message,
             messageAction: messageAction
