@@ -213,12 +213,14 @@ struct NoteField: View {
 /** Поле редактора в стиле Material: рамка и подпись на её верхней границе, цвета только из темы. */
 struct EditorTextField: View {
     @Environment(\.babyLogTheme) private var theme
+    @FocusState private var focused: Bool
     @Binding var value: String
     let label: String
     var suffix: String? = nil
     var axis: Axis = .horizontal
     var keyboard: UIKeyboardType = .default
     var isError = false
+    var autofocus = false
     var onSubmit: () -> Void = {}
 
     var body: some View {
@@ -231,7 +233,9 @@ struct EditorTextField: View {
                     .keyboardType(keyboard)
                     .tint(theme.colors.primary)
                     .appTextStyle(theme.typography.bodyLarge)
+                    .focused($focused)
                     .onSubmit(onSubmit)
+                    .onAppear { if autofocus { focused = true } }
                 if let suffix {
                     Text(suffix)
                         .appTextStyle(theme.typography.bodyLarge)

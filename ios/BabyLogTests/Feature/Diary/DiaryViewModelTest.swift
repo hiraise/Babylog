@@ -92,6 +92,21 @@ struct DiaryViewModelTest {
         #expect(model.state.lastHeight?.millimeters == 625)
     }
 
+    @Test func temperatureCanStartIllnessAtTheSameTime() async {
+        let repository = FakeDiaryRepository(children: [Child(id: 1, name: "Маша", birthDate: nil)])
+        let model = model(repository: repository)
+        #expect(await waitUntil { model.state.child != nil })
+
+        await model.saveTemperature(
+            Temperature(childId: 1, start: 12_000, tenths: 384, method: .ear),
+            startIllness: true
+        )
+
+        #expect(await waitUntil { model.state.events.count == 2 })
+        #expect(model.state.lastTemperature?.tenths == 384)
+        #expect(model.state.activeIllness?.start == 12_000)
+    }
+
     @Test func exportAndImportReportResults() async throws {
         let repository = FakeDiaryRepository(children: [Child(id: 1, name: "Маша", birthDate: nil)])
         _ = try await repository.addEvent(Feeding(childId: 1, start: 1_000, breast: .left))
