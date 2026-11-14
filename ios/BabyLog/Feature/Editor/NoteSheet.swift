@@ -7,7 +7,7 @@ import SwiftUI
     let time: TimeAgoPickerModel
     var editTime: Int64
     let isEdit: Bool
-    let initialPhotos: [EventPhoto]
+    let photos: FormPhotosState
 
     init(initial: Note?, tagOptions: TagChoices, initialPhotos: [EventPhoto]) {
         text = initial?.note ?? ""
@@ -22,12 +22,12 @@ import SwiftUI
         time = TimeAgoPickerModel()
         editTime = initial?.start ?? 0
         isEdit = initial != nil
-        self.initialPhotos = initialPhotos
+        photos = FormPhotosState(initialPhotos: initialPhotos)
     }
 
     /** «Сохранить» доступно, когда есть текст, метка или фото: пустая заметка ничего не говорит. */
     var filled: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !tags.selected.isEmpty || !initialPhotos.isEmpty
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !tags.selected.isEmpty || !photos.photos.isEmpty
     }
 
     var trimmedText: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -36,11 +36,11 @@ import SwiftUI
         resolveTime(isEdit: isEdit, minutesAgo: time.minutesAgo, editTime: editTime, clock: clock)
     }
 
-    /** Фото редактируются в S5b; до неё существующие фото сохраняются без изменений. */
-    var photoEdit: PhotoEdit { PhotoEdit(keep: initialPhotos.map(\.id), add: []) }
+    /** Вызывать только по «Сохранить»: новые файлы после переноса в `PhotoEdit` удаляются. */
+    var photoEdit: PhotoEdit { photos.takeEdit() }
 }
 
-/** Заметка (ADR-0031): текст, метки, время и сохранение существующих фото; выбор фото подключается в S5b. */
+/** Заметка (ADR-0031): текст, метки, время и фото. */
 struct NoteSheet: View {
     @Environment(\.clock) private var clock
     @Binding var isPresented: Bool
@@ -65,10 +65,13 @@ struct NoteSheet: View {
     var body: some View {
         AppSheet(
             isPresented: $isPresented,
-            onDismiss: onDismiss,
+            onDismiss: {
+                model.photos.discardPending()
+                onDismiss()
+            },
             title: "Заметка",
             icon: "ic_note",
-            confirm: SheetAction(label: "Сохранить", enabled: model.filled) {
+            confirm: SheetAction(label: "Сохранить", enabled: model.filled && !model.photos.busy) {
                 onSave(model.trimmedText, model.tags.selected, model.time(clock: clock), model.photoEdit)
             }
         ) { _ in
@@ -80,7 +83,9 @@ struct NoteSheet: View {
             )
             .frame(minHeight: BabyLogSizes.noteTextMinHeight)
             TagPicker(model: model.tags)
+            PhotosField(state: model.photos)
             TimeSection(isEdit: model.isEdit, model: model.time, editTime: $model.editTime)
+            PhotoSheets(state: model.photos)
         }
     }
 }

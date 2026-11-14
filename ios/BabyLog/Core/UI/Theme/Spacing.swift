@@ -23,6 +23,12 @@ enum BabyLogSizes {
     static let actionIcon: CGFloat = 26
     static let timerIcon: CGFloat = 32
     static let avatar: CGFloat = 40
+    static let photoAvatar: CGFloat = 96
+    static let photoBadge: CGFloat = 32
+    static let photoBadgeBorder: CGFloat = 2
+    static let photoThumbnail: CGFloat = 72
+    static let photoThumbnailBorder: CGFloat = 1
+    static let photoViewMaxHeight: CGFloat = 480
     static let healthRowIcon: CGFloat = 44
     static let actionMinHeight: CGFloat = 72
     static let cryingNoteRowHeight: CGFloat = 96

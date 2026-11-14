@@ -44,6 +44,10 @@ struct RootView: View {
                 theme = choice
             }
         }
+        .task(priority: .background) {
+            let now = container.clock.millis()
+            await Task.detached { sweepPhotoCache(now: now) }.value
+        }
         .task {
             recovery = container.recoveryNotices.pending.value
             for await notice in container.recoveryNotices.pending.stream() {
