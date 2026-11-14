@@ -99,6 +99,11 @@ import Observation
         }
     }
 
+    /** Удаляет запись вместе со связанными фото; ошибка становится сообщением экрана. */
+    func deleteEvent(_ event: any BabyEvent) async {
+        await write { try await repository.deleteEvent(event) }
+    }
+
     /** Фото записи загружаются перед открытием её редактора. */
     func eventPhotos(_ eventId: Int64) async -> [EventPhoto] {
         do {

@@ -12,6 +12,8 @@ struct DiaryActions {
     var onAdd: (NewEventKind) -> Void = { _ in }
     var onEditEvent: (any BabyEvent) -> Void = { _ in }
     var onDeleteEvent: (any BabyEvent) -> Void = { _ in }
+    var onSelectDate: (Date) -> Void = { _ in }
+    var onPickDate: () -> Void = {}
     /** Плитка «Здоровье», «Температура» на карточке болезни и её заголовок (ADR-0040). */
     var onHealth: () -> Void = {}
     var onTemperature: () -> Void = {}
@@ -109,6 +111,66 @@ struct TodayContent: View {
             DaySummaryCard(events: state.events, date: toLocalDate(now, timeZone: timeZone), now: now, sex: child.sex)
             if let tipsBanner { tipsBanner }
         }
+    }
+}
+
+/** «Дневник», вид «По дням» (ADR-0035): выбор дня, сводка выбранного дня и его записи. Свайп листает дни. */
+struct HistoryContent: View {
+    @Environment(\.babyLogTheme) private var theme
+    @Environment(\.timeZone) private var timeZone
+
+    let state: DiaryUiState
+    let child: Child
+    let now: Int64
+    let selectedDate: Date
+    let actions: DiaryActions
+
+    var body: some View {
+        let today = toLocalDate(now, timeZone: timeZone)
+        let days = historyDays(events: state.events, today: today, timeZone: timeZone)
+        let dayEvents = state.events.filter { toLocalDate($0.start, timeZone: timeZone) == selectedDate }
+        let prevDay = days.last { $0 < selectedDate }
+        let nextDay = days.first { $0 > selectedDate }
+        let emptyText = state.events.isEmpty
+            ? "Пока нет записей.\nОтмечайте сон, кормления, подгузники и лекарства в разделе «Сегодня»."
+            : "Нет записей за этот день"
+
+        DiaryList {
+            DayNavRow(
+                selectedDate: selectedDate,
+                today: today,
+                hasPrev: prevDay != nil,
+                hasNext: nextDay != nil,
+                onPrev: { if let prevDay { actions.onSelectDate(prevDay) } },
+                onNext: { if let nextDay { actions.onSelectDate(nextDay) } },
+                onPick: actions.onPickDate
+            )
+            DaySummaryCard(events: state.events, date: selectedDate, now: now, sex: child.sex)
+            if dayEvents.isEmpty {
+                Text(emptyText)
+                    .appTextStyle(theme.typography.bodyMedium)
+                    .foregroundStyle(theme.colors.onSurfaceVariant)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, theme.spacing.xxl)
+            }
+            ForEach(dayEvents, id: \.id) { event in
+                EventRow(
+                    event: event,
+                    sex: child.sex,
+                    photoCount: state.photoCounts[event.id] ?? 0,
+                    onEdit: { actions.onEditEvent(event) },
+                    onDelete: { actions.onDeleteEvent(event) }
+                )
+            }
+        }
+        .gesture(DragGesture(minimumDistance: 20).onEnded { value in
+            if value.translation.width > 90, let prevDay {
+                actions.onSelectDate(prevDay)
+            } else if value.translation.width < -90, let nextDay {
+                actions.onSelectDate(nextDay)
+            }
+        })
     }
 }
 

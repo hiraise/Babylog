@@ -15,8 +15,7 @@ struct DiaryScreen: View {
     @Environment(\.clock) private var clock
     @Environment(\.timeZone) private var timeZone
 
-    @State private var section: MainSection
-    @State private var diaryView: DiaryView
+    @State private var navigation: DiaryNavigationState
     @State private var now: Int64?
     @State private var selectedDate: Date?
     @State private var showDaySelector = false
@@ -35,6 +34,7 @@ struct DiaryScreen: View {
     @State private var openIllnessId: Int64?
     @State private var editingId: Int64?
     @State private var editingPhotos: [EventPhoto]?
+    @State private var deletingEventId: Int64?
     @State private var newEventKind: NewEventKind?
 
     let model: DiaryViewModel
@@ -51,6 +51,7 @@ struct DiaryScreen: View {
         onThemeChange: @escaping (ThemeChoice) -> Void,
         initialSection: MainSection = .today,
         initialDiaryView: DiaryView = .days,
+        initialNotesFilter: NotesFilter = .all,
         recovery: DatabaseRecovery? = nil,
         onRecoverySeen: @escaping () -> Void = {},
         developmentBadge: Bool = false,
@@ -63,8 +64,11 @@ struct DiaryScreen: View {
         self.onRecoverySeen = onRecoverySeen
         self.developmentBadge = developmentBadge
         self.onOpenHelp = onOpenHelp
-        _section = State(initialValue: initialSection)
-        _diaryView = State(initialValue: initialDiaryView)
+        _navigation = State(initialValue: DiaryNavigationState(
+            section: initialSection,
+            diaryView: initialDiaryView,
+            notesFilter: initialNotesFilter
+        ))
     }
 
     var body: some View {
@@ -81,7 +85,7 @@ struct DiaryScreen: View {
             MainNavigationBar(
                 selected: section,
                 onSelect: {
-                    section = $0
+                    navigation.select($0)
                     openIllnessId = nil
                 },
                 developmentBadge: developmentBadge
@@ -314,6 +318,22 @@ struct DiaryScreen: View {
                 onOpenIllness: { openIllnessId = $0.id }
             )
         }
+        if let deletingEventId, let child = model.state.child,
+           let event = model.state.events.first(where: { $0.id == deletingEventId }) {
+            AppSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { self.deletingEventId = nil } }),
+                onDismiss: { self.deletingEventId = nil },
+                title: "Удалить запись?",
+                icon: "ic_delete",
+                confirm: SheetAction(label: "Удалить", destructive: true) {
+                    self.deletingEventId = nil
+                    Task { await model.deleteEvent(event) }
+                }
+            ) { _ in
+                Text(eventTitle(event, sex: child.sex))
+                    .appTextStyle(themeValues.typography.bodyMedium)
+            }
+        }
         if let editingId, let editingPhotos, let child = model.state.child,
            let event = model.state.events.first(where: { $0.id == editingId }) {
             EditEventSheet(
@@ -419,24 +439,41 @@ struct DiaryScreen: View {
                     SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
                 }
             case .diary:
-                DiarySection(view: diaryView, onView: { diaryView = $0 }) { view in
-                    switch view {
-                    case .days:
-                        VStack(spacing: 0) {
-                            DayNavRow(
+                if let child = model.state.child {
+                    DiarySection(view: diaryView, onView: { navigation.diaryView = $0 }) { view in
+                        switch view {
+                        case .days:
+                            HistoryContent(
+                                state: model.state,
+                                child: child,
+                                now: now ?? clock.millis(),
                                 selectedDate: selected,
-                                today: today,
-                                hasPrev: days.first.map { selected > $0 } ?? false,
-                                hasNext: days.last.map { selected < $0 } ?? false,
-                                onPrev: { moveDay(days: days, selected: selected, offset: -1) },
-                                onNext: { moveDay(days: days, selected: selected, offset: 1) },
-                                onPick: { showDaySelector = true }
+                                actions: DiaryActions(
+                                    onEditEvent: edit,
+                                    onDeleteEvent: { deletingEventId = $0.id },
+                                    onSelectDate: { selectedDate = $0 == today ? nil : $0 },
+                                    onPickDate: { showDaySelector = true }
+                                )
                             )
-                            SectionPlaceholder(title: "День", text: "Сводка и записи выбранного дня появятся здесь.")
+                        case .notes:
+                            NotesContent(
+                                events: model.state.events,
+                                sex: child.sex,
+                                now: now ?? clock.millis(),
+                                photoCounts: model.state.photoCounts,
+                                filter: navigation.notesFilter,
+                                onFilter: { navigation.notesFilter = $0 },
+                                cryingWeek: cryingWeek(events: model.state.events, now: now ?? clock.millis(), timeZone: timeZone),
+                                onOpenAnalytics: { navigation.openCryingAnalytics() },
+                                onAddNote: { newEventKind = .note },
+                                onEdit: edit,
+                                onDelete: { deletingEventId = $0.id },
+                                onOpenIllness: { openIllnessId = $0.id }
+                            )
                         }
-                    case .notes:
-                        SectionPlaceholder(title: "Заметки", text: "Плач и заметки появятся здесь.")
                     }
+                } else {
+                    SectionPlaceholder(title: "Дневник", text: "Добавьте ребёнка, чтобы начать дневник.")
                 }
             case .development:
                 SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
@@ -446,12 +483,8 @@ struct DiaryScreen: View {
         }
     }
 
-    private func moveDay(days: [Date], selected: Date, offset: Int) {
-        guard let index = days.firstIndex(of: selected) else { return }
-        let target = index + offset
-        guard days.indices.contains(target) else { return }
-        selectedDate = days[target]
-    }
+    private var section: MainSection { navigation.section }
+    private var diaryView: DiaryView { navigation.diaryView }
 
     private func edit(_ event: any BabyEvent) {
         Task {
