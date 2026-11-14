@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /** «В дни болезни и без» — только если тех и других полных суток с записями не меньше стольких, как у меток (ADR-0031). */
 private let minIllnessDaysToCompare = 3
@@ -49,4 +49,69 @@ func illnessSleep(_ days: [DayStats], sex: Sex?) -> IllnessSleep? {
         healthyDays: healthy.count,
         illLabel: bySex(sex, masculine: "болел", feminine: "болела")
     )
+}
+
+
+/** Подпись под выбором периода: образец полосы болезни и когда болел(а). */
+struct IllnessLegend: View {
+    @Environment(\.babyLogTheme) private var theme
+    let note: String
+
+    var body: some View {
+        HStack(spacing: theme.spacing.s) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(theme.colors.illnessBand)
+                .frame(width: BabyLogSizes.illnessLegendSwatch, height: BabyLogSizes.illnessLegendSwatch)
+            Text(note)
+                .appTextStyle(theme.typography.bodySmall)
+                .foregroundStyle(theme.colors.onSurfaceVariant)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/**
+ «В дни болезни и без» в разделе «Сон»: две полосы — сон в сутки без болезни и в дни болезни,
+ длина — доля от большего. Полоса болезни — на её фоне, как столбики графика.
+ */
+struct IllnessSleepCard: View {
+    @Environment(\.babyLogTheme) private var theme
+    let model: IllnessSleep
+
+    var body: some View {
+        let longest = max(model.illMillis, model.healthyMillis, 1)
+        AppCard {
+            VStack(alignment: .leading, spacing: theme.spacing.s) {
+                CardHeader(icon: "ic_illness", title: "В дни болезни и без", trailing: nil)
+                comparison(millis: model.healthyMillis, label: "без болезни", ill: false, longest: longest)
+                comparison(millis: model.illMillis, label: model.illLabel, ill: true, longest: longest)
+                Text("по \(model.healthyDays) и \(model.illDays) суткам; сегодня в средние не входит")
+                    .appTextStyle(theme.typography.bodySmall)
+                    .foregroundStyle(theme.colors.onSurfaceVariant)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private func comparison(millis: Int64, label: String, ill: Bool, longest: Int64) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("\(formatDuration(millis)) в сутки — \(label)")
+                .appTextStyle(theme.typography.bodyMedium)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    if ill {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(theme.colors.illnessBand)
+                            .frame(width: geometry.size.width, height: BabyLogSizes.illnessComparisonBarHeight)
+                    }
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(theme.chartColors.sleep)
+                        .frame(width: geometry.size.width * CGFloat(millis) / CGFloat(longest), height: BabyLogSizes.illnessComparisonBarHeight)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: BabyLogSizes.illnessComparisonBarHeight)
+        }
+        .accessibilityElement(children: .combine)
+    }
 }

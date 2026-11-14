@@ -478,7 +478,21 @@ struct DiaryScreen: View {
             case .development:
                 SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
             case .analytics:
-                SectionPlaceholder(title: "Аналитика", text: "Графики и сводки появятся здесь.")
+                if let child = model.state.child {
+                    AnalyticsContent(
+                        events: model.state.events,
+                        child: child,
+                        now: now ?? clock.millis(),
+                        onOpenDay: { day in
+                            selectedDate = day == today ? nil : day
+                            navigation.openDay()
+                        },
+                        initialSection: navigation.analyticsSection,
+                        onOpenTag: { navigation.openTag($0) }
+                    )
+                } else {
+                    SectionPlaceholder(title: "Аналитика", text: "Добавьте ребёнка, чтобы начать дневник.")
+                }
             }
         }
     }
