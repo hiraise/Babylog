@@ -53,6 +53,7 @@ object CsvCodec {
         events: List<BabyEvent>,
         childPhotos: Map<Long, String> = emptyMap(),
         eventPhotos: Map<Long, List<String>> = emptyMap(),
+        zone: ZoneId = ZoneId.systemDefault(),
     ): String {
         val names = children.associate { it.id to it.name }
         val sb = StringBuilder()
@@ -60,7 +61,7 @@ object CsvCodec {
         sb.append(HEADER).append("\r\n")
         for (child in children) {
             sb.append(PROFILE_ROW).append(',')
-                .append(child.birthDate?.let { formatTime(it) } ?: "")
+                .append(child.birthDate?.let { formatTime(it, zone) } ?: "")
                 .append(",,").append(child.sex?.name ?: "").append(",,")
                 .append(escape(child.name)).append(',')
                 .append(escape(childPhotos[child.id].orEmpty())).append("\r\n")
@@ -68,8 +69,8 @@ object CsvCodec {
         for (event in events) {
             val r = event.toRecord()
             sb.append(r.type).append(',')
-                .append(formatTime(r.start)).append(',')
-                .append(r.end?.let { formatTime(it) } ?: "").append(',')
+                .append(formatTime(r.start, zone)).append(',')
+                .append(r.end?.let { formatTime(it, zone) } ?: "").append(',')
                 .append(escape(r.detail)).append(',')
                 .append(escape(r.note)).append(',')
                 .append(escape(names[event.childId] ?: "")).append(',')

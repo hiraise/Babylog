@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `app/src/test/`, `app/src/test/screenshots/`, `app/build.gradle.kts` (`testImplementation`, `testOptions`, `sourceSets`, `roborazzi`), `build.gradle.kts`, `scripts/dev.sh` (`check`, `goldens`), CLAUDE.md «Сборка и проверка»
+- **Затрагивает:** `app/src/test/`, `app/src/test/screenshots/`, `app/build.gradle.kts` (`testImplementation`, `testOptions`, `sourceSets`, `roborazzi`), `build.gradle.kts`, `scripts/dev.sh` (`check`, `goldens`), AGENTS.md «Сборка и проверка»
 
 ## Контекст
 

@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-16
-- **Затрагивает:** `.github/workflows/`, `.github/dependabot.yml`, `scripts/dev.sh` (`rules`, `check`, `build`, `schemas`), CLAUDE.md «Сборка и проверка», `docs/development.md` «Процесс»
+- **Затрагивает:** `.github/workflows/`, `.github/dependabot.yml`, `scripts/dev.sh` (`rules`, `check`, `build`, `schemas`), AGENTS.md «Сборка и проверка», `docs/development.md` «Процесс»
 
 ## Контекст
 
@@ -28,7 +28,7 @@
 - Workflow проверок работает без секретов, с `permissions: contents: read`; не используй
   `pull_request_target`.
 - Меняй `main` только через PR с зелёной проверкой «Проверка». Каждая задача — своя ветка;
-  параллельные сессии работают в отдельных `git worktree`.
+  задачи выполняются последовательно в основной папке, без отдельных `git worktree`.
 - Читай результат CI коротко: `gh pr checks`, при падении — `gh run view <id> --log-failed`.
 - Обновления зависимостей и actions предлагает Dependabot (`.github/dependabot.yml`); Gradle,
   AGP, Kotlin и KSP — одной группой.

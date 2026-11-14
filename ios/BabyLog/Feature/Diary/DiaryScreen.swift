@@ -1,0 +1,569 @@
+import SwiftUI
+
+private enum ChildSheetMode {
+    case add
+    case edit
+}
+
+/**
+ Главный экран (ADR-0035): шапка с ребёнком, нижняя панель разделов и нижние листы.
+ Тему применяет `RootView` (ADR-0017): экран только сообщает о новом выборе, не пересоздавая окно.
+ Разделы, редакторы и справка подключаются своими сессиями переноса.
+ */
+struct DiaryScreen: View {
+    @Environment(\.babyLogTheme) private var themeValues
+    @Environment(\.clock) private var clock
+    @Environment(\.timeZone) private var timeZone
+
+    @State private var navigation: DiaryNavigationState
+    @State private var now: Int64?
+    @State private var selectedDate: Date?
+    @State private var showDaySelector = false
+    @State private var showThemeSheet = false
+    @State private var showChildren = false
+    @State private var childSheet: ChildSheetMode?
+    @State private var confirmChildDelete = false
+    @State private var menuOpen = false
+    @State private var showHelp = false
+    @State private var showExporter = false
+    @State private var showImporter = false
+    @State private var showSleepStart = false
+    @State private var showFeedingStart = false
+    @State private var cryingDone: Crying?
+    @State private var healthSheets = HealthSheets()
+    @State private var openIllnessId: Int64?
+    @State private var editingId: Int64?
+    @State private var editingPhotos: [EventPhoto]?
+    @State private var deletingEventId: Int64?
+    @State private var newEventKind: NewEventKind?
+
+    let model: DiaryViewModel
+    let theme: ThemeChoice
+    let onThemeChange: (ThemeChoice) -> Void
+    let recovery: DatabaseRecovery?
+    let onRecoverySeen: () -> Void
+    let developmentBadge: Bool
+    let onOpenHelp: (() -> Void)?
+
+    init(
+        model: DiaryViewModel,
+        theme: ThemeChoice,
+        onThemeChange: @escaping (ThemeChoice) -> Void,
+        initialSection: MainSection = .today,
+        initialDiaryView: DiaryView = .days,
+        initialNotesFilter: NotesFilter = .all,
+        recovery: DatabaseRecovery? = nil,
+        onRecoverySeen: @escaping () -> Void = {},
+        developmentBadge: Bool = false,
+        onOpenHelp: (() -> Void)? = nil
+    ) {
+        self.model = model
+        self.theme = theme
+        self.onThemeChange = onThemeChange
+        self.recovery = recovery
+        self.onRecoverySeen = onRecoverySeen
+        self.developmentBadge = developmentBadge
+        self.onOpenHelp = onOpenHelp
+        _navigation = State(initialValue: DiaryNavigationState(
+            section: initialSection,
+            diaryView: initialDiaryView,
+            notesFilter: initialNotesFilter
+        ))
+    }
+
+    var body: some View {
+        let currentNow = now ?? clock.millis()
+        let today = toLocalDate(currentNow, timeZone: timeZone)
+        let days = historyDays(events: model.state.events, today: today, timeZone: timeZone)
+        let selected = selectedDate ?? today
+
+        VStack(spacing: 0) {
+            header(now: currentNow)
+            content(selected: selected, today: today, days: days)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(themeValues.colors.background)
+            MainNavigationBar(
+                selected: section,
+                onSelect: {
+                    navigation.select($0)
+                    openIllnessId = nil
+                },
+                developmentBadge: developmentBadge
+            )
+        }
+        .background(themeValues.colors.background.ignoresSafeArea())
+        .foregroundStyle(themeValues.colors.onBackground)
+        .overlay(alignment: .bottom) {
+            if let message = model.state.message {
+                HStack(spacing: themeValues.spacing.m) {
+                    Text(message)
+                        .appTextStyle(themeValues.typography.bodyMedium)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if model.state.messageAction != nil {
+                        Button("Отменить") {
+                            Task { await model.consumeMessage(performed: true) }
+                        }
+                        .appTextStyle(themeValues.typography.labelLarge)
+                    }
+                }
+                .padding(themeValues.spacing.l)
+                .background(themeValues.colors.surfaceContainerHigh, in: RoundedRectangle(cornerRadius: themeValues.shapes.small))
+                .padding(themeValues.spacing.l)
+                .padding(.bottom, BabyLogSizes.navigationHeight)
+                .cardShadow(shadow: themeValues.shadows.card)
+            }
+        }
+        .task {
+            while !Task.isCancelled {
+                now = clock.millis()
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        .task(id: model.state.message) {
+            guard model.state.message != nil else { return }
+            try? await Task.sleep(for: .seconds(model.state.messageAction == nil ? 4 : 10))
+            if !Task.isCancelled { await model.consumeMessage() }
+        }
+        .onChange(of: model.state.child?.id) { _, _ in
+            selectedDate = nil
+            openIllnessId = nil
+        }
+        .diaryFileExporter(
+            isPresented: $showExporter,
+            defaultFilename: diaryArchiveFilename(currentNow, timeZone: timeZone)
+        ) { result in
+            if case let .success(url) = result {
+                Task { await model.exportTo(url) }
+            }
+        }
+        .diaryFileImporter(isPresented: $showImporter) { result in
+            if case let .success(url) = result {
+                Task { await model.importFrom(url) }
+            }
+        }
+
+        if menuOpen {
+            AppSheet(isPresented: $menuOpen, onDismiss: { menuOpen = false }, edgeToEdge: true) { closer in
+                SheetMenuItem(icon: "ic_theme", label: "Тема") {
+                    closer.close { showThemeSheet = true }
+                }
+                SheetMenuItem(icon: "ic_export", label: "Экспорт в файл") {
+                    closer.close { showExporter = true }
+                }
+                SheetMenuItem(icon: "ic_import", label: "Импорт из файла") {
+                    closer.close { showImporter = true }
+                }
+                SheetMenuItem(icon: "ic_help", label: "Справка") {
+                    closer.close {
+                        if let onOpenHelp { onOpenHelp() } else { showHelp = true }
+                    }
+                }
+            }
+        }
+        if showThemeSheet {
+            ThemeModeSheet(
+                isPresented: $showThemeSheet,
+                choice: theme,
+                onSelect: onThemeChange,
+                onDismiss: { showThemeSheet = false }
+            )
+        }
+        if showHelp {
+            AppSheet(
+                isPresented: $showHelp,
+                onDismiss: { showHelp = false },
+                title: "Справка",
+                icon: "ic_help"
+            ) { _ in
+                Text("Темы и интерактивные гайды появятся здесь.")
+                    .appTextStyle(themeValues.typography.bodyMedium)
+            }
+        }
+        if let recovery {
+            DatabaseRecoveredSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { onRecoverySeen() } }),
+                recovery: recovery,
+                onDismiss: onRecoverySeen,
+                onImport: {
+                    onRecoverySeen()
+                    showImporter = true
+                }
+            )
+        }
+        if showChildren, let child = model.state.child {
+            ChildrenSheet(
+                isPresented: $showChildren,
+                children: model.state.children,
+                selectedId: child.id,
+                now: currentNow,
+                onSelect: { model.selectChild($0) },
+                onEdit: { childSheet = .edit },
+                onAdd: { childSheet = .add },
+                onDismiss: { showChildren = false }
+            )
+        }
+        if let childSheet {
+            ChildSheet(
+                isPresented: Binding(
+                    get: { true },
+                    set: { if !$0 { self.childSheet = nil } }
+                ),
+                initial: childSheet == .edit ? model.state.child : nil,
+                children: model.state.children,
+                onDismiss: { self.childSheet = nil },
+                onSave: { name, birthDate, sex, photo in
+                    let mode = childSheet
+                    self.childSheet = nil
+                    Task {
+                        if mode == .add {
+                            await model.addChild(name: name, birthDate: birthDate, sex: sex, photo: photo)
+                        } else if var child = model.state.child {
+                            child.name = name
+                            child.birthDate = birthDate
+                            child.sex = sex
+                            child.photo = photo
+                            await model.updateChild(child)
+                        }
+                    }
+                },
+                onDelete: childSheet == .edit && model.state.children.count > 1 ? {
+                    confirmChildDelete = true
+                } : nil
+            )
+        }
+        if confirmChildDelete, let child = model.state.child {
+            AppSheet(
+                isPresented: $confirmChildDelete,
+                onDismiss: { confirmChildDelete = false },
+                title: "Удалить «\(child.name)»?",
+                icon: "ic_delete",
+                confirm: SheetAction(label: "Удалить", destructive: true) {
+                    Task { await model.deleteChild(child) }
+                    confirmChildDelete = false
+                }
+            ) { _ in
+                Text("Записи этого ребёнка (\(model.state.events.count)) тоже будут удалены. Отменить это нельзя.")
+                    .appTextStyle(themeValues.typography.bodyMedium)
+            }
+        }
+        if showDaySelector {
+            DaySelectorSheet(
+                isPresented: $showDaySelector,
+                days: days,
+                events: model.state.events,
+                selectedDate: selected,
+                today: today,
+                onDismiss: { showDaySelector = false },
+                onPick: { day in
+                    selectedDate = day == today ? nil : day
+                }
+            )
+        }
+        if showSleepStart {
+            SleepStartSheet(
+                isPresented: $showSleepStart,
+                activeFeeding: model.state.activeFeeding,
+                activeCrying: model.state.activeCrying,
+                onDismiss: { showSleepStart = false },
+                onSave: { time in
+                    showSleepStart = false
+                    Task {
+                        if let crying = await model.startSleep(start: time) { cryingDone = crying }
+                    }
+                }
+            )
+        }
+        if showFeedingStart {
+            FeedingStartSheet(
+                isPresented: $showFeedingStart,
+                activeSleep: model.state.activeSleep,
+                lastBottle: model.state.lastBottle,
+                onDismiss: { showFeedingStart = false },
+                onSave: { breast, time in
+                    showFeedingStart = false
+                    Task { await model.startFeeding(start: time, breast: breast) }
+                },
+                onSaveBottle: { volume, milk, time in
+                    showFeedingStart = false
+                    Task { await model.addBottle(volumeMl: volume, milk: milk, time: time) }
+                }
+            )
+        }
+        if let crying = cryingDone {
+            CryingDoneSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { cryingDone = nil } }),
+                crying: crying,
+                context: cryingContext(events: model.state.events, crying: crying),
+                choices: cryingChoices(events: model.state.events),
+                sex: model.state.child?.sex,
+                onResume: model.state.activeSleep == nil ? {
+                    cryingDone = nil
+                    Task { await model.resumeCrying(crying) }
+                } : nil,
+                onDismiss: { cryingDone = nil },
+                onSave: { start, reasons, helped, note in
+                    cryingDone = nil
+                    Task { await model.saveCryingDetails(crying, start: start, reasons: reasons, helped: helped, note: note) }
+                }
+            )
+        }
+        if let child = model.state.child {
+            HealthSheetsHost(
+                sheets: healthSheets,
+                state: model.state,
+                child: child,
+                now: currentNow,
+                model: model,
+                onAddMedicine: { newEventKind = .medicine },
+                onOpenIllness: { openIllnessId = $0.id }
+            )
+        }
+        if let deletingEventId, let child = model.state.child,
+           let event = model.state.events.first(where: { $0.id == deletingEventId }) {
+            AppSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { self.deletingEventId = nil } }),
+                onDismiss: { self.deletingEventId = nil },
+                title: "Удалить запись?",
+                icon: "ic_delete",
+                confirm: SheetAction(label: "Удалить", destructive: true) {
+                    self.deletingEventId = nil
+                    Task { await model.deleteEvent(event) }
+                }
+            ) { _ in
+                Text(eventTitle(event, sex: child.sex))
+                    .appTextStyle(themeValues.typography.bodyMedium)
+            }
+        }
+        if let editingId, let editingPhotos, let child = model.state.child,
+           let event = model.state.events.first(where: { $0.id == editingId }) {
+            EditEventSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { self.editingId = nil; self.editingPhotos = nil } }),
+                event: event,
+                child: child,
+                events: model.state.events,
+                photos: editingPhotos,
+                cryingChoices: cryingChoices(events: model.state.events),
+                onDismiss: { self.editingId = nil; self.editingPhotos = nil },
+                onSave: { edited, photos in
+                    self.editingId = nil
+                    self.editingPhotos = nil
+                    Task { await model.saveEvent(edited, photos: photos) }
+                }
+            )
+        }
+        if let kind = newEventKind, let child = model.state.child {
+            NewEventSheet(
+                isPresented: Binding(get: { true }, set: { if !$0 { newEventKind = nil } }),
+                kind: kind,
+                child: child,
+                events: model.state.events,
+                onDismiss: { newEventKind = nil },
+                onSave: { event, photos in
+                    newEventKind = nil
+                    Task { await model.saveEvent(event, photos: photos) }
+                }
+            )
+        }
+    }
+
+    @ViewBuilder private func header(now: Int64) -> some View {
+        HStack(spacing: themeValues.spacing.s) {
+            if let child = model.state.child {
+                ChildSelector(
+                    child: child,
+                    lastWeight: model.state.lastWeight,
+                    lastHeight: model.state.lastHeight,
+                    now: now,
+                    onClick: { showChildren = true }
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text("Дневник малыша")
+                    .appTextStyle(themeValues.typography.headlineSmall)
+                    .foregroundStyle(themeValues.colors.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Button { menuOpen = true } label: {
+                AppIcon("ic_more", contentDescription: "Меню")
+                    .frame(width: BabyLogSizes.touchTarget, height: BabyLogSizes.touchTarget)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, themeValues.spacing.l)
+        .frame(minHeight: BabyLogSizes.rowMinHeight)
+        .background(themeValues.colors.background)
+    }
+
+    @ViewBuilder private func content(selected: Date, today: Date, days: [Date]) -> some View {
+        let openIllness = model.state.events.compactMap { $0 as? Illness }.first { $0.id == openIllnessId }
+        if let openIllness, let child = model.state.child, section == .today || section == .diary {
+            IllnessScreen(
+                illness: openIllness,
+                state: model.state,
+                child: child,
+                now: now ?? clock.millis(),
+                sheets: healthSheets,
+                model: model,
+                onBack: { openIllnessId = nil },
+                onEditRecord: edit,
+                onAddMedicine: { newEventKind = .medicine }
+            )
+        } else {
+            switch section {
+            case .today:
+                if let child = model.state.child {
+                    TodayContent(
+                        state: model.state,
+                        child: child,
+                        now: now ?? clock.millis(),
+                        actions: DiaryActions(
+                            onStartSleep: { showSleepStart = true },
+                            onEndSleep: { Task { await model.endSleep() } },
+                            onStartFeeding: { showFeedingStart = true },
+                            onEndFeeding: { Task { await model.endFeeding() } },
+                            onSwitchBreast: { Task { await model.switchBreast() } },
+                            onStartCrying: { Task { await model.startCrying() } },
+                            onEndCrying: {
+                                Task {
+                                    if let crying = await model.endCrying() { cryingDone = crying }
+                                }
+                            },
+                            onAdd: { newEventKind = $0 },
+                            onEditEvent: edit,
+                            onHealth: { healthSheets.menu = true },
+                            onTemperature: { healthSheets.temperature = true },
+                            onOpenIllness: { openIllnessId = $0.id }
+                        )
+                    )
+                } else {
+                    SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
+                }
+            case .diary:
+                if let child = model.state.child {
+                    DiarySection(view: diaryView, onView: { navigation.diaryView = $0 }) { view in
+                        switch view {
+                        case .days:
+                            HistoryContent(
+                                state: model.state,
+                                child: child,
+                                now: now ?? clock.millis(),
+                                selectedDate: selected,
+                                actions: DiaryActions(
+                                    onEditEvent: edit,
+                                    onDeleteEvent: { deletingEventId = $0.id },
+                                    onSelectDate: { selectedDate = $0 == today ? nil : $0 },
+                                    onPickDate: { showDaySelector = true }
+                                )
+                            )
+                        case .notes:
+                            NotesContent(
+                                events: model.state.events,
+                                sex: child.sex,
+                                now: now ?? clock.millis(),
+                                photoCounts: model.state.photoCounts,
+                                filter: navigation.notesFilter,
+                                onFilter: { navigation.notesFilter = $0 },
+                                cryingWeek: cryingWeek(events: model.state.events, now: now ?? clock.millis(), timeZone: timeZone),
+                                onOpenAnalytics: { navigation.openCryingAnalytics() },
+                                onAddNote: { newEventKind = .note },
+                                onEdit: edit,
+                                onDelete: { deletingEventId = $0.id },
+                                onOpenIllness: { openIllnessId = $0.id }
+                            )
+                        }
+                    }
+                } else {
+                    SectionPlaceholder(title: "Дневник", text: "Добавьте ребёнка, чтобы начать дневник.")
+                }
+            case .development:
+                SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
+            case .analytics:
+                SectionPlaceholder(title: "Аналитика", text: "Графики и сводки появятся здесь.")
+            }
+        }
+    }
+
+    private var section: MainSection { navigation.section }
+    private var diaryView: DiaryView { navigation.diaryView }
+
+    private func edit(_ event: any BabyEvent) {
+        Task {
+            let photos = await model.eventPhotos(event.id)
+            editingPhotos = photos
+            editingId = event.id
+        }
+    }
+
+}
+
+private struct SectionPlaceholder: View {
+    @Environment(\.babyLogTheme) private var theme
+    let title: String
+    let text: String
+
+    var body: some View {
+        VStack(spacing: theme.spacing.m) {
+            AppIcon("ic_diary", size: 40, tint: theme.colors.primary)
+            Text(title).appTextStyle(theme.typography.titleLarge)
+            Text(text)
+                .appTextStyle(theme.typography.bodyMedium)
+                .foregroundStyle(theme.colors.onSurfaceVariant)
+                .multilineTextAlignment(.center)
+        }
+        .padding(theme.spacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+private struct ThemeModeSheet: View {
+    @Environment(\.babyLogTheme) private var theme
+    @Binding var isPresented: Bool
+    let choice: ThemeChoice
+    let onSelect: (ThemeChoice) -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        AppSheet(
+            isPresented: $isPresented,
+            onDismiss: onDismiss,
+            title: "Тема",
+            icon: "ic_theme",
+            edgeToEdge: true
+        ) { _ in
+            VStack(spacing: 0) {
+                modeRow(.system, "Как в системе")
+                modeRow(.light, "Светлая")
+                modeRow(.dark, "Тёмная")
+            }
+        }
+    }
+
+    private func modeRow(_ mode: ThemeMode, _ title: String) -> some View {
+        Button {
+            var selected = choice
+            selected.mode = mode
+            onSelect(selected)
+        } label: {
+            HStack(spacing: theme.spacing.m) {
+                Image(systemName: choice.mode == mode ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(theme.colors.primary)
+                Text(title).appTextStyle(theme.typography.bodyLarge)
+                Spacer()
+            }
+            .padding(.horizontal, theme.spacing.l)
+            .frame(maxWidth: .infinity, minHeight: BabyLogSizes.menuMinHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(choice.mode == mode ? [.isSelected] : [])
+    }
+}
+
+func diaryArchiveFilename(_ millis: Int64, timeZone: TimeZone) -> String {
+    let formatter = DateFormatter()
+    formatter.calendar = Calendar(identifier: .gregorian)
+    formatter.locale = Locale(identifier: "en_US_POSIX")
+    formatter.timeZone = timeZone
+    formatter.dateFormat = "yyyy-MM-dd"
+    return "baby-diary-\(formatter.string(from: Date(timeIntervalSince1970: Double(millis) / 1000))).zip"
+}

@@ -2,7 +2,7 @@
 
 Здесь фиксируются архитектурные и важные системные решения проекта. Проект разрабатывают
 AI-агенты, поэтому ADR пишутся в первую очередь для них — коротко, с проверяемыми
-правилами, — и во вторую очередь для людей. Когда нужен ADR — в [CLAUDE.md](../../CLAUDE.md);
+правилами, — и во вторую очередь для людей. Когда нужен ADR — в [AGENTS.md](../../AGENTS.md);
 как его писать и шаблон — [template.md](template.md).
 
 Статусы: «Предложено» → «Принято» → «Заменено» или «Отменено». Принятые ADR обязательны;
@@ -20,8 +20,8 @@ AI-агенты, поэтому ADR пишутся в первую очеред�
 | [0008](0008-data-model-children.md) | Несколько детей: таблица `children`, все записи в `events` с привязкой к ребёнку | Принято | `core/model/`, `core/data/`, `app/schemas/` |
 | [0009](0009-csv-with-children.md) | CSV с колонкой `child` — формат экспорта и импорта; импорт только добавляет | Принято | `feature/transfer/`, `docs/development.md` «Формат CSV» |
 | [0010](0010-design-system.md) | Оформление задаёт `BabyLogTheme`: цвета, шрифты, формы и отступы только из темы, Material 3 без динамического цвета | Принято | UI в `core/ui/` и `feature/*/`, `res/font/`, `res/drawable/`, `res/values*/`, библиотеки шрифтов и иконок |
-| [0011](0011-ci-github-actions.md) | Проверки — в `scripts/dev.sh`, на GitHub Actions для каждого PR; `main` меняется только через PR с зелёным CI | Принято | `.github/`, `scripts/dev.sh`, CLAUDE.md «Сборка и проверка», `docs/development.md` «Процесс» |
-| [0012](0012-release-signing.md) | Релизы — APK, подписанный ключом проекта в CI, публикуется в GitHub Releases по тегу `v<versionName>` | Принято | `app/build.gradle.kts` (подпись, версия), `.github/workflows/release.yml`, `scripts/dev.sh release`, `.claude/skills/release/`, README «Установка на телефон» |
+| [0011](0011-ci-github-actions.md) | Проверки — в `scripts/dev.sh`, на GitHub Actions для каждого PR; `main` меняется только через PR с зелёным CI | Принято | `.github/`, `scripts/dev.sh`, AGENTS.md «Сборка и проверка», `docs/development.md` «Процесс» |
+| [0012](0012-release-signing.md) | Релизы — APK, подписанный ключом проекта в CI, публикуется в GitHub Releases по тегу `v<versionName>` | Принято | `app/build.gradle.kts` (подпись, версия), `.github/workflows/release.yml`, `scripts/dev.sh release`, `.agents/skills/release/`, README «Установка на телефон» |
 | [0013](0013-jvm-android-tests.md) | Миграции, Room и экраны проверяются тестами на JVM (Robolectric, room-testing, Roborazzi), а не вручную на эмуляторе | Принято | `app/src/test/`, `app/src/test/screenshots/`, `app/build.gradle.kts`, `scripts/dev.sh` (`check`, `goldens`) |
 | [0014](0014-own-icons.md) | Иконку, которой нет в Material Symbols, рисуем сами в его начертании | Принято | `res/drawable/ic_*.xml`, README «Лицензия» |
 | [0015](0015-feeding-timer.md) | Кормление — таймер с началом и концом, «Сменить грудь» — новая запись встык; прежние кормления — без длительности | Принято | `Feeding`, `startFeeding`, `switchBreast`, сессии в `feature/summary/`, `FEEDING` в CSV |
@@ -53,3 +53,8 @@ AI-агенты, поэтому ADR пишутся в первую очеред�
 | [0044](0044-dark-classic-default.md) | Тёмная тема по умолчанию — «Классика»; остальные палитры на выбор | Принято | `DarkPalette.DEFAULT`, `values-night/colors.xml`, тёмные эталоны скриншотов |
 | [0045](0045-export-archive-with-photos.md) | Экспорт — архив .zip с CSV и фото; импорт принимает архив и CSV и только добавляет | Принято | `feature/transfer/` (`DiaryArchive.kt`, `CsvTransfer.kt`, `CsvCodec.kt`, `DocumentStore`), `photoIds`/`photoJpeg`/`addEventPhoto`, меню ⋮ в `DiaryScreen.kt`, `DatabaseRecoveredSheet`, `docs/development.md` «Формат экспорта» |
 | [0046](0046-child-photo.md) | Фото ребёнка — кадрированный JPEG 512×512 в `children.photo`; камера и галерея — системные, без разрешений (сводный вместо ADR-0023) | Принято | `Child.photo`, `children.photo`, `AndroidManifest.xml`, `core/ui/photo/`, `PhotoCropSheet`, `Avatar`, `feature/transfer/` |
+| [0047](0047-store-publishing.md) | Публикация бесплатно в Google Play и App Store от аккаунтов hiraise; GitHub Releases остаётся; одна версия по тегу, ключ проекта — в Play App Signing | Предложено | `app/build.gradle.kts` (`targetSdk`, `applicationId`, подпись), `release.yml`, `scripts/dev.sh release`, `.agents/skills/release/`, `fastlane/metadata/`, `PRIVACY.md`, разрешения в `AndroidManifest.xml` |
+| [0048](0048-app-store-license-permission.md) | Лицензия — GPL-3.0-or-later с дополнительным разрешением распространять через магазины; зависимости — без GPL и LGPL | Предложено | `LICENSE`, `LICENSE-APP-STORES.md`, зависимости в `*.gradle.kts`, README «Лицензия», принцип 1 в `AGENTS.md` |
+| [0049](0049-ios-swiftui.md) | Версия для iOS — отдельное приложение на SwiftUI в `ios/` этого репозитория; поведение — по тем же ADR, Android — эталон | Предложено | `ios/`, общие ресурсы (`assets/development/`, `res/font/`, `ic_*.xml`), `versionName` и `versionCode`, `fixtures/export/`, `ios.yml`, `dependabot.yml`, `scripts/dev.sh` |
+| [0050](0050-ios-local-data.md) | Дневник на iPhone — SQLite со схемой Android-базы, вне резервных копий iCloud; перенос — экспортом | Предложено | база в `ios/` (GRDB, миграции), `app/schemas/`, `PrivacyInfo.xcprivacy`, копии базы в `ios/` |
+| [0051](0051-ios-architecture.md) | Архитектура iOS — SwiftUI с Observable-моделями, ручным DI и часами Clock | Принято | `ios/BabyLog/`, `ios/BabyLogTests/`, `ios/BabyLog.xcodeproj` |

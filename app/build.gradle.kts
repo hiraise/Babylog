@@ -16,8 +16,8 @@ android {
         minSdk = 26
         // Не поднимаем без проверки на телефоне: с 35 Android включает edge-to-edge и меняет раскладку экрана
         targetSdk = 34
-        versionCode = 11
-        versionName = "1.10"
+        versionCode = 12
+        versionName = "1.11"
     }
 
     signingConfigs {
@@ -101,8 +101,8 @@ dependencies {
     // Android на JVM без эмулятора: миграции, Room и скриншоты (ADR-0013)
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("androidx.room:room-testing:2.8.5")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.76.0")
-    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.76.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
+    testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.77.0")
     // Нажатия и ввод на экранах — UI-тесты Compose на JVM; версии из compose-bom (ADR-0022)
     testImplementation(platform("androidx.compose:compose-bom:2026.09.00"))
     testImplementation("androidx.compose.ui:ui-test-junit4")
