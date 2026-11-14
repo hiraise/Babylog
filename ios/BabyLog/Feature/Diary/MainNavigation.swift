@@ -94,6 +94,46 @@ struct MainNavigationBar: View {
     }
 }
 
+/** Выбранный раздел и вложенный вид главного экрана; переходы проверяются без SwiftUI. */
+struct DiaryNavigationState: Sendable {
+    var section: MainSection
+    var diaryView: DiaryView
+    var notesFilter: NotesFilter
+
+    init(section: MainSection = .today, diaryView: DiaryView = .days, notesFilter: NotesFilter = .all) {
+        self.section = section
+        self.diaryView = diaryView
+        self.notesFilter = notesFilter
+    }
+
+    mutating func select(_ section: MainSection) {
+        self.section = section
+    }
+
+    mutating func openCryingAnalytics() {
+        section = .analytics
+    }
+
+    mutating func openTag(_ tag: String) {
+        section = .diary
+        diaryView = .notes
+        notesFilter = .tag(tag)
+    }
+
+    /** «Назад» сначала снимает фильтр, затем возвращает на «Сегодня»; false — выход из приложения. */
+    @discardableResult mutating func back() -> Bool {
+        if notesFilter != .all {
+            notesFilter = .all
+            return true
+        }
+        if section != .today {
+            section = .today
+            return true
+        }
+        return false
+    }
+}
+
 /**
  «Дневник» (ADR-0035): переключатель «По дням | Заметки» и под ним выбранный вид.
  Это кнопки, а не вкладки: вкладки рядом с нижней панелью путают уровни навигации.
