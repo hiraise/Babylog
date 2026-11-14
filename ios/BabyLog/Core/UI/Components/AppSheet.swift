@@ -30,7 +30,8 @@ struct SheetCloser {
 
 /**
  Нижний лист — единственный вид всплывающего окна (ADR-0018). Внизу справа — «Отмена»
- и необязательное основное действие. `edgeToEdge` убирает боковые отступы содержимого для меню;
+ и необязательное основное действие. `secondary` заменяет «Отмена» действием, а `secondaryContent` —
+ системным элементом вроде `ShareLink`. `edgeToEdge` убирает боковые отступы содержимого для меню;
  `scrollable = false` используй для содержимого, которое прокручивается само.
  */
 struct AppSheet<Content: View>: View {
@@ -45,6 +46,7 @@ struct AppSheet<Content: View>: View {
     let scrollable: Bool
     let edgeToEdge: Bool
     let secondary: SheetAction?
+    let secondaryContent: AnyView?
     let content: (SheetCloser) -> Content
 
     init(
@@ -56,6 +58,7 @@ struct AppSheet<Content: View>: View {
         scrollable: Bool = true,
         edgeToEdge: Bool = false,
         secondary: SheetAction? = nil,
+        secondaryContent: AnyView? = nil,
         @ViewBuilder content: @escaping (SheetCloser) -> Content
     ) {
         _isPresented = isPresented
@@ -66,6 +69,7 @@ struct AppSheet<Content: View>: View {
         self.scrollable = scrollable
         self.edgeToEdge = edgeToEdge
         self.secondary = secondary
+        self.secondaryContent = secondaryContent
         self.content = content
     }
 
@@ -83,6 +87,7 @@ struct AppSheet<Content: View>: View {
                     scrollable: scrollable,
                     edgeToEdge: edgeToEdge,
                     secondary: secondary,
+                    secondaryContent: secondaryContent,
                     onActionDismiss: { actionDismissal = true },
                     content: content
                 )
@@ -104,6 +109,7 @@ struct AppSheetContent<Content: View>: View {
     let scrollable: Bool
     let edgeToEdge: Bool
     let secondary: SheetAction?
+    let secondaryContent: AnyView?
     let onActionDismiss: () -> Void
     let content: (SheetCloser) -> Content
 
@@ -115,6 +121,7 @@ struct AppSheetContent<Content: View>: View {
         scrollable: Bool = true,
         edgeToEdge: Bool = false,
         secondary: SheetAction? = nil,
+        secondaryContent: AnyView? = nil,
         onActionDismiss: @escaping () -> Void = {},
         @ViewBuilder content: @escaping (SheetCloser) -> Content
     ) {
@@ -125,6 +132,7 @@ struct AppSheetContent<Content: View>: View {
         self.scrollable = scrollable
         self.edgeToEdge = edgeToEdge
         self.secondary = secondary
+        self.secondaryContent = secondaryContent
         self.onActionDismiss = onActionDismiss
         self.content = content
     }
@@ -154,7 +162,9 @@ struct AppSheetContent<Content: View>: View {
             if let confirm {
                 HStack(spacing: spacing.s) {
                     Spacer()
-                    if let secondary {
+                    if let secondaryContent {
+                        secondaryContent
+                    } else if let secondary {
                         Button(secondary.label) { closer.close(then: secondary.onClick) }
                             .disabled(!secondary.enabled)
                             .buttonStyle(.plain)

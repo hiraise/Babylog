@@ -25,7 +25,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S4d | [Editors part 2 (measures, notes)](sessions/S4d.md) | medium | 1.2k / 0.4k | S4c | S6b | done (#76) |
 | S4e | [Illness](sessions/S4e.md) | medium | 0.9k / 0.5k | S4d | S5b, S6b | done (#77) |
 | S5a | [Diary tab: history, notes, tags](sessions/S5a.md) | medium | 1.0k / 0.4k | S4d | S5b, S6b | done (#78) |
-| S5b | [Photos: pick, crop, share](sessions/S5b.md) | high | 0.8k / 0.3k | S4d | S5a, S4e | todo |
+| S5b | [Photos: pick, crop, share](sessions/S5b.md) | high | 0.8k / 0.3k | S4d | S5a, S4e | done (#79) |
 | S6a | [Analytics computations](sessions/S6a.md) | medium | 1.3k / 0.8k | S2a | S2b–S4b | todo |
 | S6b | [Analytics UI and charts](sessions/S6b.md) | medium | 1.6k / 0.4k | S6a, S4a | S4c–S5b | todo |
 | S7a | [Development: data and logic](sessions/S7a.md) | low | 0.4k / 0.4k | S2a | S2b–S4b | todo |
