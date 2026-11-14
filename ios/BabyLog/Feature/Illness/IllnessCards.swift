@@ -62,15 +62,19 @@ struct TemperatureCard: View {
                             .foregroundStyle(theme.colors.onSurfaceVariant)
                     }
                     let to = max(model.illness.end ?? now, model.medicines.map(\.last).max() ?? 0, last.start)
-                    IllnessTemperatureChart(
-                        temperatures: temperatures,
-                        medicines: model.medicines.sorted { ($0.times.first ?? 0) < ($1.times.first ?? 0) },
-                        illness: model.illness,
+                    TemperatureChart(
+                        points: temperatures.map { TemperaturePoint(time: $0.start, tenths: $0.tenths) },
+                        marks: model.medicines.sorted { ($0.times.first ?? 0) < ($1.times.first ?? 0) }.map { MarkRow(label: $0.name, times: $0.times) },
                         from: model.illness.start,
                         to: to,
-                        timeZone: timeZone
+                        days: illnessChartDays(illness: model.illness, to: to, timeZone: timeZone),
+                        markers: model.illness.names.compactMap { name in
+                            guard let since = name.since, since > model.illness.startDate(timeZone) else { return nil }
+                            return TimeMarker(time: Int64(since.timeIntervalSince1970 * 1000), label: "+ \(name.name)")
+                        },
+                        lineColor: theme.chartColors.temperature,
+                        description: "Температура: \(temperatures.count) \(plural(temperatures.count, one: "замер", few: "замера", many: "замеров")), самая высокая \(formatTemperature(maximum.tenths)), последняя \(formatTemperature(last.tenths)) \(illnessAt(last.start, now: now, timeZone: timeZone))"
                     )
-                    .accessibilityLabel("Температура: \(temperatures.count) \(plural(temperatures.count, one: "замер", few: "замера", many: "замеров")), самая высокая \(formatTemperature(maximum.tenths)), последняя \(formatTemperature(last.tenths)) \(illnessAt(last.start, now: now, timeZone: timeZone))")
                 } else {
                     Text("Температуру не записывали")
                         .appTextStyle(theme.typography.bodyMedium)
@@ -82,82 +86,6 @@ struct TemperatureCard: View {
                         .foregroundStyle(theme.colors.primary)
                         .appTextStyle(theme.typography.labelLarge)
                 }
-            }
-        }
-    }
-}
-
-private struct IllnessTemperatureChart: View {
-    @Environment(\.babyLogTheme) private var theme
-    let temperatures: [Temperature]
-    let medicines: [IllnessMedicine]
-    let illness: Illness
-    let from: Int64
-    let to: Int64
-    let timeZone: TimeZone
-
-    var body: some View {
-        let days = illnessChartDays(illness: illness, to: to, timeZone: timeZone)
-        let minimum = Double((temperatures.map(\.tenths).min() ?? 360) - 3) / 10
-        let maximum = Double((temperatures.map(\.tenths).max() ?? 400) + 3) / 10
-        VStack(spacing: theme.spacing.xs) {
-            Canvas { context, size in
-                let duration = max(to - from, 1)
-                func x(_ time: Int64) -> CGFloat { CGFloat(time - from) / CGFloat(duration) * size.width }
-                func y(_ tenths: Int) -> CGFloat {
-                    size.height * (1 - CGFloat((Double(tenths) / 10 - minimum) / max(maximum - minimum, 0.1)))
-                }
-                for day in days {
-                    var grid = Path()
-                    grid.move(to: CGPoint(x: x(day.time), y: 0))
-                    grid.addLine(to: CGPoint(x: x(day.time), y: size.height))
-                    context.stroke(grid, with: .color(theme.colors.outlineVariant), lineWidth: 0.5)
-                }
-                for name in illness.names {
-                    guard let since = name.since, since > illness.startDate(timeZone) else { continue }
-                    let millis = Int64(since.timeIntervalSince1970 * 1000)
-                    var marker = Path()
-                    marker.move(to: CGPoint(x: x(millis), y: 0))
-                    marker.addLine(to: CGPoint(x: x(millis), y: size.height))
-                    context.stroke(marker, with: .color(theme.colors.tertiary), style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                }
-                let sorted = temperatures.sorted { $0.start < $1.start }
-                var line = Path()
-                for (index, temperature) in sorted.enumerated() {
-                    let point = CGPoint(x: x(temperature.start), y: y(temperature.tenths))
-                    if index == 0 { line.move(to: point) } else { line.addLine(to: point) }
-                    context.fill(Path(ellipseIn: CGRect(x: point.x - 3, y: point.y - 3, width: 6, height: 6)), with: .color(theme.chartColors.temperature))
-                }
-                if sorted.count > 1 {
-                    context.stroke(line, with: .color(theme.chartColors.temperature), lineWidth: 2)
-                }
-                for medicine in medicines {
-                    for time in medicine.times {
-                        context.fill(
-                            Path(ellipseIn: CGRect(x: x(time) - 2, y: size.height - 5, width: 4, height: 4)),
-                            with: .color(theme.colors.primary)
-                        )
-                    }
-                }
-            }
-            .frame(height: BabyLogSizes.illnessChartHeight)
-            GeometryReader { geometry in
-                let duration = max(to - from, 1)
-                ForEach(days.indices, id: \.self) { index in
-                    Text(days[index].label)
-                        .appTextStyle(theme.typography.bodySmall)
-                        .foregroundStyle(theme.colors.onSurfaceVariant)
-                        .position(
-                            x: min(max(CGFloat(days[index].time - from) / CGFloat(duration) * geometry.size.width, 18), geometry.size.width - 18),
-                            y: 8
-                        )
-                }
-            }
-            .frame(height: BabyLogSizes.illnessChartLabelsHeight)
-            if !medicines.isEmpty {
-                Text(medicines.map(\.name).joined(separator: " · "))
-                    .appTextStyle(theme.typography.bodySmall)
-                    .foregroundStyle(theme.colors.primary)
             }
         }
     }

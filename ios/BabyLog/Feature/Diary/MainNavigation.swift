@@ -99,6 +99,7 @@ struct DiaryNavigationState: Sendable {
     var section: MainSection
     var diaryView: DiaryView
     var notesFilter: NotesFilter
+    var analyticsSection: AnalyticsSection?
 
     init(section: MainSection = .today, diaryView: DiaryView = .days, notesFilter: NotesFilter = .all) {
         self.section = section
@@ -108,16 +109,25 @@ struct DiaryNavigationState: Sendable {
 
     mutating func select(_ section: MainSection) {
         self.section = section
+        analyticsSection = nil
     }
 
     mutating func openCryingAnalytics() {
         section = .analytics
+        analyticsSection = .crying
+    }
+
+    mutating func openDay() {
+        section = .diary
+        diaryView = .days
+        analyticsSection = nil
     }
 
     mutating func openTag(_ tag: String) {
         section = .diary
         diaryView = .notes
         notesFilter = .tag(tag)
+        analyticsSection = nil
     }
 
     /** «Назад» сначала снимает фильтр, затем возвращает на «Сегодня»; false — выход из приложения. */
@@ -128,6 +138,7 @@ struct DiaryNavigationState: Sendable {
         }
         if section != .today {
             section = .today
+            analyticsSection = nil
             return true
         }
         return false
