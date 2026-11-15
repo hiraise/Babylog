@@ -69,7 +69,7 @@ struct StatTile<Chart: View>: View {
                     chart
                 }
             }
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
     }
 }
