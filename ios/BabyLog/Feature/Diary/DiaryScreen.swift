@@ -40,6 +40,7 @@ struct DiaryScreen: View {
     let model: DiaryViewModel
     let theme: ThemeChoice
     let onThemeChange: (ThemeChoice) -> Void
+    let development: DevelopmentViewModel?
     let recovery: DatabaseRecovery?
     let onRecoverySeen: () -> Void
     let developmentBadge: Bool
@@ -49,6 +50,7 @@ struct DiaryScreen: View {
         model: DiaryViewModel,
         theme: ThemeChoice,
         onThemeChange: @escaping (ThemeChoice) -> Void,
+        development: DevelopmentViewModel? = nil,
         initialSection: MainSection = .today,
         initialDiaryView: DiaryView = .days,
         initialNotesFilter: NotesFilter = .all,
@@ -60,6 +62,7 @@ struct DiaryScreen: View {
         self.model = model
         self.theme = theme
         self.onThemeChange = onThemeChange
+        self.development = development
         self.recovery = recovery
         self.onRecoverySeen = onRecoverySeen
         self.developmentBadge = developmentBadge
@@ -76,6 +79,12 @@ struct DiaryScreen: View {
         let today = toLocalDate(currentNow, timeZone: timeZone)
         let days = historyDays(events: model.state.events, today: today, timeZone: timeZone)
         let selected = selectedDate ?? today
+        let tipsWeek = model.state.child.map {
+            currentDevelopmentWeek(data: development?.data, child: $0, today: today, timeZone: timeZone)
+        } ?? nil
+        let newTips = model.state.child.map {
+            hasNewTips(week: tipsWeek, childId: $0.id, seenWeeks: development?.seenWeeks ?? [:])
+        } ?? false
 
         VStack(spacing: 0) {
             header(now: currentNow)
@@ -88,7 +97,7 @@ struct DiaryScreen: View {
                     navigation.select($0)
                     openIllnessId = nil
                 },
-                developmentBadge: developmentBadge
+                developmentBadge: developmentBadge || newTips
             )
         }
         .background(themeValues.colors.background.ignoresSafeArea())
@@ -127,6 +136,11 @@ struct DiaryScreen: View {
         .onChange(of: model.state.child?.id) { _, _ in
             selectedDate = nil
             openIllnessId = nil
+        }
+        .task(id: section == .development ? "\(model.state.child?.id ?? 0):\(tipsWeek?.week ?? 0)" : "") {
+            if section == .development, let child = model.state.child, let tipsWeek {
+                development?.markSeen(childId: child.id, week: tipsWeek.week)
+            }
         }
         .diaryFileExporter(
             isPresented: $showExporter,
@@ -396,6 +410,12 @@ struct DiaryScreen: View {
 
     @ViewBuilder private func content(selected: Date, today: Date, days: [Date]) -> some View {
         let openIllness = model.state.events.compactMap { $0 as? Illness }.first { $0.id == openIllnessId }
+        let tipsWeek = model.state.child.map {
+            currentDevelopmentWeek(data: development?.data, child: $0, today: today, timeZone: timeZone)
+        } ?? nil
+        let newTips = model.state.child.map {
+            hasNewTips(week: tipsWeek, childId: $0.id, seenWeeks: development?.seenWeeks ?? [:])
+        } ?? false
         if let openIllness, let child = model.state.child, section == .today || section == .diary {
             IllnessScreen(
                 illness: openIllness,
@@ -433,7 +453,8 @@ struct DiaryScreen: View {
                             onHealth: { healthSheets.menu = true },
                             onTemperature: { healthSheets.temperature = true },
                             onOpenIllness: { openIllnessId = $0.id }
-                        )
+                        ),
+                        tipsBanner: makeTipsBanner(week: tipsWeek, isNew: newTips)
                     )
                 } else {
                     SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")
@@ -476,7 +497,16 @@ struct DiaryScreen: View {
                     SectionPlaceholder(title: "Дневник", text: "Добавьте ребёнка, чтобы начать дневник.")
                 }
             case .development:
-                SectionPlaceholder(title: "Развитие", text: "Советы и навыки появятся здесь.")
+                if let child = model.state.child {
+                    DevelopmentContent(
+                        child: child,
+                        data: development?.data,
+                        today: today,
+                        onSetBirthDate: { childSheet = .edit }
+                    )
+                } else {
+                    SectionPlaceholder(title: "Развитие", text: "Добавьте ребёнка, чтобы увидеть советы и навыки.")
+                }
             case .analytics:
                 if let child = model.state.child {
                     AnalyticsContent(
@@ -499,6 +529,14 @@ struct DiaryScreen: View {
 
     private var section: MainSection { navigation.section }
     private var diaryView: DiaryView { navigation.diaryView }
+
+    private func makeTipsBanner(week: DevelopmentWeek?, isNew: Bool) -> AnyView? {
+        guard let week, !week.allTips.isEmpty else { return nil }
+        return AnyView(WeekTipsBanner(week: week, isNew: isNew) {
+            navigation.select(.development)
+            openIllnessId = nil
+        })
+    }
 
     private func edit(_ event: any BabyEvent) {
         Task {
