@@ -4,6 +4,7 @@ struct RootView: View {
     @Environment(AppContainer.self) private var container
     @Environment(\.colorScheme) private var systemColorScheme
     @State private var model: DiaryViewModel?
+    @State private var development: DevelopmentViewModel?
     @State private var theme = ThemeChoice()
     @State private var recovery: DatabaseRecovery?
 
@@ -22,6 +23,7 @@ struct RootView: View {
                     model: model,
                     theme: theme,
                     onThemeChange: container.themeMode.select,
+                    development: development,
                     recovery: recovery,
                     onRecoverySeen: container.recoveryNotices.dismiss
                 )
@@ -39,6 +41,9 @@ struct RootView: View {
                     documents: container.documents,
                     clock: container.clock
                 )
+            }
+            if development == nil {
+                development = DevelopmentViewModel(source: AssetTipsSource(), seen: container.developmentSeen)
             }
             for await choice in container.themeMode.choice.stream() {
                 theme = choice

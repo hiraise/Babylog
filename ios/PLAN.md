@@ -29,7 +29,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S6a | [Analytics computations](sessions/S6a.md) | medium | 1.3k / 0.8k | S2a | S2b–S4b | done (#80) |
 | S6b | [Analytics UI and charts](sessions/S6b.md) | medium | 1.6k / 0.4k | S6a, S4a | S4c–S5b | done (#81) |
 | S7a | [Development: data and logic](sessions/S7a.md) | low | 0.4k / 0.4k | S2a | S2b–S4b | done (#82) |
-| S7b | [Development: screens, banner, chart](sessions/S7b.md) | medium | 0.6k / 0.2k | S7a, S4b, S6b | S8 | todo |
+| S7b | [Development: screens, banner, chart](sessions/S7b.md) | medium | 0.6k / 0.2k | S7a, S4b, S6b | S8 | wip |
 | S8 | [Theme settings, dark palettes](sessions/S8.md) | low | 0.3k / 0.2k | S4a | S7b | todo |
 | S9a | [Help: topics and screens](sessions/S9a.md) | medium | 0.7k / 0.4k | all UI | — | todo |
 | S9b | [Help: interactive guides](sessions/S9b.md) | high | 0.6k / 0.6k | S9a | — | todo |
