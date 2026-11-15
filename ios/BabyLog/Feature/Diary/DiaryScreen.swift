@@ -8,7 +8,8 @@ private enum ChildSheetMode {
 /**
  Главный экран (ADR-0035): шапка с ребёнком, нижняя панель разделов и нижние листы.
  Тему применяет `RootView` (ADR-0017): экран только сообщает о новом выборе, не пересоздавая окно.
- Разделы, редакторы и справка подключаются своими сессиями переноса.
+ Справка (ADR-0043) — последний пункт меню, карточка «Где справка» — `helpPointer`.
+ `example` — пример в гайде: без экспорта, импорта и перехода в справку.
  */
 struct DiaryScreen: View {
     @Environment(\.babyLogTheme) private var themeValues
@@ -43,8 +44,10 @@ struct DiaryScreen: View {
     let recovery: DatabaseRecovery?
     let onRecoverySeen: () -> Void
     let developmentBadge: Bool
+    let example: Bool
     let onOpenHelp: (() -> Void)?
     let helpBadge: Bool
+    let helpPointer: AnyView?
 
     init(
         model: DiaryViewModel,
@@ -57,8 +60,10 @@ struct DiaryScreen: View {
         recovery: DatabaseRecovery? = nil,
         onRecoverySeen: @escaping () -> Void = {},
         developmentBadge: Bool = false,
+        example: Bool = false,
         onOpenHelp: (() -> Void)? = nil,
-        helpBadge: Bool = false
+        helpBadge: Bool = false,
+        helpPointer: AnyView? = nil
     ) {
         self.model = model
         self.theme = theme
@@ -67,8 +72,10 @@ struct DiaryScreen: View {
         self.recovery = recovery
         self.onRecoverySeen = onRecoverySeen
         self.developmentBadge = developmentBadge
+        self.example = example
         self.onOpenHelp = onOpenHelp
         self.helpBadge = helpBadge
+        self.helpPointer = helpPointer
         _navigation = State(initialValue: DiaryNavigationState(
             section: initialSection,
             diaryView: initialDiaryView,
@@ -163,13 +170,15 @@ struct DiaryScreen: View {
                 SheetMenuItem(icon: "ic_theme", label: "Тема") {
                     closer.close { showThemeSheet = true }
                 }
-                SheetMenuItem(icon: "ic_export", label: "Экспорт в файл") {
-                    closer.close { showExporter = true }
+                if !example {
+                    SheetMenuItem(icon: "ic_export", label: "Экспорт в файл") {
+                        closer.close { showExporter = true }
+                    }
+                    SheetMenuItem(icon: "ic_import", label: "Импорт из файла") {
+                        closer.close { showImporter = true }
+                    }
                 }
-                SheetMenuItem(icon: "ic_import", label: "Импорт из файла") {
-                    closer.close { showImporter = true }
-                }
-                if let onOpenHelp {
+                if let onOpenHelp, !example {
                     SheetMenuItem(icon: "ic_help", label: "Справка", badge: helpBadge) {
                         closer.close { onOpenHelp() }
                     }
@@ -177,12 +186,14 @@ struct DiaryScreen: View {
             }
         }
         if showThemeSheet {
-            ThemeSheet(
-                isPresented: $showThemeSheet,
-                theme: theme,
-                onSelect: onThemeChange,
-                onDismiss: { showThemeSheet = false }
-            )
+            GuideSheet(target: .themeSheet) {
+                ThemeSheet(
+                    isPresented: $showThemeSheet,
+                    theme: theme,
+                    onSelect: onThemeChange,
+                    onDismiss: { showThemeSheet = false }
+                )
+            }
         }
         if let recovery {
             DatabaseRecoveredSheet(
@@ -196,16 +207,18 @@ struct DiaryScreen: View {
             )
         }
         if showChildren, let child = model.state.child {
-            ChildrenSheet(
-                isPresented: $showChildren,
-                children: model.state.children,
-                selectedId: child.id,
-                now: currentNow,
-                onSelect: { model.selectChild($0) },
-                onEdit: { childSheet = .edit },
-                onAdd: { childSheet = .add },
-                onDismiss: { showChildren = false }
-            )
+            GuideSheet(target: .childrenSheet) {
+                ChildrenSheet(
+                    isPresented: $showChildren,
+                    children: model.state.children,
+                    selectedId: child.id,
+                    now: currentNow,
+                    onSelect: { model.selectChild($0) },
+                    onEdit: { childSheet = .edit },
+                    onAdd: { childSheet = .add },
+                    onDismiss: { showChildren = false }
+                )
+            }
         }
         if let childSheet {
             ChildSheet(
@@ -252,17 +265,19 @@ struct DiaryScreen: View {
             }
         }
         if showDaySelector {
-            DaySelectorSheet(
-                isPresented: $showDaySelector,
-                days: days,
-                events: model.state.events,
-                selectedDate: selected,
-                today: today,
-                onDismiss: { showDaySelector = false },
-                onPick: { day in
-                    selectedDate = day == today ? nil : day
-                }
-            )
+            GuideSheet(target: .daySelector) {
+                DaySelectorSheet(
+                    isPresented: $showDaySelector,
+                    days: days,
+                    events: model.state.events,
+                    selectedDate: selected,
+                    today: today,
+                    onDismiss: { showDaySelector = false },
+                    onPick: { day in
+                        selectedDate = day == today ? nil : day
+                    }
+                )
+            }
         }
         if showSleepStart {
             SleepStartSheet(
@@ -341,20 +356,22 @@ struct DiaryScreen: View {
         }
         if let editingId, let editingPhotos, let child = model.state.child,
            let event = model.state.events.first(where: { $0.id == editingId }) {
-            EditEventSheet(
-                isPresented: Binding(get: { true }, set: { if !$0 { self.editingId = nil; self.editingPhotos = nil } }),
-                event: event,
-                child: child,
-                events: model.state.events,
-                photos: editingPhotos,
-                cryingChoices: cryingChoices(events: model.state.events),
-                onDismiss: { self.editingId = nil; self.editingPhotos = nil },
-                onSave: { edited, photos in
-                    self.editingId = nil
-                    self.editingPhotos = nil
-                    Task { await model.saveEvent(edited, photos: photos) }
-                }
-            )
+            GuideSheet(target: .eventEditor) {
+                EditEventSheet(
+                    isPresented: Binding(get: { true }, set: { if !$0 { self.editingId = nil; self.editingPhotos = nil } }),
+                    event: event,
+                    child: child,
+                    events: model.state.events,
+                    photos: editingPhotos,
+                    cryingChoices: cryingChoices(events: model.state.events),
+                    onDismiss: { self.editingId = nil; self.editingPhotos = nil },
+                    onSave: { edited, photos in
+                        self.editingId = nil
+                        self.editingPhotos = nil
+                        Task { await model.saveEvent(edited, photos: photos) }
+                    }
+                )
+            }
         }
         if let kind = newEventKind, let child = model.state.child {
             NewEventSheet(
@@ -401,6 +418,7 @@ struct DiaryScreen: View {
                     }
             }
             .buttonStyle(.plain)
+            .guideTarget(.menuButton, shape: .circle)
         }
         .padding(.horizontal, themeValues.spacing.l)
         .frame(minHeight: BabyLogSizes.rowMinHeight)
@@ -453,7 +471,8 @@ struct DiaryScreen: View {
                             onTemperature: { healthSheets.temperature = true },
                             onOpenIllness: { openIllnessId = $0.id }
                         ),
-                        tipsBanner: makeTipsBanner(week: tipsWeek, isNew: newTips)
+                        tipsBanner: makeTipsBanner(week: tipsWeek, isNew: newTips),
+                        helpPointer: helpPointer
                     )
                 } else {
                     SectionPlaceholder(title: "Сегодня", text: "Добавьте ребёнка, чтобы начать дневник.")

@@ -21,6 +21,7 @@ struct SleepCard: View {
             onStart: onStart,
             onStop: onEnd
         )
+        .guideTarget(.sleepTile)
     }
 }
 
@@ -45,10 +46,14 @@ struct FeedingCard: View {
             stopLabel: "закончить кормление",
             runningLabel: activeFeeding.map { "\(breastLabel($0.breast)) грудь" },
             idleCaption: afterFeedingCaption(lastFeeding: lastFeeding, now: now, timeZone: timeZone),
-            corner: AnyView(TimerCornerButton(icon: "ic_swap", description: "Сменить грудь", onClick: onSwitchBreast)),
+            corner: AnyView(
+                TimerCornerButton(icon: "ic_swap", description: "Сменить грудь", onClick: onSwitchBreast)
+                    .guideTarget(.switchBreast, shape: .circle)
+            ),
             onStart: onStart,
             onStop: onEnd
         )
+        .guideTarget(.feedingTile)
     }
 }
 
@@ -72,6 +77,7 @@ struct CryingCard: View {
             onStart: onStart,
             onStop: onEnd
         )
+        .guideTarget(.cryingTile)
     }
 }
 
@@ -101,6 +107,7 @@ struct CryingNoteRow: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 ActionTile(icon: "ic_note", label: "Заметка", onClick: onAddNote)
                     .frame(width: noteWidth, height: geometry.size.height)
+                    .guideTarget(.noteTile)
             }
         }
         .frame(height: BabyLogSizes.cryingNoteRowHeight)
@@ -180,22 +187,26 @@ struct QuickActions: View {
                 caption: diaperCaption(lastDiaper: lastDiaper, now: now),
                 highlight: diaperOverdue(lastDiaper: lastDiaper, sleeping: sleeping, now: now)
             ) { onAdd(.diaper) }
+            .guideTarget(.diaperTile)
             ActionTile(
                 icon: "ic_first_aid",
                 label: "Здоровье",
                 caption: illnessDay.map { "\($0)-й день" },
                 onClick: onHealth
             )
+            .guideTarget(.healthTile)
             ActionTile(
                 icon: "ic_weight",
                 label: "Вес",
                 caption: measuredCaption(lastMeasured: lastWeight, now: now, timeZone: timeZone)
             ) { onAdd(.weight) }
+            .guideTarget(.weightTile)
             ActionTile(
                 icon: "ic_height",
                 label: "Рост",
                 caption: measuredCaption(lastMeasured: lastHeight, now: now, timeZone: timeZone)
             ) { onAdd(.height) }
+            .guideTarget(.heightTile)
         }
     }
 }
@@ -260,5 +271,6 @@ struct EventRow: View {
                 .buttonStyle(.plain)
             }
         }
+        .accessibilityIdentifier("event-row-\(event.id)")
     }
 }

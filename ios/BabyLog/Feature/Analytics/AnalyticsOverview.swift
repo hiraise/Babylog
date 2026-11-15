@@ -63,6 +63,7 @@ struct AnalyticsOverview: View {
             .padding(analyticsListPadding(theme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .guideTarget(.analyticsOverview)
     }
 }
 
@@ -97,6 +98,7 @@ private struct TileView: View {
                     bandColor: theme.colors.illnessBand
                 )
             }
+            .guideTarget(metric.metric.section == .sleep ? .analyticsSleepTile : nil)
         case let .growth(section, growth):
             let weight = section == .weight
             StatTile(

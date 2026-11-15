@@ -66,6 +66,7 @@ struct IllnessContent: View {
                 trailing: theme.spacing.l
             ))
         }
+        .guideTarget(.illnessScreen)
     }
 }
 
@@ -148,6 +149,7 @@ private struct IllnessSummaryCard: View {
                         Button(bySex(sex, masculine: "Выздоровел", feminine: "Выздоровела"), action: actions.onRecover)
                             .buttonStyle(.borderedProminent)
                             .tint(theme.colors.primary)
+                            .guideTarget(.recoverButton)
                     } else if let onResume = actions.onResume {
                         Button("Ещё болеет", action: onResume)
                             .buttonStyle(.plain)

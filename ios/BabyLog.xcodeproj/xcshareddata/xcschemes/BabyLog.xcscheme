@@ -37,6 +37,15 @@
                     ReferencedContainer="container:BabyLog.xcodeproj">
                 </BuildableReference>
             </TestableReference>
+            <TestableReference skipped="NO">
+                <BuildableReference
+                    BuildableIdentifier="primary"
+                    BlueprintIdentifier="000000000000000000000063"
+                    BuildableName="BabyLogUITests.xctest"
+                    BlueprintName="BabyLogUITests"
+                    ReferencedContainer="container:BabyLog.xcodeproj">
+                </BuildableReference>
+            </TestableReference>
         </Testables>
     </TestAction>
     <LaunchAction

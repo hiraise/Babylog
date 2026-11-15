@@ -25,6 +25,13 @@
             remoteGlobalIDString = 000000000000000000000002;
             remoteInfo = BabyLog;
         };
+        000000000000000000000058 /* PBXContainerItemProxy */ = {
+            isa = PBXContainerItemProxy;
+            containerPortal = 000000000000000000000001 /* Project object */;
+            proxyType = 1;
+            remoteGlobalIDString = 000000000000000000000002;
+            remoteInfo = BabyLog;
+        };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +47,7 @@
         000000000000000000000043 /* nunito_extrabold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = ../app/src/main/res/font/nunito_extrabold.ttf; sourceTree = SOURCE_ROOT; };
         000000000000000000000044 /* tips_ru.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ../app/src/main/assets/development/tips_ru.json; sourceTree = SOURCE_ROOT; };
         000000000000000000000045 /* who_motor_milestones.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = ../app/src/main/assets/development/who_motor_milestones.json; sourceTree = SOURCE_ROOT; };
+        000000000000000000000056 /* BabyLogUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BabyLogUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -51,6 +59,11 @@
         000000000000000000000005 /* BabyLogTests */ = {
             isa = PBXFileSystemSynchronizedRootGroup;
             path = BabyLogTests;
+            sourceTree = "<group>";
+        };
+        000000000000000000000057 /* BabyLogUITests */ = {
+            isa = PBXFileSystemSynchronizedRootGroup;
+            path = BabyLogUITests;
             sourceTree = "<group>";
         };
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -70,6 +83,13 @@
             buildActionMask = 2147483647;
             files = (
                 000000000000000000000054 /* SnapshotTesting in Frameworks */,
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        000000000000000000000059 /* Frameworks */ = {
+            isa = PBXFrameworksBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
             );
             runOnlyForDeploymentPostprocessing = 0;
         };
@@ -101,6 +121,7 @@
             children = (
                 000000000000000000000009 /* BabyLog.app */,
                 000000000000000000000010 /* BabyLogTests.xctest */,
+                000000000000000000000056 /* BabyLogUITests.xctest */,
             );
             name = Products;
             sourceTree = "<group>";
@@ -131,6 +152,7 @@
                 000000000000000000000007 /* Configuration */,
                 000000000000000000000004 /* BabyLog */,
                 000000000000000000000005 /* BabyLogTests */,
+                000000000000000000000057 /* BabyLogUITests */,
                 000000000000000000000006 /* Shared */,
                 000000000000000000000008 /* Products */,
             );
@@ -184,6 +206,28 @@
             productReference = 000000000000000000000010 /* BabyLogTests.xctest */;
             productType = "com.apple.product-type.bundle.unit-test";
         };
+        000000000000000000000063 /* BabyLogUITests */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = 000000000000000000000064 /* Build configuration list for PBXNativeTarget "BabyLogUITests" */;
+            buildPhases = (
+                000000000000000000000061 /* Sources */,
+                000000000000000000000059 /* Frameworks */,
+                000000000000000000000060 /* Resources */,
+            );
+            buildRules = ();
+            dependencies = (
+                000000000000000000000062 /* PBXTargetDependency */,
+            );
+            fileSystemSynchronizedGroups = (
+                000000000000000000000057 /* BabyLogUITests */,
+            );
+            name = BabyLogUITests;
+            packageProductDependencies = (
+            );
+            productName = BabyLogUITests;
+            productReference = 000000000000000000000056 /* BabyLogUITests.xctest */;
+            productType = "com.apple.product-type.bundle.ui-testing";
+        };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -197,6 +241,10 @@
                         CreatedOnToolsVersion = 27.2;
                     };
                     000000000000000000000003 = {
+                        CreatedOnToolsVersion = 27.2;
+                        TestTargetID = 000000000000000000000002;
+                    };
+                    000000000000000000000063 = {
                         CreatedOnToolsVersion = 27.2;
                         TestTargetID = 000000000000000000000002;
                     };
@@ -223,6 +271,7 @@
             targets = (
                 000000000000000000000002 /* BabyLog */,
                 000000000000000000000003 /* BabyLogTests */,
+                000000000000000000000063 /* BabyLogUITests */,
             );
         };
 /* End PBXProject section */
@@ -247,6 +296,12 @@
             files = ();
             runOnlyForDeploymentPostprocessing = 0;
         };
+        000000000000000000000060 /* Resources */ = {
+            isa = PBXResourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -262,6 +317,12 @@
             files = ();
             runOnlyForDeploymentPostprocessing = 0;
         };
+        000000000000000000000061 /* Sources */ = {
+            isa = PBXSourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = ();
+            runOnlyForDeploymentPostprocessing = 0;
+        };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -269,6 +330,11 @@
             isa = PBXTargetDependency;
             target = 000000000000000000000002 /* BabyLog */;
             targetProxy = 000000000000000000000018 /* PBXContainerItemProxy */;
+        };
+        000000000000000000000062 /* PBXTargetDependency */ = {
+            isa = PBXTargetDependency;
+            target = 000000000000000000000002 /* BabyLog */;
+            targetProxy = 000000000000000000000058 /* PBXContainerItemProxy */;
         };
 /* End PBXTargetDependency section */
 
@@ -379,6 +445,34 @@
             };
             name = Release;
         };
+        000000000000000000000065 /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                CODE_SIGN_STYLE = Automatic;
+                GENERATE_INFOPLIST_FILE = YES;
+                PRODUCT_BUNDLE_IDENTIFIER = com.hiraise.babylog.uitests;
+                PRODUCT_NAME = BabyLogUITests;
+                SWIFT_EMIT_LOC_STRINGS = NO;
+                TARGETED_DEVICE_FAMILY = 1;
+                TEST_TARGET_NAME = BabyLog;
+            };
+            name = Debug;
+        };
+        000000000000000000000066 /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+                CODE_SIGN_STYLE = Automatic;
+                GENERATE_INFOPLIST_FILE = YES;
+                PRODUCT_BUNDLE_IDENTIFIER = com.hiraise.babylog.uitests;
+                PRODUCT_NAME = BabyLogUITests;
+                SWIFT_EMIT_LOC_STRINGS = NO;
+                TARGETED_DEVICE_FAMILY = 1;
+                TEST_TARGET_NAME = BabyLog;
+            };
+            name = Release;
+        };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -405,6 +499,15 @@
             buildConfigurations = (
                 000000000000000000000026 /* Debug */,
                 000000000000000000000027 /* Release */,
+            );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Release;
+        };
+        000000000000000000000064 /* Build configuration list for PBXNativeTarget "BabyLogUITests" */ = {
+            isa = XCConfigurationList;
+            buildConfigurations = (
+                000000000000000000000065 /* Debug */,
+                000000000000000000000066 /* Release */,
             );
             defaultConfigurationIsVisible = 0;
             defaultConfigurationName = Release;

@@ -190,6 +190,7 @@ struct NotesContent: View {
                         trailing: theme.spacing.l
                     ))
                 }
+                .guideTarget(summary == nil ? .notesFeed : .tagSummary)
                 .onChange(of: filter) { _, _ in
                     proxy.scrollTo("notes-top", anchor: .top)
                 }

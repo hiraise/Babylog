@@ -40,6 +40,7 @@ struct DayNavRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(theme.colors.primary)
+            .guideTarget(.dayPicker)
             Button(action: onNext) {
                 AppIcon("ic_chevron_right", contentDescription: "Следующий день")
                     .frame(width: BabyLogSizes.touchTarget, height: BabyLogSizes.touchTarget)

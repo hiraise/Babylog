@@ -24,6 +24,15 @@ enum MainSection: String, CaseIterable, Hashable, Sendable {
         case .analytics: "ic_analytics"
         }
     }
+
+    var guide: GuideTarget? {
+        switch self {
+        case .today: nil
+        case .diary: .navDiary
+        case .development: .navDevelopment
+        case .analytics: .navAnalytics
+        }
+    }
 }
 
 /** Вид «Дневника» (ADR-0035): записи по дням или плач и заметки (ADR-0031). */
@@ -86,6 +95,7 @@ struct MainNavigationBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected == section ? [.isSelected] : [])
+                .guideTarget(section.guide)
             }
         }
         .frame(height: BabyLogSizes.navigationHeight)
@@ -177,6 +187,7 @@ struct DiarySection<Content: View>: View {
                 }
             }
             .pickerStyle(.segmented)
+            .guideTarget(.notesButton)
             .padding(.leading, theme.spacing.l)
             .padding(.top, theme.spacing.m)
             .padding(.trailing, theme.spacing.l)

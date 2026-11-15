@@ -32,7 +32,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S7b | [Development: screens, banner, chart](sessions/S7b.md) | medium | 0.6k / 0.2k | S7a, S4b, S6b | S8 | done (#83) |
 | S8 | [Theme settings, dark palettes](sessions/S8.md) | low | 0.3k / 0.2k | S4a | S7b | done (#84) |
 | S9a | [Help: topics and screens](sessions/S9a.md) | medium | 0.7k / 0.4k | all UI | — | done (#85) |
-| S9b | [Help: interactive guides](sessions/S9b.md) | high | 0.6k / 0.6k | S9a | — | todo |
+| S9b | [Help: interactive guides](sessions/S9b.md) | high | 0.6k / 0.6k | S9a | — | wip |
 | S10 | [Release prep and parity audit](sessions/S10.md) | medium | — | all | — | todo |
 
 Critical path: S1a → S2a → S2b/S3 → S4a → S4b → S4c → S4d → S5a → (S9a → S9b) → S10.

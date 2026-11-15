@@ -67,6 +67,7 @@ struct TodayContent: View {
                     onMedicine: { actions.onAdd(.medicine) },
                     onNote: { actions.onAdd(.note) }
                 )
+                .guideTarget(.illnessCard)
             }
             VStack(spacing: theme.spacing.s) {
                 HStack(spacing: theme.spacing.s) {
@@ -164,6 +165,7 @@ struct HistoryContent: View {
                 )
             }
         }
+        .guideTarget(selectedDate == today ? .history : .pastDay)
         .gesture(DragGesture(minimumDistance: 20).onEnded { value in
             if value.translation.width > 90, let prevDay {
                 actions.onSelectDate(prevDay)

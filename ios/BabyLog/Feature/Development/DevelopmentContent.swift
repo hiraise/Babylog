@@ -87,6 +87,7 @@ struct DevelopmentContent: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .guideTarget(model.showSkills ? .skills : .development)
         .onChange(of: child.id) { _, id in model.updateChild(id) }
 
         if let tip = data?.tips.first(where: { $0.id == model.openTipId }) {
@@ -147,6 +148,7 @@ struct DevelopmentContent: View {
                             .buttonStyle(.plain)
                             .foregroundStyle(themeColors.primary)
                             .appTextStyle(themeTypography.labelLarge)
+                            .guideTarget(.skillsButton)
                     }
                     MilestoneChart(milestones: week.milestones, ageDays: week.ageDays)
                     Text(windowsSummary(week))
