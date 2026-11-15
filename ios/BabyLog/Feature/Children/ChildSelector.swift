@@ -46,6 +46,7 @@ struct ChildSelector: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("выбрать ребёнка")
+        .guideTarget(.childSelector, shape: .small)
     }
 }
 
@@ -123,6 +124,7 @@ struct ChildrenSheet: View {
             SheetMenuItem(icon: "ic_add_child", label: "Добавить ребёнка") {
                 closer.close(then: onAdd)
             }
+            .guideTarget(.addChild)
         }
     }
 }

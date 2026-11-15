@@ -32,6 +32,7 @@ struct AnalyticsDetail: View {
             .padding(analyticsListPadding(theme))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .guideTarget(.analyticsDetail)
         .background(SleepHelpSheet(isPresented: $sleepHelp, onDismiss: { sleepHelp = false }))
     }
 

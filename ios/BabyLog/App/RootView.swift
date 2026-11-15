@@ -9,9 +9,11 @@ struct RootView: View {
     @State private var recovery: DatabaseRecovery?
     @State private var helpRoute: HelpRoute?
     @State private var helpProgress = HelpProgress()
+    @State private var guideSessions: GuideSessions?
 
-    init(model: DiaryViewModel? = nil) {
+    init(model: DiaryViewModel? = nil, initialHelpRoute: HelpRoute? = nil) {
         _model = State(initialValue: model)
+        _helpRoute = State(initialValue: initialHelpRoute)
     }
 
     var body: some View {
@@ -28,22 +30,31 @@ struct RootView: View {
                     development: development,
                     recovery: recovery,
                     onRecoverySeen: container.recoveryNotices.dismiss,
-                    onOpenHelp: {
-                        container.help.dismissPointer()
-                        helpRoute = .topics
-                    },
-                    helpBadge: helpBadge(topics: HELP_TOPICS, progress: helpProgress)
+                    onOpenHelp: openHelp,
+                    helpBadge: helpBadge(topics: HELP_TOPICS, progress: helpProgress),
+                    helpPointer: helpProgress.pointerDone ? nil : AnyView(HelpPointerCard(
+                        onOpen: openHelp,
+                        onDismiss: container.help.dismissPointer
+                    ))
                 )
                 .fullScreenCover(item: $helpRoute) { route in
-                    HelpHost(
-                        route: route,
-                        onRoute: { helpRoute = $0 },
-                        topics: HELP_TOPICS,
-                        progress: helpProgress,
-                        onTopicOpened: {
-                            container.help.markOpened(topicId: $0.id, version: appVersion)
-                        }
-                    )
+                    if let guideSessions {
+                        HelpHost(
+                            route: route,
+                            onRoute: { helpRoute = $0 },
+                            topics: HELP_TOPICS,
+                            progress: helpProgress,
+                            onTopicOpened: {
+                                container.help.markOpened(topicId: $0.id, version: appVersion)
+                            },
+                            onTopicCompleted: { container.help.markCompleted(topicId: $0.id) },
+                            sessions: guideSessions,
+                            theme: theme,
+                            onThemeChange: container.themeMode.select
+                        )
+                    } else {
+                        ProgressView()
+                    }
                 }
             } else {
                 ProgressView()
@@ -62,6 +73,16 @@ struct RootView: View {
             }
             if development == nil {
                 development = DevelopmentViewModel(source: AssetTipsSource(), seen: container.developmentSeen)
+            }
+            if guideSessions == nil {
+                guideSessions = GuideSessions { topic in
+                    GuideSandbox(
+                        topic: topic,
+                        tips: AssetTipsSource(),
+                        documents: container.documents,
+                        baseClock: container.clock
+                    )
+                }
             }
             for await choice in container.themeMode.choice.stream() {
                 theme = choice
@@ -87,5 +108,10 @@ struct RootView: View {
 
     private var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    }
+
+    private func openHelp() {
+        container.help.dismissPointer()
+        helpRoute = .topics
     }
 }

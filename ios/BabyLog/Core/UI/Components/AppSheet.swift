@@ -36,6 +36,8 @@ struct SheetCloser {
  */
 struct AppSheet<Content: View>: View {
     @Environment(\.babyLogTheme) private var theme
+    @Environment(\.guide) private var guide
+    @Environment(\.sheetTarget) private var sheetTarget
     @Binding var isPresented: Bool
     @State private var actionDismissal = false
 
@@ -92,6 +94,8 @@ struct AppSheet<Content: View>: View {
                     content: content
                 )
                 .environment(\.babyLogTheme, theme)
+                .environment(\.guide, guide)
+                .environment(\.sheetTarget, sheetTarget)
                 .presentationDetents([.large])
                 .presentationBackground(theme.colors.surfaceContainerHigh)
                 .presentationCornerRadius(theme.shapes.extraLarge)
@@ -101,6 +105,8 @@ struct AppSheet<Content: View>: View {
 
 struct AppSheetContent<Content: View>: View {
     @Environment(\.babyLogTheme) private var theme
+    @Environment(\.guide) private var guide
+    @Environment(\.sheetTarget) private var sheetTarget
     @Binding var isPresented: Bool
 
     let title: String?
@@ -141,6 +147,11 @@ struct AppSheetContent<Content: View>: View {
         let spacing = theme.spacing
         let closer = SheetCloser(isPresented: $isPresented, beforeDismiss: onActionDismiss)
         VStack(alignment: .leading, spacing: 0) {
+            if guide?.sheetHint != nil {
+                GuideSheetHint()
+                    .padding(.horizontal, spacing.l)
+                    .padding(.bottom, spacing.m)
+            }
             if let title {
                 HStack(spacing: spacing.m) {
                     if let icon {
@@ -158,6 +169,7 @@ struct AppSheetContent<Content: View>: View {
                     sheetContent(closer)
                 }
             }
+            .guideTarget(sheetTarget)
             .frame(maxHeight: .infinity, alignment: .top)
             if let confirm {
                 HStack(spacing: spacing.s) {

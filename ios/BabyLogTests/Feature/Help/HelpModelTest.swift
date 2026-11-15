@@ -75,5 +75,6 @@ struct HelpModelTest {
     @Test func navigationRouteIDsMatchAndroidSavedRoutes() {
         #expect(HelpRoute.topics.id == "topics")
         #expect(HelpRoute.topic("diary").id == "topic:diary")
+        #expect(HelpRoute.guide("diary").id == "guide:diary")
     }
 }
