@@ -175,9 +175,9 @@ struct DiaryScreen: View {
             }
         }
         if showThemeSheet {
-            ThemeModeSheet(
+            ThemeSheet(
                 isPresented: $showThemeSheet,
-                choice: theme,
+                theme: theme,
                 onSelect: onThemeChange,
                 onDismiss: { showThemeSheet = false }
             )
@@ -567,49 +567,6 @@ private struct SectionPlaceholder: View {
     }
 }
 
-private struct ThemeModeSheet: View {
-    @Environment(\.babyLogTheme) private var theme
-    @Binding var isPresented: Bool
-    let choice: ThemeChoice
-    let onSelect: (ThemeChoice) -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        AppSheet(
-            isPresented: $isPresented,
-            onDismiss: onDismiss,
-            title: "Тема",
-            icon: "ic_theme",
-            edgeToEdge: true
-        ) { _ in
-            VStack(spacing: 0) {
-                modeRow(.system, "Как в системе")
-                modeRow(.light, "Светлая")
-                modeRow(.dark, "Тёмная")
-            }
-        }
-    }
-
-    private func modeRow(_ mode: ThemeMode, _ title: String) -> some View {
-        Button {
-            var selected = choice
-            selected.mode = mode
-            onSelect(selected)
-        } label: {
-            HStack(spacing: theme.spacing.m) {
-                Image(systemName: choice.mode == mode ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(theme.colors.primary)
-                Text(title).appTextStyle(theme.typography.bodyLarge)
-                Spacer()
-            }
-            .padding(.horizontal, theme.spacing.l)
-            .frame(maxWidth: .infinity, minHeight: BabyLogSizes.menuMinHeight)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(choice.mode == mode ? [.isSelected] : [])
-    }
-}
 
 func diaryArchiveFilename(_ millis: Int64, timeZone: TimeZone) -> String {
     let formatter = DateFormatter()
