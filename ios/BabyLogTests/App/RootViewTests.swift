@@ -28,6 +28,7 @@ struct RootViewTests {
                 clock: clock,
                 selectedChild: selection,
                 themeMode: PrefsThemeModeStore(defaults: defaults),
+                help: PrefsHelpStore(defaults: defaults, version: "1.11"),
                 recoveryNotices: FakeRecoveryNotices(),
                 repository: repository,
                 documents: documents
