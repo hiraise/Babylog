@@ -24,7 +24,6 @@ struct DiaryScreen: View {
     @State private var childSheet: ChildSheetMode?
     @State private var confirmChildDelete = false
     @State private var menuOpen = false
-    @State private var showHelp = false
     @State private var showExporter = false
     @State private var showImporter = false
     @State private var showSleepStart = false
@@ -45,6 +44,7 @@ struct DiaryScreen: View {
     let onRecoverySeen: () -> Void
     let developmentBadge: Bool
     let onOpenHelp: (() -> Void)?
+    let helpBadge: Bool
 
     init(
         model: DiaryViewModel,
@@ -57,7 +57,8 @@ struct DiaryScreen: View {
         recovery: DatabaseRecovery? = nil,
         onRecoverySeen: @escaping () -> Void = {},
         developmentBadge: Bool = false,
-        onOpenHelp: (() -> Void)? = nil
+        onOpenHelp: (() -> Void)? = nil,
+        helpBadge: Bool = false
     ) {
         self.model = model
         self.theme = theme
@@ -67,6 +68,7 @@ struct DiaryScreen: View {
         self.onRecoverySeen = onRecoverySeen
         self.developmentBadge = developmentBadge
         self.onOpenHelp = onOpenHelp
+        self.helpBadge = helpBadge
         _navigation = State(initialValue: DiaryNavigationState(
             section: initialSection,
             diaryView: initialDiaryView,
@@ -167,9 +169,9 @@ struct DiaryScreen: View {
                 SheetMenuItem(icon: "ic_import", label: "Импорт из файла") {
                     closer.close { showImporter = true }
                 }
-                SheetMenuItem(icon: "ic_help", label: "Справка") {
-                    closer.close {
-                        if let onOpenHelp { onOpenHelp() } else { showHelp = true }
+                if let onOpenHelp {
+                    SheetMenuItem(icon: "ic_help", label: "Справка", badge: helpBadge) {
+                        closer.close { onOpenHelp() }
                     }
                 }
             }
@@ -181,17 +183,6 @@ struct DiaryScreen: View {
                 onSelect: onThemeChange,
                 onDismiss: { showThemeSheet = false }
             )
-        }
-        if showHelp {
-            AppSheet(
-                isPresented: $showHelp,
-                onDismiss: { showHelp = false },
-                title: "Справка",
-                icon: "ic_help"
-            ) { _ in
-                Text("Темы и интерактивные гайды появятся здесь.")
-                    .appTextStyle(themeValues.typography.bodyMedium)
-            }
         }
         if let recovery {
             DatabaseRecoveredSheet(
@@ -398,8 +389,16 @@ struct DiaryScreen: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Button { menuOpen = true } label: {
-                AppIcon("ic_more", contentDescription: "Меню")
+                AppIcon("ic_more", contentDescription: helpBadge ? "Меню, новое в справке" : "Меню")
                     .frame(width: BabyLogSizes.touchTarget, height: BabyLogSizes.touchTarget)
+                    .overlay(alignment: .topTrailing) {
+                        if helpBadge {
+                            Circle()
+                                .fill(themeValues.colors.primary)
+                                .frame(width: BabyLogSizes.badge, height: BabyLogSizes.badge)
+                                .offset(x: themeValues.spacing.xs)
+                        }
+                    }
             }
             .buttonStyle(.plain)
         }

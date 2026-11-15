@@ -7,6 +7,8 @@ struct RootView: View {
     @State private var development: DevelopmentViewModel?
     @State private var theme = ThemeChoice()
     @State private var recovery: DatabaseRecovery?
+    @State private var helpRoute: HelpRoute?
+    @State private var helpProgress = HelpProgress()
 
     init(model: DiaryViewModel? = nil) {
         _model = State(initialValue: model)
@@ -25,8 +27,24 @@ struct RootView: View {
                     onThemeChange: container.themeMode.select,
                     development: development,
                     recovery: recovery,
-                    onRecoverySeen: container.recoveryNotices.dismiss
+                    onRecoverySeen: container.recoveryNotices.dismiss,
+                    onOpenHelp: {
+                        container.help.dismissPointer()
+                        helpRoute = .topics
+                    },
+                    helpBadge: helpBadge(topics: HELP_TOPICS, progress: helpProgress)
                 )
+                .fullScreenCover(item: $helpRoute) { route in
+                    HelpHost(
+                        route: route,
+                        onRoute: { helpRoute = $0 },
+                        topics: HELP_TOPICS,
+                        progress: helpProgress,
+                        onTopicOpened: {
+                            container.help.markOpened(topicId: $0.id, version: appVersion)
+                        }
+                    )
+                }
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -49,6 +67,12 @@ struct RootView: View {
                 theme = choice
             }
         }
+        .task {
+            helpProgress = container.help.progress.value
+            for await progress in container.help.progress.stream() {
+                helpProgress = progress
+            }
+        }
         .task(priority: .background) {
             let now = container.clock.millis()
             await Task.detached { sweepPhotoCache(now: now) }.value
@@ -59,5 +83,9 @@ struct RootView: View {
                 recovery = notice
             }
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     }
 }
