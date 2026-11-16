@@ -75,7 +75,13 @@ File → Open → папка проекта, затем Run → Debug 'app'. Н�
 локальные параметры задайте в необязательном `ios/Local.xcconfig` — он подключён после общей
 конфигурации и игнорируется git. Тесты и CI собираются с `CODE_SIGNING_ALLOWED=NO`.
 Workflow `iOS` всегда проходит как обязательная проверка, но пропускает сборку, если не менялись
-`ios/`, общие ресурсы, схемы, fixtures или `scripts/dev.sh`.
+`ios/`, общие ресурсы, схемы, fixtures, `docs/screenshots/ios/` или `scripts/dev.sh`.
+
+Скриншоты App Store лежат в `docs/screenshots/ios/`: их создаёт и сверяет `AppStoreScreenshotTest`,
+а обновляет вместе с остальными эталонами `scripts/dev.sh ios-goldens`. Русские тексты карточки —
+в `fastlane/metadata/ios/ru/`, политика конфиденциальности — в [PRIVACY.md](../PRIVACY.md).
+Сборку из тега архивирует и загружает в App Store Connect владелец; внешнее тестирование TestFlight
+и отправку на проверку он также выполняет сам ([ADR-0047](adr/0047-store-publishing.md)).
 
 ## Технологии
 

@@ -37,8 +37,11 @@ struct RootView: View {
                         onDismiss: container.help.dismissPointer
                     ))
                 )
-                .fullScreenCover(item: $helpRoute) { route in
-                    if let guideSessions {
+                .fullScreenCover(isPresented: Binding(
+                    get: { helpRoute != nil },
+                    set: { if !$0 { helpRoute = nil } }
+                )) {
+                    if let route = helpRoute, let guideSessions {
                         HelpHost(
                             route: route,
                             onRoute: { helpRoute = $0 },
