@@ -55,6 +55,8 @@
 - `scripts/dev.sh check` (`check_design_tokens`) падает, если вне `core/ui/theme/` есть `Color(0x`,
   `.sp`, `FontFamily`/`Font(`, `dynamic*ColorScheme` или отступ (`padding`, `PaddingValues`,
   `spacedBy`, `Spacer`, в том числе многострочный) с литералом `dp`.
+- Та же проверка в `ios/BabyLog/` ищет в Swift сырые цвета, размеры, шрифты и отступы вне
+  `Core/UI/Theme/`; iOS-компоненты берут их из `babyLogTheme` и `BabyLogSizes`.
 - `ThemeContrastTest` проверяет контраст пар палитры, что заданы все роли `ColorScheme` и что
   `surfaceTint` равен `surface`; `ThemeWindowTest` — что цвет окна в `colors.xml` равен `background` темы.
 - Изменения UI сверяй на эмуляторе в светлой и тёмной теме (`scripts/dev.sh screenshot`).
