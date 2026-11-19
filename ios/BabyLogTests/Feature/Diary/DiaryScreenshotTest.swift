@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import BabyLog
 
@@ -36,6 +37,28 @@ struct DiaryScreenshotTest {
     @Test func diaryDay() async throws {
         let model = try await makeModel()
         await assertShell(model: model, dark: false, section: .diary, name: "diary_day")
+    }
+
+    @Test(arguments: [false, true]) func standardExtraLargeText(dark: Bool) async throws {
+        let model = try await makeModel()
+        await assertShell(
+            model: model,
+            dark: dark,
+            section: .today,
+            name: dark ? "diary_xxx_large_dark" : "diary_xxx_large_light",
+            dynamicTypeSize: .xxxLarge
+        )
+    }
+
+    @Test(arguments: [false, true]) func accessibilityText(dark: Bool) async throws {
+        let model = try await makeModel()
+        await assertShell(
+            model: model,
+            dark: dark,
+            section: .today,
+            name: dark ? "diary_accessibility_dark" : "diary_accessibility_light",
+            dynamicTypeSize: .accessibility3
+        )
     }
 
     /** Двое детей; у Маши за сегодня записи всех типов и идёт сон либо кормление или плач. */
@@ -89,9 +112,21 @@ struct DiaryScreenshotTest {
         return model
     }
 
-    private func assertShell(model: DiaryViewModel, dark: Bool, section: MainSection, name: String) async {
+    private func assertShell(
+        model: DiaryViewModel,
+        dark: Bool,
+        section: MainSection,
+        name: String,
+        dynamicTypeSize: DynamicTypeSize = .large
+    ) async {
         let clock = TestClock(date: Date(timeIntervalSince1970: Double(at("2026-10-15T10:00:00Z")) / 1000), timeZone: TimeZone(secondsFromGMT: 0)!)
-        assertComponentSnapshot(name: name, style: dark ? .dark : .light, clock: clock) {
+        assertComponentSnapshot(
+            name: name,
+            style: dark ? .dark : .light,
+            testName: "assertShell(model:dark:section:name:)",
+            clock: clock,
+            dynamicTypeSize: dynamicTypeSize
+        ) {
             DiaryScreen(
                 model: model,
                 theme: ThemeChoice(),

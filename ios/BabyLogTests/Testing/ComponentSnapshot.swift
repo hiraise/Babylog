@@ -27,6 +27,7 @@ func assertComponentSnapshot<Content: View>(
     testName: String = #function,
     line: UInt = #line,
     clock: any Clock = TestClock(),
+    dynamicTypeSize: DynamicTypeSize = .large,
     @ViewBuilder content: () -> Content
 ) {
     let dark = style == .dark
@@ -36,18 +37,29 @@ func assertComponentSnapshot<Content: View>(
         }
         .environment(\.locale, Locale(identifier: "ru_RU"))
         .environment(\.timeZone, TimeZone(identifier: "Europe/Moscow")!)
+        .environment(\.dynamicTypeSize, dynamicTypeSize)
     }
     let controller = UIHostingController(rootView: root)
     controller.overrideUserInterfaceStyle = style
     controller.view.frame = CGRect(x: 0, y: 0, width: width, height: height)
     controller.view.layoutIfNeeded()
-    assertSnapshot(
-        of: controller,
-        as: .image,
-        named: name,
-        fileID: fileID,
-        file: filePath,
-        testName: testName,
-        line: line
-    )
+    withSnapshotRecording {
+        assertSnapshot(
+            of: controller,
+            as: .image,
+            named: name,
+            fileID: fileID,
+            file: filePath,
+            testName: testName,
+            line: line
+        )
+    }
+}
+
+func withSnapshotRecording(_ body: () -> Void) {
+#if SNAPSHOT_RECORD
+    withSnapshotTesting(record: .all) { body() }
+#else
+    body()
+#endif
 }

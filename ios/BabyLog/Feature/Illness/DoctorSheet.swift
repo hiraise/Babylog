@@ -9,8 +9,8 @@ import UIKit
 struct DoctorSheet: View {
     @Environment(\.babyLogTheme) private var theme
     @Binding var isPresented: Bool
-    @State private var share = false
     let text: String
+    let onShare: () -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -19,7 +19,7 @@ struct DoctorSheet: View {
             onDismiss: onDismiss,
             title: "Для врача",
             icon: "ic_share",
-            confirm: SheetAction(label: "Поделиться") { share = true }
+            confirm: SheetAction(label: "Поделиться", onClick: onShare)
         ) { _ in
             Text("Уйдёт текстом туда, куда выберете: Telegram, WhatsApp, почта")
                 .appTextStyle(theme.typography.bodyMedium)
@@ -28,19 +28,18 @@ struct DoctorSheet: View {
                 Text(text)
                     .appTextStyle(theme.typography.bodyMedium)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("doctor-summary")
             }
-        }
-        .sheet(isPresented: $share, onDismiss: onDismiss) {
-            DoctorShareSheet(text: text)
         }
     }
 }
 
-private struct DoctorShareSheet: UIViewControllerRepresentable {
+struct DoctorShareSheet: UIViewControllerRepresentable {
     let text: String
+    var activityItems: [String] { [text] }
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: [text], applicationActivities: nil)
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}

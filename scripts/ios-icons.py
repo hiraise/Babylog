@@ -160,6 +160,7 @@ def generate_app_icon(root, destination, work):
     foreground = convert_vector(root / "app/src/main/res/drawable/ic_launcher_foreground.xml")
     background = res_colors(root / "app/src/main/res/values/colors.xml")["ic_launcher_background"]
     opening, body = foreground.split(">", 1)
+    opening = opening.replace('width="108" height="108"', 'width="1024" height="1024"', 1)
     body = body.rsplit("</svg>", 1)[0]
     svg = opening + f'><rect width="108" height="108" fill="{background}"/>' + body + "</svg>\n"
     source = work / "AppIcon.svg"
@@ -176,6 +177,17 @@ def generate_app_icon(root, destination, work):
     target = destination / "AppIcon.appiconset/AppIcon.png"
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(rendered), target)
+    flattened = work / "AppIcon.jpg"
+    subprocess.run(
+        ["sips", "-s", "format", "jpeg", "-s", "formatOptions", "100", str(target), "--out", str(flattened)],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
+    subprocess.run(
+        ["sips", "-s", "format", "png", str(flattened), "--out", str(target)],
+        check=True,
+        stdout=subprocess.DEVNULL,
+    )
     subprocess.run(["sips", "-z", "1024", "1024", str(target)], check=True, stdout=subprocess.DEVNULL)
     write_json(
         destination / "AppIcon.appiconset/Contents.json",

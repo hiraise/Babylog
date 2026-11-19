@@ -135,7 +135,12 @@ ios_simulator_id() {
 cmd_ios() {
     select_ios_xcode
     local device
+    local settings=(CODE_SIGNING_ALLOWED=NO)
     device="$(ios_simulator_id)"
+    if [[ "${SNAPSHOT_TESTING_RECORD:-}" == "all" ]]; then
+        # Xcode 27 не передаёт shell-окружение в test runner; включаем запись на этапе компиляции.
+        settings=(SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG SNAPSHOT_RECORD" CODE_SIGNING_ALLOWED=NO)
+    fi
     rm -rf "$IOS_RESULT_BUNDLE"
     mkdir -p "$ROOT/ios/build"
     xcodebuild -project "$IOS_PROJECT" -scheme BabyLog \
@@ -144,7 +149,7 @@ cmd_ios() {
         -packageCachePath "$IOS_PACKAGE_CACHE" \
         -clonedSourcePackagesDirPath "$IOS_SOURCE_PACKAGES" \
         -resultBundlePath "$IOS_RESULT_BUNDLE" \
-        CODE_SIGNING_ALLOWED=NO build test
+        "${settings[@]}" build test
 }
 
 cmd_ios_goldens() {

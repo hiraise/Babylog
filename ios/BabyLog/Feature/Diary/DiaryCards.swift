@@ -81,9 +81,13 @@ struct CryingCard: View {
     }
 }
 
-/** Плач занимает ширину трёх быстрых плиток, «Заметка» стоит точно над «Ростом». */
+/**
+ Плач занимает ширину трёх быстрых плиток, «Заметка» стоит точно над «Ростом».
+ При accessibility-размере текста обе плитки идут полной шириной друг под другом.
+ */
 struct CryingNoteRow: View {
     @Environment(\.babyLogTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let activeCrying: Crying?
     let lastCrying: Crying?
@@ -94,23 +98,39 @@ struct CryingNoteRow: View {
 
     var body: some View {
         let gap = theme.spacing.s
-        GeometryReader { geometry in
-            let noteWidth = (geometry.size.width - gap * CGFloat(quickActionCount - 1)) / CGFloat(quickActionCount)
-            HStack(spacing: gap) {
-                CryingCard(
-                    activeCrying: activeCrying,
-                    lastCrying: lastCrying,
-                    now: now,
-                    onStart: onStartCrying,
-                    onEnd: onEndCrying
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                ActionTile(icon: "ic_note", label: "Заметка", onClick: onAddNote)
-                    .frame(width: noteWidth, height: geometry.size.height)
-                    .guideTarget(.noteTile)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: gap) {
+                    CryingCard(
+                        activeCrying: activeCrying,
+                        lastCrying: lastCrying,
+                        now: now,
+                        onStart: onStartCrying,
+                        onEnd: onEndCrying
+                    )
+                    ActionTile(icon: "ic_note", label: "Заметка", onClick: onAddNote)
+                        .guideTarget(.noteTile)
+                }
+            } else {
+                GeometryReader { geometry in
+                    let noteWidth = (geometry.size.width - gap * CGFloat(quickActionCount - 1)) / CGFloat(quickActionCount)
+                    HStack(spacing: gap) {
+                        CryingCard(
+                            activeCrying: activeCrying,
+                            lastCrying: lastCrying,
+                            now: now,
+                            onStart: onStartCrying,
+                            onEnd: onEndCrying
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        ActionTile(icon: "ic_note", label: "Заметка", onClick: onAddNote)
+                            .frame(width: noteWidth, height: geometry.size.height)
+                            .guideTarget(.noteTile)
+                    }
+                }
             }
         }
-        .frame(height: BabyLogSizes.cryingNoteRowHeight)
+        .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : BabyLogSizes.cryingNoteRowHeight)
     }
 }
 
@@ -145,10 +165,14 @@ private func sinceLast(end: Int64?, now: Int64) -> Int64? {
 
 private let sinceLastLimitMillis: Int64 = 24 * 60 * 60 * 1000
 
-/** Плитки быстрого добавления записей; подгузник выделяется после трёх часов бодрствования. */
+/**
+ Плитки быстрого добавления записей; подгузник выделяется после трёх часов бодрствования.
+ При accessibility-размере текста плитки складываются в столбец, чтобы не обрезать названия.
+ */
 struct QuickActions: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let lastDiaper: Int64?
     let lastWeight: Int64?
@@ -180,33 +204,46 @@ struct QuickActions: View {
     }
 
     var body: some View {
-        HStack(spacing: theme.spacing.s) {
-            ActionTile(
-                icon: "ic_diaper",
-                label: "Подгузник",
-                caption: diaperCaption(lastDiaper: lastDiaper, now: now),
-                highlight: diaperOverdue(lastDiaper: lastDiaper, sleeping: sleeping, now: now)
-            ) { onAdd(.diaper) }
-            .guideTarget(.diaperTile)
-            ActionTile(
-                icon: "ic_first_aid",
-                label: "Здоровье",
-                caption: illnessDay.map { "\($0)-й день" },
-                onClick: onHealth
-            )
-            .guideTarget(.healthTile)
-            ActionTile(
-                icon: "ic_weight",
-                label: "Вес",
-                caption: measuredCaption(lastMeasured: lastWeight, now: now, timeZone: timeZone)
-            ) { onAdd(.weight) }
-            .guideTarget(.weightTile)
-            ActionTile(
-                icon: "ic_height",
-                label: "Рост",
-                caption: measuredCaption(lastMeasured: lastHeight, now: now, timeZone: timeZone)
-            ) { onAdd(.height) }
-            .guideTarget(.heightTile)
+        let diaper = ActionTile(
+            icon: "ic_diaper",
+            label: "Подгузник",
+            caption: diaperCaption(lastDiaper: lastDiaper, now: now),
+            highlight: diaperOverdue(lastDiaper: lastDiaper, sleeping: sleeping, now: now)
+        ) { onAdd(.diaper) }
+        .guideTarget(.diaperTile)
+        let health = ActionTile(
+            icon: "ic_first_aid",
+            label: "Здоровье",
+            caption: illnessDay.map { "\($0)-й день" },
+            onClick: onHealth
+        )
+        .guideTarget(.healthTile)
+        let weight = ActionTile(
+            icon: "ic_weight",
+            label: "Вес",
+            caption: measuredCaption(lastMeasured: lastWeight, now: now, timeZone: timeZone)
+        ) { onAdd(.weight) }
+        .guideTarget(.weightTile)
+        let height = ActionTile(
+            icon: "ic_height",
+            label: "Рост",
+            caption: measuredCaption(lastMeasured: lastHeight, now: now, timeZone: timeZone)
+        ) { onAdd(.height) }
+        .guideTarget(.heightTile)
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: theme.spacing.s) {
+                diaper
+                health
+                weight
+                height
+            }
+        } else {
+            HStack(spacing: theme.spacing.s) {
+                diaper
+                health
+                weight
+                height
+            }
         }
     }
 }

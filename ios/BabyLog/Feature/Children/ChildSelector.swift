@@ -3,10 +3,12 @@ import SwiftUI
 /**
  Выбор ребёнка в шапке (ADR-0035): аватар, «Дневник Маши» и под ним возраст, последние
  вес и рост. Касание открывает `ChildrenSheet`; стрелка подсказывает, что это выбор.
+ Текст переносится; на accessibility-размерах шапка использует `xxxLarge`, чтобы не вытеснить экран.
  */
 struct ChildSelector: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let child: Child
     let lastWeight: Weight?
@@ -22,9 +24,6 @@ struct ChildSelector: View {
                     Text(diaryTitle(child.name, sex: child.sex))
                         .appTextStyle(theme.typography.headlineSmall)
                         .foregroundStyle(theme.colors.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .truncationMode(.tail)
                     if let info = childInfo(
                         child: child,
                         lastWeight: lastWeight,
@@ -35,8 +34,6 @@ struct ChildSelector: View {
                         Text(info)
                             .appTextStyle(theme.typography.bodySmall)
                             .foregroundStyle(theme.colors.onSurfaceVariant)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
                     }
                 }
                 AppIcon("ic_expand", tint: theme.colors.onSurfaceVariant)
@@ -45,6 +42,7 @@ struct ChildSelector: View {
             .background(theme.colors.background, in: RoundedRectangle(cornerRadius: theme.shapes.small))
         }
         .buttonStyle(.plain)
+        .environment(\.dynamicTypeSize, dynamicTypeSize.isAccessibilitySize ? .xxxLarge : dynamicTypeSize)
         .accessibilityHint("выбрать ребёнка")
         .guideTarget(.childSelector, shape: .small)
     }
