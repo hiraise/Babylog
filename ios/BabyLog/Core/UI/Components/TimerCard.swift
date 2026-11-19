@@ -10,6 +10,7 @@ private let tileMotion = 0.25
 struct TimerTile: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var lastElapsed: Int64 = 0
 
     let icon: String
@@ -81,7 +82,7 @@ struct TimerTile: View {
                         .padding(.top, spacing.xs)
                         .appTextStyle(theme.typography.labelMedium)
                         .multilineTextAlignment(.center)
-                        .lineLimit(1)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                     if !running, let idleCaption {
                         Text(idleCaption)
                             .appTextStyle(theme.typography.bodySmall)
@@ -126,6 +127,7 @@ struct TimerCornerButton: View {
 struct WideTimerTile: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let icon: String
     let label: String
@@ -183,7 +185,9 @@ struct WideTimerTile: View {
                         .minimumScaleFactor(0.6)
                         .layoutPriority(-1)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(label).appTextStyle(theme.typography.labelMedium).lineLimit(1)
+                        Text(label)
+                            .appTextStyle(theme.typography.labelMedium)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                         Text("с \(formatClock(runningSince, timeZone: timeZone))")
                             .appTextStyle(theme.typography.bodySmall)
                             .lineLimit(1)
@@ -191,7 +195,9 @@ struct WideTimerTile: View {
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(label).appTextStyle(theme.typography.labelMedium).lineLimit(1)
+                        Text(label)
+                            .appTextStyle(theme.typography.labelMedium)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
                         if let idleCaption {
                             Text(idleCaption)
                                 .appTextStyle(theme.typography.bodySmall)

@@ -53,6 +53,8 @@ struct RootViewTests {
         try? await Task.sleep(for: .milliseconds(200))
         controller.view.layoutIfNeeded()
 
-        assertSnapshot(of: controller, as: .image, named: name)
+        withSnapshotRecording {
+            assertSnapshot(of: controller, as: .image, named: name)
+        }
     }
 }

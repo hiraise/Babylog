@@ -5,7 +5,7 @@ struct BabyLogAppTests {
     @Test func applicationMetadataAndSharedResourcesAreBundled() {
         let bundle = Bundle.main
 
-        #expect(bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String == "Дневник малыша")
+        #expect(bundle.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String == "Babylog")
         #expect(bundle.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption") as? Bool == false)
 
         for name in ["inter_regular", "inter_medium", "inter_semibold", "nunito_extrabold"] {

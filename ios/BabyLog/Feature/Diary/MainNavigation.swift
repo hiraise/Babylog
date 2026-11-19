@@ -50,57 +50,76 @@ enum DiaryView: String, CaseIterable, Hashable, Sendable {
 
 /**
  Нижняя панель разделов (ADR-0035): до неё дотягивается большой палец, когда ребёнок на руках.
- Подписи видны у всех пунктов. Точка на «Развитии» — советы этой недели ещё не открывали.
+ Подписи видны у всех пунктов; при accessibility-размере текста пункты стоят в два ряда.
+ Точка на «Развитии» — советы этой недели ещё не открывали.
  */
 struct MainNavigationBar: View {
     @Environment(\.babyLogTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let selected: MainSection
     let onSelect: (MainSection) -> Void
     var developmentBadge = false
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(MainSection.allCases, id: \.self) { section in
-                Button {
-                    onSelect(section)
-                } label: {
-                    VStack(spacing: theme.spacing.xs) {
-                        AppIcon(
-                            section.icon,
-                            contentDescription: section == .development && developmentBadge ? "есть новые советы" : nil,
-                            tint: selected == section ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant
-                        )
-                        .frame(width: BabyLogSizes.touchTarget, height: BabyLogSizes.chipHeight)
-                        .background(
-                            selected == section ? theme.colors.secondaryContainer : .clear,
-                            in: Capsule()
-                        )
-                        .overlay(alignment: .topTrailing) {
-                            if section == .development && developmentBadge {
-                                Circle()
-                                    .fill(theme.colors.primary)
-                                    .frame(width: BabyLogSizes.badge, height: BabyLogSizes.badge)
-                                    .offset(x: theme.spacing.xs)
-                            }
-                        }
-                        Text(section.title)
-                            .appTextStyle(theme.typography.labelMedium)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(spacing: 0) {
+                    HStack(spacing: 0) {
+                        button(.today)
+                        button(.diary)
                     }
-                    .foregroundStyle(selected == section ? theme.colors.onSurface : theme.colors.onSurfaceVariant)
-                    .frame(maxWidth: .infinity, minHeight: BabyLogSizes.rowMinHeight)
-                    .contentShape(Rectangle())
+                    HStack(spacing: 0) {
+                        button(.development)
+                        button(.analytics)
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected == section ? [.isSelected] : [])
-                .guideTarget(section.guide)
+            } else {
+                HStack(spacing: 0) {
+                    ForEach(MainSection.allCases, id: \.self) { button($0) }
+                }
             }
         }
-        .frame(height: BabyLogSizes.navigationHeight)
         .frame(maxWidth: .infinity)
+        .frame(height: dynamicTypeSize.isAccessibilitySize ? nil : BabyLogSizes.navigationHeight)
         .background(theme.colors.surfaceContainer)
+    }
+
+    @ViewBuilder private func button(_ section: MainSection) -> some View {
+        Button {
+            onSelect(section)
+        } label: {
+            VStack(spacing: theme.spacing.xs) {
+                AppIcon(
+                    section.icon,
+                    contentDescription: section == .development && developmentBadge ? "есть новые советы" : nil,
+                    tint: selected == section ? theme.colors.onSecondaryContainer : theme.colors.onSurfaceVariant
+                )
+                .frame(width: BabyLogSizes.touchTarget, height: BabyLogSizes.chipHeight)
+                .background(
+                    selected == section ? theme.colors.secondaryContainer : .clear,
+                    in: Capsule()
+                )
+                .overlay(alignment: .topTrailing) {
+                    if section == .development && developmentBadge {
+                        Circle()
+                            .fill(theme.colors.primary)
+                            .frame(width: BabyLogSizes.badge, height: BabyLogSizes.badge)
+                            .offset(x: theme.spacing.xs)
+                    }
+                }
+                Text(section.title)
+                    .appTextStyle(theme.typography.labelMedium)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.8)
+            }
+            .foregroundStyle(selected == section ? theme.colors.onSurface : theme.colors.onSurfaceVariant)
+            .frame(maxWidth: .infinity, minHeight: BabyLogSizes.rowMinHeight)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected == section ? [.isSelected] : [])
+        .guideTarget(section.guide)
     }
 }
 

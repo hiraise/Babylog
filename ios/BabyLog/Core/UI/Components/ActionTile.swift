@@ -2,11 +2,13 @@ import SwiftUI
 
 /**
  Плитка быстрого действия: акцентная иконка над короткой подписью на нажимаемой `AppCard`.
- Подпись уменьшается до 3/4 размера и только затем обрезается. `caption` — до двух строк;
- `highlight` выделяет важное пояснение акцентом, но смысл всегда есть в самом тексте.
+ При обычном тексте подпись уменьшается до 3/4 размера и только затем обрезается; при accessibility-размере
+ она переносится. `caption` — до двух строк; `highlight` выделяет важное пояснение акцентом,
+ но смысл всегда есть в самом тексте.
  */
 struct ActionTile: View {
     @Environment(\.babyLogTheme) private var theme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let icon: String
     let label: String
@@ -33,8 +35,8 @@ struct ActionTile: View {
                 Text(label)
                     .appTextStyle(theme.typography.labelMedium)
                     .multilineTextAlignment(.center)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                    .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.75)
                     .truncationMode(.tail)
                 if let caption {
                     Text(caption)

@@ -28,6 +28,7 @@ struct DiaryActions {
 struct TodayContent: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     let state: DiaryUiState
     let child: Child
@@ -70,25 +71,46 @@ struct TodayContent: View {
                 .guideTarget(.illnessCard)
             }
             VStack(spacing: theme.spacing.s) {
-                HStack(spacing: theme.spacing.s) {
-                    SleepCard(
-                        child: child,
-                        activeSleep: state.activeSleep,
-                        lastSleepEnd: state.lastSleepEnd,
-                        now: now,
-                        onStart: actions.onStartSleep,
-                        onEnd: actions.onEndSleep
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    FeedingCard(
-                        activeFeeding: state.activeFeeding,
-                        lastFeeding: state.lastFeeding,
-                        now: now,
-                        onStart: actions.onStartFeeding,
-                        onEnd: actions.onEndFeeding,
-                        onSwitchBreast: actions.onSwitchBreast
-                    )
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: theme.spacing.s) {
+                        SleepCard(
+                            child: child,
+                            activeSleep: state.activeSleep,
+                            lastSleepEnd: state.lastSleepEnd,
+                            now: now,
+                            onStart: actions.onStartSleep,
+                            onEnd: actions.onEndSleep
+                        )
+                        FeedingCard(
+                            activeFeeding: state.activeFeeding,
+                            lastFeeding: state.lastFeeding,
+                            now: now,
+                            onStart: actions.onStartFeeding,
+                            onEnd: actions.onEndFeeding,
+                            onSwitchBreast: actions.onSwitchBreast
+                        )
+                    }
+                } else {
+                    HStack(spacing: theme.spacing.s) {
+                        SleepCard(
+                            child: child,
+                            activeSleep: state.activeSleep,
+                            lastSleepEnd: state.lastSleepEnd,
+                            now: now,
+                            onStart: actions.onStartSleep,
+                            onEnd: actions.onEndSleep
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        FeedingCard(
+                            activeFeeding: state.activeFeeding,
+                            lastFeeding: state.lastFeeding,
+                            now: now,
+                            onStart: actions.onStartFeeding,
+                            onEnd: actions.onEndFeeding,
+                            onSwitchBreast: actions.onSwitchBreast
+                        )
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
                 }
                 CryingNoteRow(
                     activeCrying: state.activeCrying,

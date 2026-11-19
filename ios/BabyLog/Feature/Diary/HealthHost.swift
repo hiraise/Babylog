@@ -15,6 +15,7 @@ private let noIllnessId: Int64 = -1
     var nameIndex = -1
     var recoverId: Int64 = noIllnessId
     var doctorId: Int64 = noIllnessId
+    var doctorShareText: String?
 
     func editName(_ illness: Illness, index: Int) {
         nameIllnessId = illness.id
@@ -142,19 +143,31 @@ struct HealthSheetsHost: View {
             )
         }
         if let illness = illnessById(sheets.doctorId) {
+            let text = doctorText(
+                model: illnessScreenModel(events: state.events, illness: illness, now: now, timeZone: timeZone),
+                child: child,
+                lastWeight: state.lastWeight,
+                timeZone: timeZone
+            )
             DoctorSheet(
                 isPresented: Binding(
                     get: { sheets.doctorId != noIllnessId },
                     set: { if !$0 { sheets.doctorId = noIllnessId } }
                 ),
-                text: doctorText(
-                    model: illnessScreenModel(events: state.events, illness: illness, now: now, timeZone: timeZone),
-                    child: child,
-                    lastWeight: state.lastWeight,
-                    timeZone: timeZone
-                ),
+                text: text,
+                onShare: { sheets.doctorShareText = text },
                 onDismiss: { sheets.doctorId = noIllnessId }
             )
+        }
+        if let text = sheets.doctorShareText {
+            Color.clear.sheet(
+                isPresented: Binding(
+                    get: { sheets.doctorShareText != nil },
+                    set: { if !$0 { sheets.doctorShareText = nil } }
+                )
+            ) {
+                DoctorShareSheet(text: text)
+            }
         }
     }
 
