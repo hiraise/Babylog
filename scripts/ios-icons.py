@@ -3,10 +3,12 @@ import argparse
 import filecmp
 import json
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+import zlib
 from pathlib import Path
 
 ANDROID = "{http://schemas.android.com/apk/res/android}"
@@ -156,6 +158,82 @@ def generate_launch_colors(root, destination):
     )
 
 
+def png_chunk(kind, data):
+    crc = zlib.crc32(kind + data) & 0xFFFFFFFF
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", crc)
+
+
+def remove_png_alpha(path):
+    data = path.read_bytes()
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("Некорректный PNG иконки")
+    offset = 8
+    header = None
+    compressed = []
+    ancillary = []
+    while offset < len(data):
+        length = struct.unpack(">I", data[offset : offset + 4])[0]
+        kind = data[offset + 4 : offset + 8]
+        body = data[offset + 8 : offset + 8 + length]
+        offset += length + 12
+        if kind == b"IHDR":
+            header = body
+        elif kind == b"IDAT":
+            compressed.append(body)
+        elif kind not in (b"IEND", b"tRNS"):
+            ancillary.append((kind, body))
+    width, height, depth, color, compression, filtering, interlace = struct.unpack(">IIBBBBB", header)
+    if depth != 8 or color != 6 or compression != 0 or filtering != 0 or interlace != 0:
+        raise ValueError("Иконка должна быть непересекающимся RGBA PNG с 8 битами на канал")
+    raw = zlib.decompress(b"".join(compressed))
+    stride = width * 4
+    previous = bytearray(stride)
+    rows = []
+    for row in range(height):
+        start = row * (stride + 1)
+        mode = raw[start]
+        current = bytearray(raw[start + 1 : start + stride + 1])
+        for index in range(stride):
+            left = current[index - 4] if index >= 4 else 0
+            up = previous[index]
+            upper_left = previous[index - 4] if index >= 4 else 0
+            if mode == 1:
+                predictor = left
+            elif mode == 2:
+                predictor = up
+            elif mode == 3:
+                predictor = (left + up) // 2
+            elif mode == 4:
+                estimate = left + up - upper_left
+                left_distance = abs(estimate - left)
+                up_distance = abs(estimate - up)
+                corner_distance = abs(estimate - upper_left)
+                if left_distance <= up_distance and left_distance <= corner_distance:
+                    predictor = left
+                elif up_distance <= corner_distance:
+                    predictor = up
+                else:
+                    predictor = upper_left
+            elif mode == 0:
+                predictor = 0
+            else:
+                raise ValueError("Неизвестный PNG-фильтр")
+            current[index] = (current[index] + predictor) & 0xFF
+        rgb = bytearray(width * 3)
+        rgb[0::3] = current[0::4]
+        rgb[1::3] = current[1::4]
+        rgb[2::3] = current[2::4]
+        rows.append(b"\x00" + bytes(rgb))
+        previous = current
+    header = bytearray(header)
+    header[9] = 2
+    output = [b"\x89PNG\r\n\x1a\n", png_chunk(b"IHDR", bytes(header))]
+    output.extend(png_chunk(kind, body) for kind, body in ancillary)
+    output.append(png_chunk(b"IDAT", zlib.compress(b"".join(rows), 9)))
+    output.append(png_chunk(b"IEND", b""))
+    path.write_bytes(b"".join(output))
+
+
 def generate_app_icon(root, destination, work):
     foreground = convert_vector(root / "app/src/main/res/drawable/ic_launcher_foreground.xml")
     background = res_colors(root / "app/src/main/res/values/colors.xml")["ic_launcher_background"]
@@ -177,18 +255,8 @@ def generate_app_icon(root, destination, work):
     target = destination / "AppIcon.appiconset/AppIcon.png"
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(rendered), target)
-    flattened = work / "AppIcon.jpg"
-    subprocess.run(
-        ["sips", "-s", "format", "jpeg", "-s", "formatOptions", "100", str(target), "--out", str(flattened)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
-    subprocess.run(
-        ["sips", "-s", "format", "png", str(flattened), "--out", str(target)],
-        check=True,
-        stdout=subprocess.DEVNULL,
-    )
     subprocess.run(["sips", "-z", "1024", "1024", str(target)], check=True, stdout=subprocess.DEVNULL)
+    remove_png_alpha(target)
     write_json(
         destination / "AppIcon.appiconset/Contents.json",
         {
