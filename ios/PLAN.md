@@ -34,7 +34,7 @@ Each session name links to its only complete specification; do not duplicate it 
 | S9a | [Help: topics and screens](sessions/S9a.md) | medium | 0.7k / 0.4k | all UI | — | done (#85) |
 | S9b | [Help: interactive guides](sessions/S9b.md) | high | 0.6k / 0.6k | S9a | — | done (#86) |
 | S10 | [Release prep and parity audit](sessions/S10.md) | medium | — | all | — | done (#87) |
-| S11 | [Post-review functional and visual fixes](sessions/S11.md) | high | — | S10 | — | wip |
+| S11 | [Post-review functional and visual fixes](sessions/S11.md) | high | — | S10 | — | done (#88) |
 
 Critical path: S1a → S2a → S2b/S3 → S4a → S4b → S4c → S4d → S5a → (S9a → S9b) → S10.
 External TestFlight for the focus group — after S4e and S5a (diary usable, data importable from Android).
