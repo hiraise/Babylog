@@ -99,7 +99,7 @@ dependencies {
     // Тесты ViewModel на JVM (Dispatchers.Main, runTest); версия — как у kotlinx-coroutines в приложении
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     // Android на JVM без эмулятора: миграции, Room и скриншоты (ADR-0013)
-    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("org.robolectric:robolectric:4.18")
     testImplementation("androidx.room:room-testing:2.8.5")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.76.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.76.0")
