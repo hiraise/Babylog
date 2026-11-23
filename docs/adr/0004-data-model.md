@@ -2,7 +2,7 @@
 
 - **Статус:** Заменено [ADR-0008](0008-data-model-children.md)
 - **Дата:** 2026-08-15 (записано 2026-10-15)
-- **Затрагивает:** `app/src/main/java/com/kid/babylog/data/`, `app/schemas/`, `MainViewModel.kt`
+- **Затрагивает:** `app/src/main/java/com/hiraise/babylog/data/`, `app/schemas/`, `MainViewModel.kt`
 
 ## Контекст
 

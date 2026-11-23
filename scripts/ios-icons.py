@@ -276,7 +276,11 @@ def generate(root, destination):
 
 
 def files(directory):
-    return {path.relative_to(directory) for path in directory.rglob("*") if path.is_file()}
+    return {
+        path.relative_to(directory)
+        for path in directory.rglob("*")
+        if path.is_file() and path.name != ".DS_Store"
+    }
 
 
 def check(expected, actual):

@@ -1,0 +1,114 @@
+package com.hiraise.babylog
+
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.hiraise.babylog.core.data.DevelopmentSeenStore
+import com.hiraise.babylog.core.data.DiaryRepository
+import com.hiraise.babylog.core.data.HelpStore
+import com.hiraise.babylog.core.data.PrefsDevelopmentSeenStore
+import com.hiraise.babylog.core.data.PrefsHelpStore
+import com.hiraise.babylog.core.data.PrefsRecoveryNotices
+import com.hiraise.babylog.core.data.PrefsSelectedChildStore
+import com.hiraise.babylog.core.data.PrefsShadeStore
+import com.hiraise.babylog.core.data.PrefsThemeModeStore
+import com.hiraise.babylog.core.data.RecoveryNotices
+import com.hiraise.babylog.core.data.SelectedChildStore
+import com.hiraise.babylog.core.data.ShadeStore
+import com.hiraise.babylog.core.data.ThemeModeStore
+import com.hiraise.babylog.core.data.room.AppDatabase
+import com.hiraise.babylog.core.data.room.RoomDiaryRepository
+import com.hiraise.babylog.core.ui.photo.sweepPhotoCache
+import com.hiraise.babylog.feature.development.AssetTipsSource
+import com.hiraise.babylog.feature.development.DevelopmentViewModel
+import com.hiraise.babylog.feature.development.TipsSource
+import com.hiraise.babylog.feature.diary.DiaryViewModel
+import com.hiraise.babylog.feature.shade.ShadeController
+import com.hiraise.babylog.feature.transfer.ContentResolverDocumentStore
+import com.hiraise.babylog.feature.transfer.DocumentStore
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
+
+/** Ручная сборка зависимостей: весь граф приложения в одном месте, без DI-фреймворка (ADR-0007). */
+class AppContainer(context: Context) {
+
+    /** Системное время в текущем часовом поясе устройства (пояс может смениться на ходу). */
+    val clock: Clock = SystemZoneClock
+
+    /** Сообщение о восстановлении повреждённой базы (ADR-0033): показывает `MainActivity`. */
+    val recoveryNotices: RecoveryNotices = PrefsRecoveryNotices(context)
+
+    private val database = AppDatabase.build(context, recoveryNotices, Dispatchers.IO.asExecutor(), clock::millis)
+
+    init {
+        // Снимки и копии фото, не дошедшие до базы, и копии для «Поделиться» (ADR-0024)
+        sweepPhotoCache(context, clock.millis())
+    }
+
+    val repository: DiaryRepository = RoomDiaryRepository(database)
+
+    val selectedChild: SelectedChildStore = PrefsSelectedChildStore(context)
+
+    val themeMode: ThemeModeStore = PrefsThemeModeStore(context)
+
+    val documents: DocumentStore = ContentResolverDocumentStore(context)
+
+    /** Советы и окна навыков раздела «Развитие» (ADR-0037). */
+    val tips: TipsSource = AssetTipsSource(context)
+
+    val developmentSeen: DevelopmentSeenStore = PrefsDevelopmentSeenStore(context)
+
+    /** Уведомление с кнопками в шторке (ADR-0042): включено ли и что помнит между нажатиями. */
+    val shadeStore: ShadeStore = PrefsShadeStore(context)
+
+    val shade = ShadeController(context, repository, selectedChild, shadeStore, clock, ShadeActionReceiver::class.java)
+
+    val diaryViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
+        initializer { DiaryViewModel(repository, selectedChild, documents, clock) }
+    }
+
+    val developmentViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
+        initializer { DevelopmentViewModel(tips, developmentSeen) }
+    }
+
+    /** Версия приложения: от неё справка считает «Новое» (ADR-0043). */
+    val appVersion: String = context.versionName()
+
+    val help: HelpStore = PrefsHelpStore(context, appVersion)
+
+    /** Пример дневника для гайдов справки (ADR-0043): своя база в памяти на каждый гайд. */
+    val guideSessionsFactory: ViewModelProvider.Factory = viewModelFactory {
+        initializer {
+            GuideSessions { topic ->
+                val example = AppDatabase.inMemory(context)
+                GuideSandbox(topic, RoomDiaryRepository(example), tips, documents, clock, onClose = example::close)
+            }
+        }
+    }
+}
+
+private fun Context.versionName(): String {
+    val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0)
+    }
+    return info.versionName.orEmpty()
+}
+
+private object SystemZoneClock : Clock() {
+    override fun getZone(): ZoneId = ZoneId.systemDefault()
+
+    override fun withZone(zone: ZoneId): Clock = system(zone)
+
+    override fun instant(): Instant = Instant.now()
+
+    override fun millis(): Long = System.currentTimeMillis()
+}

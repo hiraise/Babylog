@@ -1,6 +1,6 @@
 # ADR-0047: Приложение публикуется бесплатно в Google Play и App Store от аккаунтов hiraise; GitHub Releases остаётся
 
-- **Статус:** Предложено
+- **Статус:** Принято
 - **Дата:** 2026-11-07
 - **Затрагивает:** `app/build.gradle.kts` (`targetSdk`, `applicationId`, подпись), `.github/workflows/release.yml`, `scripts/dev.sh release`, `.agents/skills/release/`, `fastlane/metadata/`, `PRIVACY.md`, разрешения в `AndroidManifest.xml`, README «Установка на телефон» и «Приватность»
 - **Заменяет:** пункт [ADR-0006](0006-tech-stack-agp9.md) о targetSdk 34; альтернативу «Google Play и Play App Signing» в [ADR-0012](0012-release-signing.md)
@@ -21,7 +21,7 @@ Google Play и Apple.
   и APK, и `babylog-<версия>.aab` для Play. В магазины не загружай сборку не из тега.
 - Подписывай AAB ключом проекта (ADR-0012) и передай этот ключ в Play App Signing как ключ
   подписи приложения. Тогда копия из Play обновляется поверх APK из GitHub и наоборот.
-- Не меняй `applicationId` `com.kid.babylog`: по нему Play и Android узнают приложение.
+- Используй `applicationId` `com.hiraise.babylog`: по нему Play и Android узнают приложение.
 - Держи targetSdk не ниже требования Google Play к обновлениям. Поднимай его отдельным PR
   с проверкой UI: с 35 Android включает edge-to-edge.
 - Храни тексты для магазинов в репозитории: `fastlane/metadata/android/ru-RU/` (название,
@@ -48,6 +48,8 @@ Google Play и Apple.
 
 - Раз в год Play поднимает требование к targetSdk: без PR с подъёмом обновления не примут.
 - У Google есть копия ключа подписи. Это цена переходов между Play и GitHub без переустановки.
+- Ранние сборки с `applicationId` `com.hiraise.babylog` не обновляются до `com.hiraise.babylog`:
+  пользователь экспортирует дневник, импортирует его в новое приложение и только затем удаляет старое.
 - Если аккаунт Play личный и создан после ноября 2023, перед выходом в продакшен нужно
   закрытое тестирование: не меньше 12 тестировщиков, 14 дней подряд.
 - Взносы магазинам платит владелец. Это расходы на публикацию, а не монетизация.

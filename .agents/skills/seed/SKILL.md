@@ -6,7 +6,7 @@ whenToUse: Когда для проверки или показа BabyLog нуж
 
 # Тестовый дневник
 
-Данные — [SeedCsvTest](../../../app/src/test/java/com/kid/babylog/feature/transfer/SeedCsvTest.kt):
+Данные — [SeedCsvTest](../../../app/src/test/java/com/hiraise/babylog/feature/transfer/SeedCsvTest.kt):
 «Соня», ~150 дней, ~3300 записей всех типов из `sampleMonths`, время — по сегодня.
 
 1. **Устройство.** На эмулятор, где смотрит владелец, — только по его просьбе: импорт добавит
@@ -22,6 +22,6 @@ whenToUse: Когда для проверки или показа BabyLog нуж
    удали «Соню»: выбери её → заголовок «Дневник Сони» → карандаш → «Удалить ребёнка…».
 6. Скажи владельцу, что «Соня» появилась (или обновилась) в отладочной базе и на каком эмуляторе.
 
-Новый тип записи добавь в `sampleMonths` (`app/src/main/java/com/kid/babylog/feature/help/SampleDiary.kt`):
+Новый тип записи добавь в `sampleMonths` (`app/src/main/java/com/hiraise/babylog/feature/help/SampleDiary.kt`):
 `SeedCsvTest` падает, пока в дневнике нет хотя бы одного типа из `EventRecord`. Эталоны
 «Аналитики» после этого перезапиши (`scripts/dev.sh goldens`).
