@@ -52,7 +52,7 @@ suspend fun exportArchive(
     }
     val zip = ZipOutputStream(output)
     zip.putNextEntry(ZipEntry(ARCHIVE_CSV))
-    val csv = CsvCodec.encode(children, events, childFiles, eventFiles.mapValues { (_, list) -> list.map { it.second } })
+    val csv = CsvCodec.encode(children, events, childFiles, eventFiles.mapValues { (_, list) -> list.map { it.second } }, zone)
     zip.write(csv.toByteArray(Charsets.UTF_8))
     zip.closeEntry()
     var photos = 0
