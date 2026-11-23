@@ -31,11 +31,6 @@ keystore.properties
 .vscode/*
 !.vscode/tasks.json
 
-# Канонические скиллы — .agents/skills; в .claude — только совместимые указатели и субагенты
-.claude/*
-!.claude/skills/
-!.claude/agents/
-
 # iOS: личная подпись, настройки Xcode, сертификаты и архивы (ADR-0049)
 ios/Local.xcconfig
 xcuserdata/

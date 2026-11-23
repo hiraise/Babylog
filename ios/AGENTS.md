@@ -1,14 +1,14 @@
 # BabyLog iOS port — agent rules
 
 > Written in English by the owner's decision to save porting-session tokens. Do not translate.
-> The canonical repository rules are in the root `AGENTS.md`; do not reread them through `CLAUDE.md`.
+> The canonical repository rules are in the root `AGENTS.md`.
 
 ## Session workflow
 
 1. Start exactly one implementation session with the `ios-port` skill and its ID. Read this file and
    `ios/sessions/<ID>.md`; do not read other session specifications or explore the whole repository.
 2. Read the common ADRs below, plus the additional ADRs and Android files listed in the session
-   specification. Android paths are relative to `app/src/main/java/com/kid/babylog/`
+   specification. Android paths are relative to `app/src/main/java/com/hiraise/babylog/`
    unless given as repository paths; their tests live under the corresponding `app/src/test/` tree.
 3. Work sequentially in the main checkout. Confirm `git status` is clean, then create the branch:
    `git fetch && git switch -c ios/<id> origin/release/v1.11`.
@@ -24,9 +24,7 @@
 7. The whole port ships in release 1.11. Branch from the release branch, not `main`. After approval
    and green CI, merge into the release branch only through the `release` skill, section «Пока PR открыт»,
    when the owner asks.
-8. Run one session at a time in the main checkout. Update only your session's row in `ios/PLAN.md`
-   in the PR that finishes it.
-9. Do not launch subagents for routine exploration: the session specification is the file map.
+8. Do not launch subagents for routine exploration: the session specification is the file map.
    Any required content verification, including `tips-verifier`, follows the ADRs instead.
 
 ## Architecture

@@ -1,0 +1,154 @@
+package com.hiraise.babylog.feature.transfer
+
+import com.hiraise.babylog.core.model.BabyEvent
+import com.hiraise.babylog.core.model.Child
+import com.hiraise.babylog.core.model.EventRecord
+import com.hiraise.babylog.core.model.toRecord
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+/**
+ * CSV-формат (ADR-0009): `type,start,end,detail,note,child,photos`.
+ * Время — локальное, "yyyy-MM-dd HH:mm:ss" (при импорте допускается 'T' как разделитель
+ * и время без секунд). Экранирование по RFC 4180. Строка PROFILE описывает ребёнка:
+ * дата рождения в `start` (может быть пустой), пол в `detail` (`BOY`/`GIRL`, может быть пустым,
+ * ADR-0016), имя в `child`. `photos` — файлы фото в архиве экспорта через `;` (ADR-0045): у PROFILE —
+ * фото ребёнка, у записи — её фото по порядку.
+ */
+object CsvCodec {
+
+    const val HEADER = "type,start,end,detail,note,child,photos"
+    const val PROFILE_ROW = "PROFILE"
+    private const val PHOTO_SEPARATOR = ";"
+
+    /**
+     * Поле длиннее — не запись приложения: так выглядят строки, склеенные незакрытой кавычкой, или чужой
+     * файл. Строка базы с таким полем не влезла бы в окно курсора SQLite (2 МБ) и роняла бы чтение дневника.
+     */
+    const val MAX_FIELD_LENGTH = 100_000
+    private val FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+    fun formatTime(millis: Long, zone: ZoneId = ZoneId.systemDefault()): String =
+        Instant.ofEpochMilli(millis).atZone(zone).toLocalDateTime().format(FORMAT)
+
+    fun parseTime(raw: String, zone: ZoneId = ZoneId.systemDefault()): Long? {
+        var s = raw.trim().replace('T', ' ')
+        if (s.isEmpty()) return null
+        if (s.length == 16) s += ":00" // yyyy-MM-dd HH:mm
+        return try {
+            LocalDateTime.parse(s, FORMAT).atZone(zone).toInstant().toEpochMilli()
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Весь дневник: строка PROFILE на каждого ребёнка, затем записи в переданном порядке. [childPhotos] — файл
+     * фото ребёнка по его id, [eventPhotos] — файлы фото записи по её id; это пути внутри архива (ADR-0045).
+     */
+    fun encode(
+        children: List<Child>,
+        events: List<BabyEvent>,
+        childPhotos: Map<Long, String> = emptyMap(),
+        eventPhotos: Map<Long, List<String>> = emptyMap(),
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): String {
+        val names = children.associate { it.id to it.name }
+        val sb = StringBuilder()
+        sb.append('\uFEFF') // BOM, чтобы Excel корректно открывал кириллицу
+        sb.append(HEADER).append("\r\n")
+        for (child in children) {
+            sb.append(PROFILE_ROW).append(',')
+                .append(child.birthDate?.let { formatTime(it, zone) } ?: "")
+                .append(",,").append(child.sex?.name ?: "").append(",,")
+                .append(escape(child.name)).append(',')
+                .append(escape(childPhotos[child.id].orEmpty())).append("\r\n")
+        }
+        for (event in events) {
+            val r = event.toRecord()
+            sb.append(r.type).append(',')
+                .append(formatTime(r.start, zone)).append(',')
+                .append(r.end?.let { formatTime(it, zone) } ?: "").append(',')
+                .append(escape(r.detail)).append(',')
+                .append(escape(r.note)).append(',')
+                .append(escape(names[event.childId] ?: "")).append(',')
+                .append(escape(eventPhotos[event.id].orEmpty().joinToString(PHOTO_SEPARATOR))).append("\r\n")
+        }
+        return sb.toString()
+    }
+
+    private fun escape(s: String): String =
+        if (s.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+            "\"" + s.replace("\"", "\"\"") + "\""
+        } else s
+
+    /**
+     * Разбирает CSV в строки-записи с учётом кавычек и переносов внутри кавычек. Кавычка, не закрытая до
+     * конца файла, — [IllegalArgumentException] с номером строки: иначе остаток файла молча стал бы одним полем.
+     */
+    fun parseRows(text: String): List<List<String>> {
+        val rows = mutableListOf<List<String>>()
+        val row = mutableListOf<String>()
+        val field = StringBuilder()
+        var inQuotes = false
+        var line = 1
+        var quoteLine = 0
+        var i = 0
+        val src = text.removePrefix("\uFEFF")
+        while (i < src.length) {
+            val c = src[i]
+            if (c == '\n') line++
+            when {
+                inQuotes -> when {
+                    c == '"' && i + 1 < src.length && src[i + 1] == '"' -> { field.append('"'); i++ }
+                    c == '"' -> inQuotes = false
+                    else -> field.append(c)
+                }
+                // Режим кавычек — только с начала поля; кавычка в середине — литерал (как в Excel)
+                c == '"' && field.isEmpty() -> {
+                    inQuotes = true
+                    quoteLine = line
+                }
+                c == ',' -> { row.add(field.toString()); field.clear() }
+                c == '\r' -> { /* пропускаем, строку завершит \n */ }
+                c == '\n' -> {
+                    row.add(field.toString()); field.clear()
+                    if (row.any { it.isNotBlank() }) rows.add(row.toList())
+                    row.clear()
+                }
+                else -> field.append(c)
+            }
+            i++
+        }
+        require(!inQuotes) { "в строке $quoteLine кавычка не закрыта — исправьте файл" }
+        row.add(field.toString())
+        if (row.any { it.isNotBlank() }) rows.add(row.toList())
+        return rows
+    }
+
+    /**
+     * Строка CSV → плоская запись; null — нет обязательных колонок или время не разбирается.
+     * Тип и детали проверяет [com.hiraise.babylog.core.model.toEvent].
+     */
+    fun rowToRecord(row: List<String>): EventRecord? {
+        if (row.size < 4) return null
+        val start = parseTime(row[1]) ?: return null
+        val end = if (row[2].isBlank()) null else parseTime(row[2]) ?: return null
+        return EventRecord(
+            type = row[0].trim(),
+            start = start,
+            end = end,
+            detail = row[3].trim(),
+            note = row.getOrElse(4) { "" }.trim(),
+        )
+    }
+
+    /** Имя ребёнка из колонки `child`; пусто — колонки нет (файл старой версии) или она не заполнена. */
+    fun childName(row: List<String>): String = row.getOrElse(5) { "" }.trim()
+
+    /** Файлы фото из колонки `photos` по порядку; пусто — фото нет или файл версии до 1.10 (ADR-0045). */
+    fun photoNames(row: List<String>): List<String> =
+        row.getOrElse(6) { "" }.split(PHOTO_SEPARATOR).map { it.trim() }.filter { it.isNotEmpty() }
+}

@@ -8,16 +8,16 @@ plugins {
 }
 
 android {
-    namespace = "com.kid.babylog"
+    namespace = "com.hiraise.babylog"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.kid.babylog"
+        applicationId = "com.hiraise.babylog"
         minSdk = 26
         // Не поднимаем без проверки на телефоне: с 35 Android включает edge-to-edge и меняет раскладку экрана
-        targetSdk = 34
-        versionCode = 12
-        versionName = "1.11"
+        targetSdk = 36
+        versionCode = 13
+        versionName = "1.12"
     }
 
     signingConfigs {
@@ -99,7 +99,7 @@ dependencies {
     // Тесты ViewModel на JVM (Dispatchers.Main, runTest); версия — как у kotlinx-coroutines в приложении
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
     // Android на JVM без эмулятора: миграции, Room и скриншоты (ADR-0013)
-    testImplementation("org.robolectric:robolectric:4.17")
+    testImplementation("org.robolectric:robolectric:4.18.1")
     testImplementation("androidx.room:room-testing:2.8.5")
     testImplementation("io.github.takahirom.roborazzi:roborazzi:1.77.0")
     testImplementation("io.github.takahirom.roborazzi:roborazzi-compose:1.77.0")

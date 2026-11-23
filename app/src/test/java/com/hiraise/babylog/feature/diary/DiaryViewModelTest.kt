@@ -1,0 +1,343 @@
+package com.hiraise.babylog.feature.diary
+
+import com.hiraise.babylog.core.data.DiaryRepository
+import com.hiraise.babylog.core.model.BabyEvent
+import com.hiraise.babylog.core.model.Bottle
+import com.hiraise.babylog.core.model.Breast
+import com.hiraise.babylog.core.model.Child
+import com.hiraise.babylog.core.model.ChildPhoto
+import com.hiraise.babylog.core.model.Crying
+import com.hiraise.babylog.core.model.Diaper
+import com.hiraise.babylog.core.model.DiaperKind
+import com.hiraise.babylog.core.model.Feeding
+import com.hiraise.babylog.core.model.Medicine
+import com.hiraise.babylog.core.model.Milk
+import com.hiraise.babylog.core.model.PhotoEdit
+import com.hiraise.babylog.core.model.Sex
+import com.hiraise.babylog.core.model.Sleep
+import com.hiraise.babylog.testing.FakeDiaryRepository
+import com.hiraise.babylog.testing.FakeDocumentStore
+import com.hiraise.babylog.testing.FakeSelectedChildStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import java.io.IOException
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZoneOffset
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class DiaryViewModelTest {
+
+    private val now = Instant.parse("2026-10-15T10:00:00.750Z")
+    private val clock = Clock.fixed(now, ZoneOffset.UTC)
+    private val repo = FakeDiaryRepository(listOf(Child(1, "Маша", null), Child(2, "Петя", null)))
+    private val selection = FakeSelectedChildStore()
+    private val documents = FakeDocumentStore()
+
+    @Before
+    fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
+
+    @After
+    fun tearDown() = Dispatchers.resetMain()
+
+    /** ViewModel с подписчиком на state: без него `stateIn(WhileSubscribed)` не обновляется. */
+    private fun TestScope.viewModel(): DiaryViewModel {
+        val vm = DiaryViewModel(repo, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        return vm
+    }
+
+    @Test
+    fun `first child is shown until another is selected`() = runTest {
+        val vm = viewModel()
+        assertEquals(1L, vm.state.value.child?.id)
+        vm.selectChild(2)
+        assertEquals(2L, vm.state.value.child?.id)
+    }
+
+    @Test
+    fun `records belong to the selected child only`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        vm.saveEvent(Diaper(childId = 2, start = 2_000, kind = DiaperKind.WET))
+        assertEquals(listOf(1L), vm.state.value.events.map { it.childId })
+        vm.selectChild(2)
+        assertTrue(vm.state.value.events.single() is Diaper)
+    }
+
+    @Test
+    fun `medicine suggestions come from the selected child's records`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Medicine(childId = 1, start = 1_000, name = "Витамин D"))
+        vm.saveEvent(Medicine(childId = 1, start = 3_000, name = "Нурофен"))
+        vm.saveEvent(Medicine(childId = 2, start = 2_000, name = "Эспумизан"))
+        assertEquals(listOf("Нурофен", "Витамин D"), vm.state.value.pastMedicines.map { it.name })
+        vm.selectChild(2)
+        assertEquals(listOf("Эспумизан"), vm.state.value.pastMedicines.map { it.name })
+    }
+
+    @Test
+    fun `new child is selected with its photo and duplicate names are ignored`() = runTest {
+        val vm = viewModel()
+        val photo = ChildPhoto(byteArrayOf(1, 2, 3))
+        vm.addChild(" Вася ", birthDate = null, sex = Sex.BOY, photo = photo)
+        assertEquals(Child(3, "Вася", null, Sex.BOY, photo), vm.state.value.child)
+        vm.addChild("вася", birthDate = null, sex = null, photo = null)
+        assertEquals(3, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `new diaper is saved with its photos, editing without photos keeps them`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Diaper(childId = 1, start = 1_000, kind = DiaperKind.DIRTY), PhotoEdit(emptyList(), listOf(byteArrayOf(1), byteArrayOf(2))))
+        val diaper = vm.state.value.events.single() as Diaper
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        vm.saveEvent(diaper.copy(note = "зелёный"))
+        assertEquals(mapOf(diaper.id to 2), vm.state.value.photoCounts)
+
+        val first = repo.photos.value.getValue(diaper.id).first()
+        vm.saveEvent(diaper, PhotoEdit(keep = listOf(first.id), add = emptyList()))
+        assertEquals(mapOf(diaper.id to 1), vm.state.value.photoCounts)
+    }
+
+    @Test
+    fun `deleting the selected child falls back to the first one`() = runTest {
+        val vm = viewModel()
+        vm.selectChild(2)
+        vm.deleteChild(vm.state.value.child!!)
+        assertEquals(1L, vm.state.value.child?.id)
+        assertEquals("Удалено: Петя", vm.state.value.message)
+        vm.deleteChild(vm.state.value.child!!) // последнего удалить нельзя
+        assertEquals(1, vm.state.value.children.size)
+    }
+
+    @Test
+    fun `sleep timer ends at clock time truncated to seconds`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.startSleep(now.toEpochMilli()) // второй активный сон не начинается
+        assertEquals(1, vm.state.value.events.size)
+        vm.endSleep()
+        assertNull(vm.state.value.activeSleep)
+        val sleep = vm.state.value.events.single() as com.hiraise.babylog.core.model.Sleep
+        assertEquals(Instant.parse("2026-10-15T10:00:00Z").toEpochMilli(), sleep.end)
+    }
+
+    @Test
+    fun `switching breast splits the feeding at one second and end stops it`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 600_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startFeeding(now.toEpochMilli(), Breast.RIGHT) // второе кормление не начинается
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
+        vm.switchBreast()
+        val second = Instant.parse("2026-10-15T10:00:00Z").toEpochMilli()
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+        assertEquals(second, vm.state.value.activeFeeding?.start)
+        vm.endFeeding()
+        assertNull(vm.state.value.activeFeeding)
+        val feedings = vm.state.value.events.filterIsInstance<Feeding>().sortedBy { it.start }
+        assertEquals(listOf(Breast.LEFT, Breast.RIGHT), feedings.map { it.breast })
+        assertEquals(listOf(second, second), feedings.map { it.end })
+        assertEquals(second, feedings[1].start) // правая начата ровно в конце левой: одно кормление в сводке
+    }
+
+    @Test
+    fun `sleep and feeding never run together`() = runTest {
+        val vm = viewModel()
+        val start = now.toEpochMilli() - 1_800_000
+        vm.startFeeding(start, Breast.LEFT)
+        vm.startSleep(start + 600_000)
+        assertNull(vm.state.value.activeFeeding)
+        // Кормление закончилось в момент начала сна — с точностью до секунды, как хранит репозиторий
+        assertEquals(Instant.parse("2026-10-15T09:40:00Z").toEpochMilli(), vm.state.value.events.filterIsInstance<Feeding>().single().end)
+        vm.startFeeding(start + 1_200_000, Breast.RIGHT)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.RIGHT, vm.state.value.activeFeeding?.breast)
+    }
+
+    @Test
+    fun `stopping a timer by tap can be undone`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        assertEquals("Сон: 1 ч", vm.state.value.message)
+        assertTrue(vm.state.value.messageAction is MessageAction.ResumeTimer)
+        vm.consumeMessage(performed = true)
+        assertNull(vm.state.value.events.filterIsInstance<Sleep>().single().end)
+        assertNull(vm.state.value.messageAction)
+    }
+
+    @Test
+    fun `an accidental crying start is undone and the sleep goes on`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.startCrying()
+        assertEquals("Плач начат, сон закончен", vm.state.value.message)
+        vm.consumeMessage(performed = true)
+        assertTrue(vm.state.value.events.none { it is Crying })
+        assertNotNull(vm.state.value.activeSleep)
+    }
+
+    @Test
+    fun `stopping the crying drops its undo — the sheet has its own «Ещё плачет»`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        assertEquals("Плач начат", vm.state.value.message)
+        vm.endCrying()
+        assertNull(vm.state.value.message)
+        assertNull(vm.state.value.messageAction)
+    }
+
+    @Test
+    fun `falling asleep ends the crying without a message — the screen opens its sheet`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        vm.consumeMessage()
+        vm.startSleep(now.toEpochMilli())
+        assertNull(vm.state.value.activeCrying)
+        assertNotNull(vm.state.value.activeSleep)
+        assertNull(vm.state.value.message)
+    }
+
+    @Test
+    fun `crying that started earlier moves the end of the sleep it interrupted`() = runTest {
+        val vm = viewModel()
+        val sleepStart = now.toEpochMilli() / 1000 * 1000 - 3_600_000
+        vm.startSleep(sleepStart)
+        vm.startCrying()
+        vm.endCrying()
+        val crying = vm.state.value.lastCrying!!
+        // Плакал за 10 минут до того, как нажали: и проснулся тогда же
+        vm.saveCryingDetails(crying, crying.start - 600_000, listOf("голод"), emptyList(), "")
+        val saved = vm.state.value.events.filterIsInstance<Crying>().single()
+        assertEquals(crying.start - 600_000, saved.start)
+        assertEquals(listOf("голод"), saved.reasons)
+        assertEquals(crying.start - 600_000, vm.state.value.events.filterIsInstance<Sleep>().single().end)
+    }
+
+    @Test
+    fun `crying starts at once, wakes the baby and can be resumed after a wrong stop`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        // Плачет — значит, не спит (ADR-0030): таймер плача идёт сразу, сон заканчивается
+        vm.startCrying()
+        val crying = vm.state.value.activeCrying!!
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(now.toEpochMilli() / 1000 * 1000, crying.start)
+
+        vm.endCrying()
+        assertNull(vm.state.value.activeCrying)
+        assertEquals(crying.id, vm.state.value.lastCrying?.id)
+        // «Ещё плачет» в листе: остановили по ошибке — таймер идёт дальше с того же начала
+        vm.resumeCrying(vm.state.value.lastCrying!!)
+        assertEquals(crying.start, vm.state.value.activeCrying?.start)
+    }
+
+    @Test
+    fun `details of a finished crying are saved into the same record`() = runTest {
+        val vm = viewModel()
+        vm.startCrying()
+        vm.endCrying()
+        val done = vm.state.value.lastCrying!!
+        vm.saveEvent(done.copy(reasons = listOf("колики"), helped = listOf("укачивание"), note = "вечер"))
+        val saved = vm.state.value.events.filterIsInstance<Crying>().single()
+        assertEquals(listOf("колики"), saved.reasons)
+        assertEquals(listOf("укачивание"), saved.helped)
+        // Своя метка из этой записи — теперь первая в подсказках листа
+        assertEquals("колики", vm.state.value.cryingChoices.reasons.shown.first())
+    }
+
+    @Test
+    fun `undo does not resume a timer once another one started`() = runTest {
+        val vm = viewModel()
+        vm.startSleep(now.toEpochMilli() - 3_600_000)
+        vm.endSleep()
+        vm.startFeeding(now.toEpochMilli(), Breast.LEFT)
+        vm.consumeMessage(performed = true)
+        assertNull(vm.state.value.activeSleep)
+        assertEquals(Breast.LEFT, vm.state.value.activeFeeding?.breast)
+    }
+
+    @Test
+    fun `export and import report results`() = runTest {
+        val vm = viewModel()
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        vm.exportTo("file")
+        assertEquals("Экспортировано записей: 1", vm.state.value.message)
+        vm.consumeMessage()
+        vm.importFrom("file")
+        assertEquals("Импорт: добавлено 0, дубликатов 1", vm.state.value.message)
+    }
+
+    @Test
+    fun `history days include today even without records`() {
+        val today = LocalDate.of(2026, 10, 15)
+        val events = listOf(Feeding(childId = 1, start = Instant.parse("2026-10-13T12:00:00Z").toEpochMilli(), breast = Breast.LEFT))
+        assertEquals(
+            listOf(LocalDate.of(2026, 10, 13), today),
+            historyDays(events, today, ZoneId.of("UTC")),
+        )
+    }
+
+    @Test
+    fun `bottle is saved for the selected child and becomes the last feeding and bottle`() = runTest {
+        val vm = viewModel()
+        vm.addBottle(volumeMl = 120, milk = Milk.FORMULA, time = 5_000)
+        val bottle = vm.state.value.events.single() as Bottle
+        assertEquals(Triple(1L, 120, Milk.FORMULA), Triple(bottle.childId, bottle.volumeMl, bottle.milk))
+        assertEquals(bottle, vm.state.value.lastBottle)
+        assertEquals(LastFeeding(5_000, 5_000, breast = null), vm.state.value.lastFeeding)
+    }
+
+    @Test
+    fun `a failed write is a message, not a crash`() = runTest {
+        // Так падает запись, когда память телефона заполнена (SQLiteFullException)
+        val full = object : DiaryRepository by repo {
+            override suspend fun addEvent(event: BabyEvent): Long = throw IOException("database or disk is full")
+        }
+        val vm = DiaryViewModel(full, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        vm.saveEvent(Feeding(childId = 1, start = 1_000, breast = Breast.LEFT))
+        assertTrue(vm.state.value.message!!.startsWith("Не удалось сохранить"))
+        assertTrue(repo.events.value.isEmpty())
+    }
+
+    @Test
+    fun `a failed read is retried instead of closing the app`() = runTest {
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        repo.events.value = listOf(Feeding(id = 1, childId = 1, start = 1_000, end = 2_000, breast = Breast.LEFT))
+        var broken = true
+        val flaky = object : DiaryRepository by repo {
+            override fun observeEvents(childId: Long): Flow<List<BabyEvent>> =
+                if (broken) flow { throw IOException("database disk image is malformed") } else repo.observeEvents(childId)
+        }
+        val vm = DiaryViewModel(flaky, selection, documents, clock)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.state.collect {} }
+        assertTrue(vm.state.value.message!!.startsWith("Не удалось прочитать дневник"))
+
+        broken = false
+        advanceTimeBy(1_500)
+        assertEquals(1, vm.state.value.events.size)
+    }
+}

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Локальная отладка BabyLog: эмулятор, сборка+запуск debug-версии, логи, база, скриншоты.
-# Работает с отладочной сборкой (com.kid.babylog.debug) — основное приложение и его данные не трогает.
+# Работает с отладочной сборкой (com.hiraise.babylog.debug) — основное приложение и его данные не трогает.
 #
 # По умолчанию всё идёт на эмулятор. Чтобы работать с телефоном по USB:
 #   ANDROID_SERIAL=<серийник из `adb devices`> scripts/dev.sh run
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-APP_ID="com.kid.babylog.debug"
-ACTIVITY="com.kid.babylog.MainActivity"
+APP_ID="com.hiraise.babylog.debug"
+ACTIVITY="com.hiraise.babylog.MainActivity"
 APK="$ROOT/app/build/outputs/apk/debug/app-debug.apk"
 DB_NAME="babylog.db"
 
@@ -28,14 +28,14 @@ EMULATOR="$SDK/emulator/emulator"
 EMULATOR_LOG="${TMPDIR:-/tmp/}babylog-emulator.log"
 STUDIO_JDK="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
-# Gradle 9 нужен JDK 17+. Если в JAVA_HOME Java ниже 17 (на этом Mac по умолчанию 11), берём JDK из Android Studio
+# Тестам SDK 36 нужен JDK 21+. Если в JAVA_HOME Java ниже 21 (на этом Mac по умолчанию 11), берём JDK из Android Studio
 run_gradle() {
     local version
     version="$("${JAVA_HOME:+$JAVA_HOME/bin/}java" -XshowSettings:properties -version 2>&1 |
         sed -n 's/^ *java\.specification\.version = //p' || true)"
-    if [[ "${version%%.*}" -lt 17 ]]; then
+    if [[ "${version%%.*}" -lt 21 ]]; then
         if [[ ! -x "$STUDIO_JDK/bin/java" ]]; then
-            echo "Gradle нужен JDK 17 или новее — укажите его в JAVA_HOME" >&2
+            echo "Проверкам нужен JDK 21 или новее — укажите его в JAVA_HOME" >&2
             exit 1
         fi
         export JAVA_HOME="$STUDIO_JDK"
@@ -315,7 +315,7 @@ report() {
 # Правила из разделов «Проверка» ADR, которые ловятся поиском по коду (ADR-0011).
 # Меняешь правило в ADR — меняй проверку здесь в том же изменении.
 check_adr_rules() {
-    local main="$ROOT/app/src/main" code="$ROOT/app/src/main/java/com/kid/babylog" failed=0 hits
+    local main="$ROOT/app/src/main" code="$ROOT/app/src/main/java/com/hiraise/babylog" failed=0 hits
     hits="$(grep -nHE 'com\.google\.(android\.gms|firebase)' "$ROOT"/*.gradle.kts "$ROOT"/app/*.gradle.kts || true)"
     report "ADR-0001: закрытые SDK (Play Services, Firebase) не подключаются" "$hits" || failed=1
     # INTERNET появится только вместе с ADR сетевой интеграции — тогда поправь и эту проверку
@@ -358,61 +358,10 @@ check_adr_rules() {
     # Гайд темы справки проверяет UI-тест *GuideTest.kt с id темы: иначе он тихо сломается при правке экрана
     hits=""
     while IFS= read -r id; do
-        grep -rqF --include='*GuideTest.kt' "\"$id\"" "$ROOT/app/src/test/java/com/kid/babylog/feature/help" || hits+="$id"$'\n'
+        grep -rqF --include='*GuideTest.kt' "\"$id\"" "$ROOT/app/src/test/java/com/hiraise/babylog/feature/help" || hits+="$id"$'\n'
     done < <(sed -n 's/^ *id = "\([a-z0-9-]*\)",$/\1/p' "$code"/feature/help/HelpTopics*.kt)
     report "ADR-0043: у темы справки нет UI-теста гайда (feature/help/*GuideTest.kt с её id)" "${hits%$'\n'}" || failed=1
     return "$failed"
-}
-
-# У каждой строки плана есть ровно один файл ТЗ; статус живёт только в таблице, зависимости — в ней же
-check_ios_sessions() {
-    local plan="$ROOT/ios/PLAN.md" dir="$ROOT/ios/sessions"
-    [[ -f "$plan" && -d "$dir" ]] || {
-        report "Нет ios/PLAN.md или ios/sessions/" "$plan"
-        return 1
-    }
-    local hits="" ids="" id session effort size needs parallel status ignored f dep
-    while IFS='|' read -r ignored id session effort size needs parallel status ignored; do
-        id="$(printf '%s' "$id" | tr -d '[:space:]')"
-        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || continue
-        case " $ids " in
-            *" $id "*) hits+="$id: повторная строка в PLAN.md"$'\n' ;;
-        esac
-        ids+="$id "
-        [[ "$session" == *"](sessions/$id.md)"* ]] ||
-            hits+="$id: ссылка должна вести на sessions/$id.md"$'\n'
-        [[ -f "$dir/$id.md" ]] || hits+="$id: нет sessions/$id.md"$'\n'
-        if [[ -f "$dir/$id.md" ]]; then
-            grep -q "^# $id " "$dir/$id.md" || hits+="$id: заголовок файла не совпадает с ID"$'\n'
-        fi
-        status="$(printf '%s' "$status" | sed 's/^ *//;s/ *$//')"
-        if [[ "$id" == S0 ]]; then
-            [[ "$status" == done || "$status" =~ ^partly\ \(.+\)$ ]] ||
-                hits+="S0: статус должен быть partly (…) или done, сейчас: $status"$'\n'
-        else
-            [[ "$status" == todo || "$status" == wip || "$status" =~ ^done\ \(#[0-9]+\)$ ]] ||
-                hits+="$id: статус должен быть todo, wip или done (#PR), сейчас: $status"$'\n'
-        fi
-    done < "$plan"
-    for f in "$dir"/S*.md; do
-        [[ -f "$f" ]] || continue
-        id="$(basename "$f" .md)"
-        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || { hits+="$f: имя файла не похоже на ID сессии"$'\n'; continue; }
-        case " $ids " in
-            *" $id "*) ;;
-            *) hits+="$id: файла нет в таблице PLAN.md"$'\n' ;;
-        esac
-    done
-    while IFS='|' read -r ignored id session effort size needs parallel status ignored; do
-        id="$(printf '%s' "$id" | tr -d '[:space:]')"
-        [[ "$id" =~ ^S[0-9]+[a-z]?$ ]] || continue
-        needs="$(printf '%s' "$needs" | sed 's/^ *//;s/ *$//')"
-        [[ "$needs" == "—" || "$needs" == all || "$needs" == "all UI" ]] && continue
-        for dep in ${needs//,/ }; do
-            [[ " $ids " == *" $dep "* ]] || hits+="$id: неизвестная зависимость $dep"$'\n'
-        done
-    done < "$plan"
-    report "Структура iOS-сессий (ios/PLAN.md ↔ ios/sessions/)" "${hits%$'\n'}"
 }
 
 # Документация: каждый ADR есть в индексе, номера не повторяются, относительные ссылки в .md не битые
@@ -425,8 +374,7 @@ check_docs() {
     hits="$(ls "$adr" | sed -n 's/^\([0-9]\{4\}\)-.*\.md$/\1/p' | sort | uniq -d)"
     report "Номера ADR повторяются" "$hits" || failed=1
     hits=""
-    # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md. Из .claude/ берём только
-    # совместимые указатели скиллов; канонические .agents/skills входят в общий обход .md
+    # template.md пропускаем: в нём ссылки-заготовки вида NNNN-slug.md
     while IFS= read -r f; do
         while IFS= read -r link; do
             target="${link%%#*}"
@@ -434,10 +382,8 @@ check_docs() {
             [[ -e "$(dirname "$f")/$target" ]] || hits+="$f → $link"$'\n'
         done < <(grep -oE '\]\([^) ]+\)' "$f" | sed 's/^](//; s/)$//')
     done < <(find "$ROOT" -name '*.md' ! -name template.md \
-        ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*' \
-        \( ! -path '*/.claude/*' -o -path "$ROOT/.claude/skills/*" \))
+        ! -path '*/build/*' ! -path '*/.gradle/*' ! -path '*/.git/*')
     report "Битые ссылки в документации" "${hits%$'\n'}" || failed=1
-    check_ios_sessions || failed=1
     check_adr_numbers || failed=1
     return "$failed"
 }

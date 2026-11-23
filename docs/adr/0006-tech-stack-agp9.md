@@ -1,6 +1,6 @@
 # ADR-0006: Стек: Kotlin, Compose и Room в одном модуле; сборка на AGP 9 и JDK 17+
 
-- **Статус:** Принято
+- **Статус:** Заменено [ADR-0052](0052-android-toolchain.md)
 - **Дата:** 2026-10-15
 - **Затрагивает:** `build.gradle.kts`, `app/build.gradle.kts`, `settings.gradle.kts`, `gradle.properties`, `gradle/wrapper/`, выбор JDK в `scripts/dev.sh`
 - **Заменяет:** [ADR-0003](0003-tech-stack.md)
@@ -22,7 +22,7 @@ ADR-0003 закрепил compileSdk 34 и JDK 17. Android Studio 2026.2 пос�
   Kotlin; `org.jetbrains.kotlin.plugin.compose` держи той же версии.
 - Обновляй Gradle, AGP, Kotlin и KSP вместе: KSP должен поддерживать выбранный Kotlin,
   а Android Studio — выбранный AGP.
-- Gradle запускается на JDK 17+, байткод — Java 17 (`compileOptions`, `jvmTarget`).
+- Gradle и проверки запускаются на JDK 21+ ([ADR-0052](0052-android-toolchain.md)), байткод — Java 17 (`compileOptions`, `jvmTarget`).
   Путь к JDK не коммить: `org.gradle.java.home` в `gradle.properties` ломает сборку на
   других машинах. JDK задают `JAVA_HOME`, Android Studio или `scripts/dev.sh`.
 - minSdk 26 (Android 8.0), targetSdk 34, compileSdk — какой требуют зависимости (сейчас 37).

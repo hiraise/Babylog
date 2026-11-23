@@ -6,12 +6,12 @@
 
 ## Сборка
 
-Нужны Android SDK и JDK 17 или новее — подойдёт встроенный в Android Studio;
+Нужны Android SDK и JDK 21 или новее — подойдёт встроенный в Android Studio;
 недостающие платформы SDK Gradle скачает сам. Почему тулчейн такой —
-[ADR-0006](adr/0006-tech-stack-agp9.md).
+[ADR-0052](adr/0052-android-toolchain.md).
 
 ```bash
-# macOS; не нужно, если JAVA_HOME уже указывает на JDK 17+
+# macOS; не нужно, если JAVA_HOME уже указывает на JDK 21+
 export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ./gradlew assembleDebug
 ```
@@ -24,10 +24,10 @@ APK: `app/build/outputs/apk/debug/app-debug.apk` — отдельное прил
 ## Локальная отладка
 
 Отладочная сборка ставится отдельным приложением «Дневник (debug)»
-(`com.kid.babylog.debug`) со своей пустой базой. Основное приложение и его
+(`com.hiraise.babylog.debug`) со своей пустой базой. Основное приложение и его
 записи она не трогает, поэтому её можно ставить и на свой телефон.
 
-`scripts/dev.sh` сам берёт JDK из Android Studio, если в `JAVA_HOME` Java ниже 17,
+`scripts/dev.sh` сам берёт JDK из Android Studio, если в `JAVA_HOME` Java ниже 21,
 так что настраивать для него JDK не нужно.
 
 Всё запускается через `scripts/dev.sh` или в VS Code: Terminal → Run Task…
@@ -94,7 +94,7 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 ## Процесс
 
 Проект разрабатывается с помощью AI-агентов. Канонические правила работы —
-в [AGENTS.md](../AGENTS.md) (`CLAUDE.md` — только указатель для совместимости), архитектурные
+в [AGENTS.md](../AGENTS.md), архитектурные
 и системные решения — в [docs/adr/](adr/README.md). Прежде чем менять архитектуру, добавлять
 зависимость или сетевую функцию, загляните туда.
 
@@ -107,7 +107,6 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 
 Повторяемые процедуры агента — скиллы в [.agents/skills/](../.agents/skills/): сдача задачи
 `pr`, тестовый дневник `seed`, выпуск версии `release`, перенос одной iOS-сессии `ios-port`.
-Файлы в `.claude/skills/` — только указатели для совместимости, не второй источник инструкций.
 Версию агент собирает по команде владельца: готовые PR вливаются в один релизный PR,
 а сливает его и ставит тег владелец — скриптом `finish.sh` из скилла.
 
@@ -138,7 +137,7 @@ baby-diary-2026-10-22.zip
 `ExportFixturesTest` собирает их из фиксированного дневника в `app/build/export-fixtures/` и сравнивает
 с эталонами: CSV побайтово, ZIP — по именам, содержимому и способу сжатия записей. После намеренного
 изменения формата эталоны обновляет команда
-`BABYLOG_UPDATE_EXPORT_FIXTURES=1 ./gradlew :app:testDebugUnitTest --tests "com.kid.babylog.feature.transfer.ExportFixturesTest"`;
+`BABYLOG_UPDATE_EXPORT_FIXTURES=1 ./gradlew :app:testDebugUnitTest --tests "com.hiraise.babylog.feature.transfer.ExportFixturesTest"`;
 изменённые файлы фикстур нужно закоммитить.
 
 ### Формат CSV

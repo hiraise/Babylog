@@ -43,7 +43,7 @@ struct AppDatabaseTest {
             .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
-            .appendingPathComponent("app/schemas/com.kid.babylog.core.data.room.AppDatabase/7.json")
+            .appendingPathComponent("app/schemas/com.hiraise.babylog.core.data.room.AppDatabase/7.json")
         let schema = try JSONDecoder().decode(RoomSchema.self, from: Data(contentsOf: schemaURL))
         #expect(schema.database.version == AppDatabase.version)
         let database = try AppDatabase.inMemory()

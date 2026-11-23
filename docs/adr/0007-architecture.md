@@ -2,7 +2,7 @@
 
 - **Статус:** Принято
 - **Дата:** 2026-10-15
-- **Затрагивает:** структура пакетов `app/src/main/java/com/kid/babylog/`, `AppContainer.kt`, тесты `app/src/test/`
+- **Затрагивает:** структура пакетов `app/src/main/java/com/hiraise/babylog/`, `AppContainer.kt`, тесты `app/src/test/`
 - **Заменяет:** часть [ADR-0006](0006-tech-stack-agp9.md) о структуре пакетов и состоянии
 
 ## Контекст

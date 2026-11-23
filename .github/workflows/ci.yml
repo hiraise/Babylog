@@ -26,11 +26,11 @@ jobs:
         with:
           persist-credentials: false
 
-      # JDK 17 — нижняя граница из ADR-0006 (локально обычно новее)
+      # JDK 21 нужен Robolectric для SDK 36 (ADR-0052)
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
 
       # Открытый кеш (MIT): кеш по умолчанию — проприетарный компонент (ADR-0001, ADR-0011).
       # Заодно проверяет, что gradle-wrapper.jar — настоящий.

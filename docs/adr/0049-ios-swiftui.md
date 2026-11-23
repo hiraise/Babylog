@@ -16,7 +16,7 @@
   Kotlin Multiplatform не используй: Android-версия не меняется ради iOS.
 - Проект — `ios/BabyLog.xcodeproj` с синхронизируемыми папками: новый файл попадает в сборку
   без правки `project.pbxproj`. Минимальная версия — iOS 17. Bundle ID — `com.hiraise.babylog`
-  (зарегистрирован в Apple Developer; у Android `applicationId` свой, `com.kid.babylog`, — не выравнивай).
+  (зарегистрирован в Apple Developer; у Android `applicationId` свой, `com.hiraise.babylog`, — не выравнивай).
 - Зависимости подключай через Swift Package Manager. Допустимы только GRDB (база),
   ZIPFoundation (архив экспорта) и swift-snapshot-testing (только тесты). Остальное — фреймворки
   iOS. Новую зависимость добавляй только с ADR; лицензии — по [ADR-0048](0048-app-store-license-permission.md).
@@ -46,13 +46,13 @@
 - Не клади в репозиторий сертификаты и ключи (`*.p12`, `*.cer`), профили (`*.mobileprovision`),
   ключи App Store Connect API (`*.p8`), `xcuserdata/` ([ADR-0001](0001-open-source-non-commercial.md)).
   SKU и номер приложения в App Store Connect сборке не нужны: в репозиторий их не добавляй.
-- Общие правила переноса держи в `ios/AGENTS.md`, статус и дорожную карту — в `ios/PLAN.md`,
-  а полное ТЗ каждой сессии — только в `ios/sessions/<ID>.md`. Не дублируй эти тексты друг в друге.
+- Общие правила переноса держи в `ios/AGENTS.md`, а полное ТЗ каждой сессии — только в
+  `ios/sessions/<ID>.md`. Не дублируй эти тексты друг в друге.
 
 ## Последствия
 
 - Общие файлы (советы, шрифты, `fixtures/export/`) меняются для обеих платформ: CI проверяет обе.
-- Новая функция после выхода iOS-версии — два PR, или один с пометкой в `ios/PLAN.md`, что iOS отстаёт.
+- Новая функция после выхода iOS-версии — два PR, или один с пометкой в его описании, что iOS отстаёт.
 
 ## Проверка
 
