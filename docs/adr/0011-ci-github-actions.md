@@ -22,7 +22,7 @@
 - `check` = `rules` + `testDebugUnitTest lintDebug assembleDebug` — обязательная локальная проверка.
 - CI (`.github/workflows/ci.yml`) на каждый PR и push в `main` выполняет `rules`, `build` (то же
   и `assembleRelease`) и `schemas` (сборка не изменила `app/schemas/`).
-- CI работает на `ubuntu-24.04` с JDK 17 — нижней границей из [ADR-0006](0006-tech-stack-agp9.md).
+- CI работает на `ubuntu-24.04` с JDK 21 — это нужно Robolectric для SDK 36 ([ADR-0052](0052-android-toolchain.md)).
 - Подключай только открытые actions. Закрепляй их по SHA коммита с версией в комментарии.
   У `gradle/actions/setup-gradle` ставь `cache-provider: basic`: кеш по умолчанию проприетарный.
 - Workflow проверок работает без секретов, с `permissions: contents: read`; не используй

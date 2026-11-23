@@ -101,7 +101,7 @@ README — презентация для людей: что умеет прил�
   в её PR. `check` — правила проекта (`scripts/dev.sh rules`: дизайн-токены, правила ADR,
   ссылки и структура сессий в документации), unit-тесты со сверкой скриншотов, lint и
   debug-сборка; что проверяет CI — [ADR-0011](docs/adr/0011-ci-github-actions.md). Gradle
-  нужен JDK 17+: если в `JAVA_HOME` Java ниже, скрипт сам возьмёт JDK из Android Studio.
+  и проверки нужно запускать на JDK 21+: если в `JAVA_HOME` Java ниже, скрипт сам возьмёт JDK из Android Studio.
 - Изменения UI проверяй скриншот-тестами, миграции — тестами миграций, а не вручную
   ([ADR-0013](docs/adr/0013-jvm-android-tests.md)); нажатия и ввод — UI-тестами Compose
   ([ADR-0022](docs/adr/0022-compose-ui-tests.md)). Намеренно поменял вид — перезапиши эталоны

@@ -28,14 +28,14 @@ EMULATOR="$SDK/emulator/emulator"
 EMULATOR_LOG="${TMPDIR:-/tmp/}babylog-emulator.log"
 STUDIO_JDK="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
-# Gradle 9 нужен JDK 17+. Если в JAVA_HOME Java ниже 17 (на этом Mac по умолчанию 11), берём JDK из Android Studio
+# Тестам SDK 36 нужен JDK 21+. Если в JAVA_HOME Java ниже 21 (на этом Mac по умолчанию 11), берём JDK из Android Studio
 run_gradle() {
     local version
     version="$("${JAVA_HOME:+$JAVA_HOME/bin/}java" -XshowSettings:properties -version 2>&1 |
         sed -n 's/^ *java\.specification\.version = //p' || true)"
-    if [[ "${version%%.*}" -lt 17 ]]; then
+    if [[ "${version%%.*}" -lt 21 ]]; then
         if [[ ! -x "$STUDIO_JDK/bin/java" ]]; then
-            echo "Gradle нужен JDK 17 или новее — укажите его в JAVA_HOME" >&2
+            echo "Проверкам нужен JDK 21 или новее — укажите его в JAVA_HOME" >&2
             exit 1
         fi
         export JAVA_HOME="$STUDIO_JDK"
