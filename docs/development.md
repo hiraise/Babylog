@@ -80,8 +80,8 @@ Workflow `iOS` всегда проходит как обязательная п�
 Скриншоты App Store лежат в `docs/screenshots/ios/`: их создаёт и сверяет `AppStoreScreenshotTest`,
 а обновляет вместе с остальными эталонами `scripts/dev.sh ios-goldens`. Русские тексты карточки —
 в `fastlane/metadata/ios/ru/`, политика конфиденциальности — в [PRIVACY.md](../PRIVACY.md).
-Сборку из тега архивирует и загружает в App Store Connect владелец; внешнее тестирование TestFlight
-и отправку на проверку он также выполняет сам ([ADR-0047](adr/0047-store-publishing.md)).
+Сборку из тега архивирует и загружает в TestFlight workflow `Release`; отправку на App Review
+и выпуск рабочей версии выполняет владелец ([ADR-0053](adr/0053-store-cicd.md)).
 
 Материалы карточки Google Play на русском лежат в `fastlane/metadata/android/ru-RU/`: название и
 описания — `title.txt`, `short_description.txt`, `full_description.txt`, «Что нового» —
@@ -115,6 +115,31 @@ Kotlin, Jetpack Compose (Material 3), Room, минимум зависимост�
 `pr`, тестовый дневник `seed`, выпуск версии `release`, перенос одной iOS-сессии `ios-port`.
 Версию агент собирает по команде владельца: готовые PR вливаются в один релизный PR,
 а сливает его и ставит тег владелец — скриптом `finish.sh` из скилла.
+
+### Публикация
+
+Тег `v<versionName>` на коммите из `main` запускает `.github/workflows/release.yml`
+([ADR-0053](adr/0053-store-cicd.md)). Android job собирает подписанные APK и AAB, публикует APK
+в GitHub Releases и загружает AAB в закрытый трек `alpha`. iOS job собирает IPA и загружает его
+в TestFlight. Production в обоих магазинах владелец запускает вручную после тестирования и review.
+
+Секреты хранятся только в защищённом окружении GitHub `release`, которое выдаёт их тегам `v*`:
+
+| Секрет | Содержимое |
+| --- | --- |
+| `BABYLOG_KEYSTORE_BASE64`, `BABYLOG_KEYSTORE_PASSWORD` | PKCS12 и пароль общего ключа Android (уже настроены) |
+| `PLAY_SERVICE_ACCOUNT_JSON_BASE64` | JSON сервисного аккаунта Google Play с правом создавать тестовые выпуски |
+| `IOS_DISTRIBUTION_CERTIFICATE_BASE64` | distribution-сертификат `.p12` для подписи iOS |
+| `IOS_DISTRIBUTION_CERTIFICATE_PASSWORD` | Пароль этого сертификата |
+| `IOS_PROVISIONING_PROFILE_BASE64` | App Store provisioning profile для `com.hiraise.babylog` |
+| `IOS_PROVISIONING_PROFILE_NAME` | Имя этого профиля в Xcode |
+| `APP_STORE_CONNECT_KEY_ID` | Key ID ключа App Store Connect API |
+| `APP_STORE_CONNECT_ISSUER_ID` | Issuer ID аккаунта App Store Connect |
+| `APP_STORE_CONNECT_PRIVATE_KEY_BASE64` | Содержимое приватного ключа `.p8` в Base64 |
+
+Для переноса файла в секрет на macOS используйте `base64 -i <файл>`. Ключи и профили не кладите
+в репозиторий. Fastlane 2.242.0 устанавливается из `Gemfile` на Ruby 3.2; локальная проверка
+конфигурации — `bundle install`, затем `bundle exec fastlane lanes`.
 
 ## Формат экспорта
 

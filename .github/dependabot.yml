@@ -26,6 +26,11 @@ updates:
         patterns:
           - io.github.takahirom.roborazzi*
 
+  - package-ecosystem: bundler
+    directory: /
+    schedule:
+      interval: weekly
+
   - package-ecosystem: swift
     directory: /ios/
     schedule:

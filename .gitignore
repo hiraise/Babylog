@@ -31,6 +31,10 @@ keystore.properties
 .vscode/*
 !.vscode/tasks.json
 
+# Ruby/Bundler: локальные зависимости Fastlane не коммитим
+.bundle/
+vendor/bundle/
+
 # iOS: личная подпись, настройки Xcode, сертификаты и архивы (ADR-0049)
 ios/Local.xcconfig
 xcuserdata/
