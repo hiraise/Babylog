@@ -436,9 +436,9 @@ cmd_check() {
     run_gradle "${CHECK_TASKS[@]}"
 }
 
-# Gradle-шаг CI: всё из check и release-сборка — по ней docs/development.md учит собирать APK (ADR-0011)
+# Gradle-шаг CI: всё из check и release-сборка — по ней docs/development.md учит собирать APK и AAB
 cmd_build() {
-    run_gradle "${CHECK_TASKS[@]}" assembleRelease
+    run_gradle "${CHECK_TASKS[@]}" assembleRelease bundleRelease
 }
 
 # Шаг CI после сборки: Room не должен был изменить схемы в app/schemas/ (ADR-0008).
@@ -460,7 +460,7 @@ RELEASE_CERT_SHA256="e43b34e322438744830268de4b5579cafae46c4b549aceb0265a910a4d7
 # Подписанный APK для GitHub Releases (ADR-0012). Аргумент — тег v<versionName>.
 # Ключ — BABYLOG_KEYSTORE (путь к .jks) и BABYLOG_KEYSTORE_PASSWORD; в CI их даёт окружение release.
 cmd_release() {
-    local tag="${1:-}" version apk tools cert out
+    local tag="${1:-}" version apk aab tools cert aab_cert out
     version="$(sed -n 's/^ *versionName = "\(.*\)"$/\1/p' "$ROOT/app/build.gradle.kts")"
     if [[ "$tag" != "v$version" ]]; then
         echo "Тег «${tag}» должен совпадать с versionName: v$version" >&2
@@ -471,8 +471,9 @@ cmd_release() {
         return 1
     fi
     cmd_rules
-    run_gradle "${CHECK_TASKS[@]}" assembleRelease
+    run_gradle "${CHECK_TASKS[@]}" assembleRelease bundleRelease
     apk="$ROOT/app/build/outputs/apk/release/app-release.apk"
+    aab="$ROOT/app/build/outputs/bundle/release/app-release.aab"
     tools="$(ls -d "$SDK"/build-tools/*/ | LC_ALL=C sort | tail -1)"
     # apksigner.jar напрямую: обёртка apksigner берёт java из PATH, а там может быть Java ниже 17.
     # Формат строки зависит от версии build-tools («Signer #1 certificate …» до 36, «V2 Signer: certificate …»
@@ -483,12 +484,20 @@ cmd_release() {
         echo "APK подписан не ключом проекта (сертификат: ${cert:-нет подписи}) — ADR-0012" >&2
         return 1
     fi
+    aab_cert="$(keytool -printcert -jarfile "$aab" 2>/dev/null |
+        sed -n 's/^[[:space:]]*SHA256: //p' | tr -d ':' | tr 'A-F' 'a-f' | LC_ALL=C sort -u)"
+    if [[ "$aab_cert" != "$RELEASE_CERT_SHA256" ]]; then
+        echo "AAB подписан не ключом проекта (сертификат: ${aab_cert:-нет подписи}) — ADR-0012" >&2
+        return 1
+    fi
     out="$ROOT/build/release"
     rm -rf "$out"
     mkdir -p "$out"
     cp "$apk" "$out/babylog-$version.apk"
+    cp "$aab" "$out/babylog-$version.aab"
     (cd "$out" && shasum -a 256 "babylog-$version.apk" >"babylog-$version.apk.sha256")
     echo "$out/babylog-$version.apk"
+    echo "$out/babylog-$version.aab"
 }
 
 cmd_logcat() {
@@ -586,7 +595,7 @@ usage() {
   goldens     перезаписать эталонные скриншоты (app/src/test/screenshots/) после намеренной правки UI
   build       шаг CI: unit-тесты со сверкой скриншотов, lint, debug- и release-сборка
   schemas     шаг CI после сборки: схемы Room в app/schemas/ совпадают с закоммиченными
-  release v<версия>  подписанный APK и .sha256 в build/release/ (нужен ключ релизов, ADR-0012)
+  release v<версия>  подписанные APK, AAB и .sha256 в build/release/ (нужен ключ релизов, ADR-0012)
   emulator    запустить эмулятор и дождаться загрузки
   logcat      логи приложения (переживают перезапуски и падения)
   db          скачать базу в build/debug-db/$DB_NAME
