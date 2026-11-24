@@ -83,6 +83,12 @@ Workflow `iOS` всегда проходит как обязательная п�
 Сборку из тега архивирует и загружает в App Store Connect владелец; внешнее тестирование TestFlight
 и отправку на проверку он также выполняет сам ([ADR-0047](adr/0047-store-publishing.md)).
 
+Материалы карточки Google Play на русском лежат в `fastlane/metadata/android/ru-RU/`: название и
+описания — `title.txt`, `short_description.txt`, `full_description.txt`, «Что нового» —
+`changelogs/<versionCode>.txt`, ссылка на [PRIVACY.md](../PRIVACY.md) — `privacy_url.txt`,
+иконка 512×512 и баннер 1024×500 — `images/`. Скриншоты берутся из `docs/screenshots/`
+и не дублируются.
+
 ## Технологии
 
 Kotlin, Jetpack Compose (Material 3), Room, минимум зависимостей.
