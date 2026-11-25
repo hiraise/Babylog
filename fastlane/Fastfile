@@ -52,7 +52,8 @@ platform :ios do
           "com.hiraise.babylog" => profile_name
         }
       },
-      xcargs: "CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY='Apple Distribution' DEVELOPMENT_TEAM=#{team_id} PROVISIONING_PROFILE_SPECIFIER='#{profile_name}'"
+      codesigning_identity: "Apple Distribution",
+      xcargs: "CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=#{team_id} BABYLOG_PROVISIONING_PROFILE='#{profile_name}'"
     )
 
     pilot(

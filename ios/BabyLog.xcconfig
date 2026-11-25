@@ -1,3 +1,6 @@
 #include "Version.xcconfig"
 #include "Signing.xcconfig"
 #include? "Local.xcconfig"
+
+// Профиль задаётся только для target приложения, не для Swift Package dependencies
+PROVISIONING_PROFILE_SPECIFIER = $(BABYLOG_PROVISIONING_PROFILE)
