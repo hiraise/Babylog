@@ -1,4 +1,88 @@
 import SwiftUI
+import UIKit
+
+private struct AppSheetDragHandle: UIViewRepresentable {
+    let tint: UIColor
+    let onDrag: (CGFloat) -> Void
+    let onEnd: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.accessibilityIdentifier = "app-sheet-drag-handle"
+        let handle = UIView()
+        handle.backgroundColor = tint
+        handle.layer.cornerRadius = BabyLogSizes.sheetDragIndicatorHeight / 2
+        view.addSubview(handle)
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.drag(_:)))
+        pan.delegate = context.coordinator
+        view.addGestureRecognizer(pan)
+        context.coordinator.handle = handle
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        context.coordinator.onDrag = onDrag
+        context.coordinator.onEnd = onEnd
+        context.coordinator.handle?.backgroundColor = tint
+        context.coordinator.handle?.frame = CGRect(
+            x: (view.bounds.width - BabyLogSizes.sheetDragIndicatorWidth) / 2,
+            y: BabyLogSizes.sheetDragIndicatorTop,
+            width: BabyLogSizes.sheetDragIndicatorWidth,
+            height: BabyLogSizes.sheetDragIndicatorHeight
+        )
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var onDrag: (CGFloat) -> Void = { _ in }
+        var onEnd: (CGFloat) -> Void = { _ in }
+        var handle: UIView?
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+
+        @objc func drag(_ recognizer: UIPanGestureRecognizer) {
+            let height = max(0, recognizer.translation(in: recognizer.view).y)
+            switch recognizer.state {
+            case .changed:
+                onDrag(height)
+            case .ended, .cancelled:
+                onEnd(height)
+            default:
+                break
+            }
+        }
+    }
+}
+
+private enum AppSheetHeightPart: Hashable {
+    case top, guide, title, content, actions, bottom
+}
+
+private struct AppSheetHeightPreferenceKey: PreferenceKey {
+    static let defaultValue: [AppSheetHeightPart: CGFloat] = [:]
+
+    static func reduce(value: inout Value, nextValue: () -> Value) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
+private extension View {
+    func measureAppSheetHeight(_ part: AppSheetHeightPart) -> some View {
+        background(
+            GeometryReader { geometry in
+                Color.clear.preference(key: AppSheetHeightPreferenceKey.self, value: [part: geometry.size.height])
+            }
+        )
+    }
+}
 
 /** Основная кнопка листа; `destructive` делает действие красным. */
 struct SheetAction {
@@ -29,17 +113,28 @@ struct SheetCloser {
 }
 
 /**
- Нижний лист — единственный вид всплывающего окна (ADR-0018). Внизу справа — «Отмена»
+ Нижний лист — единственный вид всплывающего окна (ADR-0018, ADR-0054). Внизу справа — «Отмена»
  и необязательное основное действие. `secondary` заменяет «Отмена» действием, а `secondaryContent` —
  системным элементом вроде `ShareLink`. `edgeToEdge` убирает боковые отступы содержимого для меню;
  `scrollable = false` используй для содержимого, которое прокручивается само.
+ Лист показан через `fullScreenCover` с прозрачным фоном и собственной нижней карточкой: системной подложки нет.
+ Перед презентацией обычное содержимое измеряется без `ScrollView`, а самопрокручиваемое — с доступной высотой.
+ Длинное содержимое прокручивается, кнопки остаются видимыми. Сверху — drag indicator и отступ под него.
  */
 struct AppSheet<Content: View>: View {
     @Environment(\.babyLogTheme) private var theme
     @Environment(\.guide) private var guide
     @Environment(\.sheetTarget) private var sheetTarget
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
+    @Environment(\.clock) private var clock
+    @Environment(\.colorScheme) private var colorScheme
     @Binding var isPresented: Bool
     @State private var actionDismissal = false
+    @State private var contentHeight: CGFloat = 1
+    @State private var presentationReady = false
+    @State private var dragOffset: CGFloat = 0
 
     let onDismiss: () -> Void
     let title: String?
@@ -76,30 +171,110 @@ struct AppSheet<Content: View>: View {
     }
 
     var body: some View {
-        Color.clear
-            .sheet(isPresented: $isPresented, onDismiss: {
-                if !actionDismissal { onDismiss() }
-                actionDismissal = false
-            }) {
-                AppSheetContent(
-                    isPresented: $isPresented,
-                    title: title,
-                    icon: icon,
-                    confirm: confirm,
-                    scrollable: scrollable,
-                    edgeToEdge: edgeToEdge,
-                    secondary: secondary,
-                    secondaryContent: secondaryContent,
-                    onActionDismiss: { actionDismissal = true },
-                    content: content
-                )
-                .environment(\.babyLogTheme, theme)
-                .environment(\.guide, guide)
-                .environment(\.sheetTarget, sheetTarget)
-                .presentationDetents([.large])
-                .presentationBackground(theme.colors.surfaceContainerHigh)
-                .presentationCornerRadius(theme.shapes.extraLarge)
+        GeometryReader { geometry in
+            Color.clear
+                .fullScreenCover(
+                    isPresented: Binding(
+                        get: { isPresented && presentationReady },
+                        set: { isPresented = $0 }
+                    ),
+                    onDismiss: {
+                        if !actionDismissal { onDismiss() }
+                        actionDismissal = false
+                    }
+                ) {
+                    GeometryReader { overlay in
+                        ZStack(alignment: .bottom) {
+                            theme.colors.scrim.opacity(0.35)
+                                .ignoresSafeArea()
+                                .onTapGesture { isPresented = false }
+                            sheetCard(maxHeight: overlay.size.height - overlay.safeAreaInsets.top)
+                        }
+                        .ignoresSafeArea(.container, edges: .bottom)
+                        .presentationBackground(.clear)
+                        .interactiveDismissDisabled(true)
+                        .transition(.opacity)
+                    }
+                }
+                .onAppear { preparePresentation(width: geometry.size.width) }
+                .onChange(of: isPresented) { _, presented in
+                    if presented {
+                        preparePresentation(width: geometry.size.width)
+                    } else {
+                        presentationReady = false
+                        dragOffset = 0
+                    }
+                }
+        }
+        .frame(height: 0)
+    }
+
+    private func sheetCard(maxHeight: CGFloat) -> some View {
+        withSheetEnvironment(sheetContent(scrollable: scrollable))
+            .onPreferenceChange(AppSheetHeightPreferenceKey.self) { heights in
+                contentHeight = heights.values.reduce(0, +)
             }
+            .frame(height: min(contentHeight, maxHeight))
+            .background(theme.colors.surfaceContainerHigh)
+            .clipShape(UnevenRoundedRectangle(
+                topLeadingRadius: theme.shapes.extraLarge,
+                bottomLeadingRadius: 0,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: theme.shapes.extraLarge,
+                style: .continuous
+            ))
+            .overlay(alignment: .top) {
+                AppSheetDragHandle(
+                    tint: UIColor(theme.colors.onSurfaceVariant.opacity(0.5)),
+                    onDrag: { dragOffset = $0 },
+                    onEnd: { height in
+                        if height > 30 { isPresented = false }
+                        dragOffset = 0
+                    }
+                )
+                .frame(height: BabyLogSizes.touchTarget)
+            }
+            .offset(y: dragOffset)
+            .animation(.easeInOut(duration: 0.2), value: dragOffset)
+    }
+
+    private func sheetContent(scrollable: Bool) -> AppSheetContent<Content> {
+        AppSheetContent(
+            isPresented: $isPresented,
+            title: title,
+            icon: icon,
+            confirm: confirm,
+            scrollable: scrollable,
+            edgeToEdge: edgeToEdge,
+            secondary: secondary,
+            secondaryContent: secondaryContent,
+            onActionDismiss: { actionDismissal = true },
+            content: content
+        )
+    }
+
+    private func withSheetEnvironment<V: View>(_ view: V) -> some View {
+        view
+            .environment(\.babyLogTheme, theme)
+            .environment(\.guide, guide)
+            .environment(\.sheetTarget, sheetTarget)
+            .environment(\.dynamicTypeSize, dynamicTypeSize)
+            .environment(\.locale, locale)
+            .environment(\.timeZone, timeZone)
+            .environment(\.clock, clock)
+            .environment(\.colorScheme, colorScheme)
+    }
+
+    private func preparePresentation(width: CGFloat) {
+        guard isPresented, !presentationReady, width > 0 else { return }
+        let controller = UIHostingController(
+            rootView: withSheetEnvironment(sheetContent(scrollable: false))
+        )
+        let fittingHeight: CGFloat = scrollable ? 0 : UIScreen.main.bounds.height
+        let height = controller.sizeThatFits(in: CGSize(width: width, height: fittingHeight)).height
+        guard height > 0 else { return }
+        contentHeight = height
+        presentationReady = true
     }
 }
 
@@ -147,10 +322,13 @@ struct AppSheetContent<Content: View>: View {
         let spacing = theme.spacing
         let closer = SheetCloser(isPresented: $isPresented, beforeDismiss: onActionDismiss)
         VStack(alignment: .leading, spacing: 0) {
+            Spacer().frame(height: spacing.l)
+                .measureAppSheetHeight(.top)
             if guide?.sheetHint != nil {
                 GuideSheetHint()
                     .padding(.horizontal, spacing.l)
                     .padding(.bottom, spacing.m)
+                    .measureAppSheetHeight(.guide)
             }
             if let title {
                 HStack(spacing: spacing.m) {
@@ -161,6 +339,7 @@ struct AppSheetContent<Content: View>: View {
                 }
                 .padding(.horizontal, spacing.l)
                 .padding(.bottom, spacing.m)
+                .measureAppSheetHeight(.title)
             }
             Group {
                 if scrollable {
@@ -170,7 +349,6 @@ struct AppSheetContent<Content: View>: View {
                 }
             }
             .guideTarget(sheetTarget)
-            .frame(maxHeight: .infinity, alignment: .top)
             if let confirm {
                 HStack(spacing: spacing.s) {
                     Spacer()
@@ -197,10 +375,13 @@ struct AppSheetContent<Content: View>: View {
                 }
                 .padding(.horizontal, spacing.l)
                 .padding(.top, spacing.m)
+                .measureAppSheetHeight(.actions)
             }
             Spacer().frame(height: spacing.l)
+                .measureAppSheetHeight(.bottom)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("app-sheet")
         .background(theme.colors.surfaceContainerHigh)
         .foregroundStyle(theme.colors.onSurface)
     }
@@ -211,6 +392,7 @@ struct AppSheetContent<Content: View>: View {
         }
         .padding(.horizontal, edgeToEdge ? 0 : theme.spacing.l)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .measureAppSheetHeight(.content)
     }
 }
 

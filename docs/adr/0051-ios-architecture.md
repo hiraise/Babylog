@@ -17,7 +17,7 @@ iOS-версия повторяет Android-приложение, но испо�
 - Собирай зависимости вручную в `AppContainer`, как в `AppContainer.kt`: создавай контейнер в `BabyLogApp` и передавай через `@Environment`. Тесты создают его с `DatabaseQueue` в памяти; fakes повторяют `testing/Fakes.kt`.
 - Внедряй протокол `Clock`, как `core/ui/Clock.kt`. Храни время в epoch millis `Int64`, как на Android; используй `Calendar(identifier: .gregorian)`, локаль `ru_RU`, первым днём недели — понедельник, часовой пояс — `TimeZone.current`.
 - Русские строки пиши прямо в Swift, как в Kotlin, без `.xcstrings`; множественные числа и `bySex` переноси функциями из `Format.kt`.
-- Всплывающие окна делай через `AppSheet` на SwiftUI `.sheet` и `presentationDetents` со стилем темы ([ADR-0018](0018-bottom-sheets.md)). Нижнюю панель реализуй своим компонентом по Android-эталону, не `TabView` ([ADR-0035](0035-bottom-navigation.md)).
+- Всплывающие окна делай через `AppSheet` с собственной нижней презентацией ([ADR-0054](0054-ios-bottom-sheets.md)). Нижнюю панель реализуй своим компонентом по Android-эталону, не `TabView` ([ADR-0035](0035-bottom-navigation.md)).
 - Логику и модели проверяй Swift Testing, экраны — swift-snapshot-testing в светлой и тёмной теме на одном закреплённом симуляторе `iPhone 17` с iOS из закреплённого Xcode. Фиксируй `ru_RU`, часовой пояс Android-тестов и `Clock`. Нажатия и ввод проверяй через модели; XCUITest используй только для гайдов справки (S9b).
 
 ## Последствия

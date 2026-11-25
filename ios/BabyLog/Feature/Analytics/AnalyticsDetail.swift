@@ -118,6 +118,7 @@ private struct DetailHeader: View {
                 .appTextStyle(theme.typography.headlineSmall)
                 .accessibilityAddTraits(.isHeader)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

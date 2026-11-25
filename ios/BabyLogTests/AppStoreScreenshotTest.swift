@@ -107,13 +107,15 @@ struct AppStoreScreenshotTest {
         controller.overrideUserInterfaceStyle = dark ? .dark : .light
         controller.view.frame = CGRect(origin: .zero, size: appStoreScreenshotSize)
         controller.view.layoutIfNeeded()
-        if let failure = verifySnapshot(
-            of: controller,
-            as: .image(size: appStoreScreenshotSize, traits: UITraitCollection(displayScale: 3)),
-            snapshotDirectory: appStoreScreenshotsDirectory,
-            testName: testName
-        ) {
-            Issue.record("\(failure)")
+        withSnapshotRecording {
+            if let failure = verifySnapshot(
+                of: controller,
+                as: .image(size: appStoreScreenshotSize, traits: UITraitCollection(displayScale: 3)),
+                snapshotDirectory: appStoreScreenshotsDirectory,
+                testName: testName
+            ) {
+                Issue.record("\(failure)")
+            }
         }
     }
 }

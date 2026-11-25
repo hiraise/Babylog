@@ -101,10 +101,15 @@ import XCTest
         settle()
     }
 
-    /** Свайп вниз закрывает открытый лист. */
+    /** Свайп вниз закрывает открытый лист независимо от его высоты. */
     func back() {
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85))
+        let activity = app.otherElements["ActivityListView"].firstMatch
+        let appSheet = app.descendants(matching: .any).matching(identifier: "app-sheet").firstMatch
+        let dragHandle = app.descendants(matching: .any).matching(identifier: "app-sheet-drag-handle").firstMatch
+        let sheet = activity.exists ? activity : dragHandle.exists ? dragHandle : appSheet
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), "Нет открытого листа")
+        let start = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
         start.press(forDuration: 0.1, thenDragTo: end)
         settle()
     }

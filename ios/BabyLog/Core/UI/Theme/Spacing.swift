@@ -49,4 +49,7 @@ enum BabyLogSizes {
     static let illnessComparisonBarHeight: CGFloat = 12
     static let guideOutlineWidth: CGFloat = 3
     static let guideOutlineGap: CGFloat = 3
+    static let sheetDragIndicatorWidth: CGFloat = 36
+    static let sheetDragIndicatorHeight: CGFloat = 5
+    static let sheetDragIndicatorTop: CGFloat = 6
 }
