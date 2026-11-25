@@ -1,6 +1,67 @@
 import SwiftUI
 import UIKit
 
+private struct AppSheetDragHandle: UIViewRepresentable {
+    let tint: UIColor
+    let onDrag: (CGFloat) -> Void
+    let onEnd: (CGFloat) -> Void
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.accessibilityIdentifier = "app-sheet-drag-handle"
+        let handle = UIView()
+        handle.backgroundColor = tint
+        handle.layer.cornerRadius = BabyLogSizes.sheetDragIndicatorHeight / 2
+        view.addSubview(handle)
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.drag(_:)))
+        pan.delegate = context.coordinator
+        view.addGestureRecognizer(pan)
+        context.coordinator.handle = handle
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        context.coordinator.onDrag = onDrag
+        context.coordinator.onEnd = onEnd
+        context.coordinator.handle?.backgroundColor = tint
+        context.coordinator.handle?.frame = CGRect(
+            x: (view.bounds.width - BabyLogSizes.sheetDragIndicatorWidth) / 2,
+            y: BabyLogSizes.sheetDragIndicatorTop,
+            width: BabyLogSizes.sheetDragIndicatorWidth,
+            height: BabyLogSizes.sheetDragIndicatorHeight
+        )
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator: NSObject, UIGestureRecognizerDelegate {
+        var onDrag: (CGFloat) -> Void = { _ in }
+        var onEnd: (CGFloat) -> Void = { _ in }
+        var handle: UIView?
+
+        func gestureRecognizer(
+            _ gestureRecognizer: UIGestureRecognizer,
+            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+        ) -> Bool {
+            true
+        }
+
+        @objc func drag(_ recognizer: UIPanGestureRecognizer) {
+            let height = max(0, recognizer.translation(in: recognizer.view).y)
+            switch recognizer.state {
+            case .changed:
+                onDrag(height)
+            case .ended, .cancelled:
+                onEnd(height)
+            default:
+                break
+            }
+        }
+    }
+}
+
 private enum AppSheetHeightPart: Hashable {
     case top, guide, title, content, actions, bottom
 }
@@ -127,13 +188,11 @@ struct AppSheet<Content: View>: View {
                             theme.colors.scrim.opacity(0.35)
                                 .ignoresSafeArea()
                                 .onTapGesture { isPresented = false }
-                            sheetCard(
-                                maxHeight: overlay.size.height - overlay.safeAreaInsets.top,
-                                bottomInset: overlay.safeAreaInsets.bottom
-                            )
+                            sheetCard(maxHeight: overlay.size.height - overlay.safeAreaInsets.top)
                         }
                         .ignoresSafeArea(.container, edges: .bottom)
                         .presentationBackground(.clear)
+                        .interactiveDismissDisabled(true)
                         .transition(.opacity)
                     }
                 }
@@ -150,13 +209,12 @@ struct AppSheet<Content: View>: View {
         .frame(height: 0)
     }
 
-    private func sheetCard(maxHeight: CGFloat, bottomInset: CGFloat) -> some View {
+    private func sheetCard(maxHeight: CGFloat) -> some View {
         withSheetEnvironment(sheetContent(scrollable: scrollable))
             .onPreferenceChange(AppSheetHeightPreferenceKey.self) { heights in
                 contentHeight = heights.values.reduce(0, +)
             }
-            .padding(.bottom, bottomInset)
-            .frame(height: min(contentHeight + bottomInset, maxHeight))
+            .frame(height: min(contentHeight, maxHeight))
             .background(theme.colors.surfaceContainerHigh)
             .clipShape(UnevenRoundedRectangle(
                 topLeadingRadius: theme.shapes.extraLarge,
@@ -166,24 +224,18 @@ struct AppSheet<Content: View>: View {
                 style: .continuous
             ))
             .overlay(alignment: .top) {
-                Capsule()
-                    .fill(theme.colors.onSurfaceVariant.opacity(0.5))
-                    .frame(width: BabyLogSizes.sheetDragIndicatorWidth, height: BabyLogSizes.sheetDragIndicatorHeight)
-                    .padding(.top, BabyLogSizes.sheetDragIndicatorTop)
+                AppSheetDragHandle(
+                    tint: UIColor(theme.colors.onSurfaceVariant.opacity(0.5)),
+                    onDrag: { dragOffset = $0 },
+                    onEnd: { height in
+                        if height > 30 { isPresented = false }
+                        dragOffset = 0
+                    }
+                )
+                .frame(height: BabyLogSizes.touchTarget)
             }
             .offset(y: dragOffset)
             .animation(.easeInOut(duration: 0.2), value: dragOffset)
-            .animation(.easeInOut(duration: 0.2), value: contentHeight)
-            .simultaneousGesture(
-                DragGesture()
-                    .onChanged { value in
-                        dragOffset = max(0, value.translation.height)
-                    }
-                    .onEnded { value in
-                        if value.translation.height > 80 { isPresented = false }
-                        dragOffset = 0
-                    }
-            )
     }
 
     private func sheetContent(scrollable: Bool) -> AppSheetContent<Content> {
