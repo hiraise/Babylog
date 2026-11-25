@@ -208,7 +208,7 @@ struct WideTimerTile: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
-            .frame(maxWidth: .infinity, minHeight: BabyLogSizes.wideTimerMinHeight, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: BabyLogSizes.wideTimerMinHeight, maxHeight: .infinity, alignment: .leading)
         }
         .animation(.easeInOut(duration: tileMotion), value: running)
     }
