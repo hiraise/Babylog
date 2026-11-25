@@ -1,12 +1,14 @@
+opt_out_usage
 default_platform(:android)
 
 platform :android do
   desc "Загрузить AAB в закрытое тестирование Google Play"
   lane :play_closed do
-    version = File.read("app/build.gradle.kts", encoding: "UTF-8")[/versionName = "([^"]+)"/, 1]
+    root = File.expand_path("..", __dir__)
+    version = File.read(File.join(root, "app/build.gradle.kts"), encoding: "UTF-8")[/versionName = "([^"]+)"/, 1]
     supply(
       package_name: "com.hiraise.babylog",
-      aab: "build/release/babylog-#{version}.aab",
+      aab: File.join(root, "build/release/babylog-#{version}.aab"),
       track: "alpha",
       json_key: ENV.fetch("PLAY_JSON_KEY_PATH"),
       release_status: "completed",
@@ -20,8 +22,9 @@ end
 
 platform :ios do
   desc "Собрать IPA и загрузить его в TestFlight"
-  lane :testflight do
-    team_id = File.read("ios/Signing.xcconfig", encoding: "UTF-8")[/DEVELOPMENT_TEAM = (\S+)/, 1]
+  lane :ios_testflight do
+    root = File.expand_path("..", __dir__)
+    team_id = File.read(File.join(root, "ios/Signing.xcconfig"), encoding: "UTF-8")[/DEVELOPMENT_TEAM = (\S+)/, 1]
     profile_name = ENV.fetch("IOS_PROVISIONING_PROFILE_NAME")
     api_key = app_store_connect_api_key(
       key_id: ENV.fetch("ASC_KEY_ID"),
@@ -31,15 +34,15 @@ platform :ios do
     )
 
     gym(
-      project: "ios/BabyLog.xcodeproj",
+      project: File.join(root, "ios/BabyLog.xcodeproj"),
       scheme: "BabyLog",
       configuration: "Release",
       destination: "generic/platform=iOS",
       clean: true,
-      archive_path: "build/ios/BabyLog.xcarchive",
-      output_directory: "build/ios",
+      archive_path: File.join(root, "build/ios/BabyLog.xcarchive"),
+      output_directory: File.join(root, "build/ios"),
       output_name: "BabyLog",
-      derived_data_path: "ios/build/DerivedData",
+      derived_data_path: File.join(root, "ios/build/DerivedData"),
       export_method: "app-store",
       export_team_id: team_id,
       export_options: {
@@ -55,7 +58,7 @@ platform :ios do
     pilot(
       api_key: api_key,
       app_identifier: "com.hiraise.babylog",
-      ipa: "build/ios/BabyLog.ipa",
+      ipa: File.join(root, "build/ios/BabyLog.ipa"),
       skip_submission: true,
       skip_waiting_for_build_processing: true
     )
