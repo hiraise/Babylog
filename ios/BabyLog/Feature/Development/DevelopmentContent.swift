@@ -229,6 +229,7 @@ private struct WeekCard: View {
                 Text("\(age) · новые советы — каждую неделю")
                     .appTextStyle(theme.typography.bodyMedium)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }

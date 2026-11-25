@@ -136,6 +136,7 @@ struct PeriodPicker: View {
                 IllnessLegend(note: illnessNote)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
