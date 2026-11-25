@@ -105,9 +105,10 @@ import XCTest
     func back() {
         let activity = app.otherElements["ActivityListView"].firstMatch
         let appSheet = app.descendants(matching: .any).matching(identifier: "app-sheet").firstMatch
-        let sheet = activity.exists ? activity : appSheet
+        let dragHandle = app.descendants(matching: .any).matching(identifier: "app-sheet-drag-handle").firstMatch
+        let sheet = activity.exists ? activity : dragHandle.exists ? dragHandle : appSheet
         XCTAssertTrue(sheet.waitForExistence(timeout: 10), "Нет открытого листа")
-        let start = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05))
+        let start = sheet.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95))
         start.press(forDuration: 0.1, thenDragTo: end)
         settle()
