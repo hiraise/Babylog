@@ -130,6 +130,7 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s \
             -k "$keychain_password" "$keychain_path"
           security default-keychain -s "$keychain_path"
+          security find-identity -v -p codesigning "$keychain_path"
           mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
           cp "$RUNNER_TEMP/profile.mobileprovision" \
             "$HOME/Library/MobileDevice/Provisioning Profiles/babylog-ci.mobileprovision"
