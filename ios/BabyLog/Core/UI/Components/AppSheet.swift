@@ -132,7 +132,7 @@ struct AppSheet<Content: View>: View {
                                 bottomInset: overlay.safeAreaInsets.bottom
                             )
                         }
-                        .ignoresSafeArea()
+                        .ignoresSafeArea(.container, edges: .bottom)
                         .presentationBackground(.clear)
                         .transition(.opacity)
                     }
