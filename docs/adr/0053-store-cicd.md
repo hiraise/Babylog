@@ -38,7 +38,7 @@
 ## Проверка
 
 - `scripts/dev.sh release v<versionName>` собирает и проверяет подпись APK и AAB.
-- `bundle exec fastlane lanes` показывает `play_closed` и `testflight` без обращения к магазинам.
+- `bundle exec fastlane lanes` показывает `play_closed` и `ios_testflight` без обращения к магазинам.
 
 ## Альтернативы
 
