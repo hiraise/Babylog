@@ -16,8 +16,8 @@ android {
         minSdk = 26
         // Не поднимаем без проверки на телефоне: с 35 Android включает edge-to-edge и меняет раскладку экрана
         targetSdk = 36
-        versionCode = 18
-        versionName = "1.13.4"
+        versionCode = 19
+        versionName = "1.13.5"
     }
 
     signingConfigs {
